@@ -1,0 +1,273 @@
+[
+  {
+    "id": "lang_001",
+    "topic": "langchain",
+    "sub_topic": "lcel",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "LCEL（LangChain Expression Language）是什么？它解决了什么问题？举个你用过的例子。",
+    "answer_key_points": [
+      "LCEL 是 LangChain 的声明式编排语言，用 | 管道符串联组件",
+      "解决的问题：之前用 Chain 类需要大量样板代码，可读性差",
+      "核心语法：prompt | llm | output_parser",
+      "自动提供：流式、异步、批处理、并行执行等能力",
+      "Runnable 协议：所有组件都实现 Runnable，统一接口"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心概念并有实例",
+          "followup": "LCEL 的 RunnablePassthrough 和 RunnableLambda 分别用来做什么？什么场景下需要它们？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "答对两者的区别和场景",
+              "followup": "LCEL 能实现并行处理吗？比如同时检索多个知识库？怎么写？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_002",
+    "topic": "langchain",
+    "sub_topic": "chain_vs_agent",
+    "difficulty": 2,
+    "round": "round1",
+    "question_text": "用 LangChain 时，你怎么决定用 Chain 还是用 Agent？判断标准是什么？",
+    "answer_key_points": [
+      "流程固定 → Chain；流程不确定需要动态决策 → Agent",
+      "Chain 优势：可预测、可调试、成本可控",
+      "Agent 优势：灵活、能处理未知情况",
+      "有时候不用选：用 LCEL 写一个带条件分支的 Chain 就能解决很多'动态'需求",
+      "Agent = LLM 驱动的动态路由器"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "有实际判断经验",
+          "followup": "有没有过一个场景，你一开始觉得是 Chain 就够了，但上线后发现必须换成 Agent？问题出在哪？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_003",
+    "topic": "langgraph",
+    "sub_topic": "state_graph",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "LangGraph 的 State Graph 怎么设计？State 里应该放什么、不应该放什么？",
+    "answer_key_points": [
+      "State 应该放：流程控制变量、中间结果、累积数据（如对话历史）",
+      "State 不应该放：过大的数据（如完整的文档全文），影响性能",
+      "用 Annotated + operator.add 实现列表累积（如 messages 追加）",
+      "State 设计原则：够用就好，不要过度设计",
+      "TypedDict 定义 State，类型安全"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "有实际 State 设计经验",
+          "followup": "State 里的变量什么时候用 operator.add 追加，什么时候直接覆盖？你一般怎么选？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "答出区别",
+              "followup": "如果 State 越来越大会不会影响性能？LangGraph 有办法压缩 State 吗？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_004",
+    "topic": "langgraph",
+    "sub_topic": "conditional_edge",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "LangGraph 的条件边（Conditional Edge）是怎么用的？它和普通边的区别是什么？",
+    "answer_key_points": [
+      "普通边：固定路由，A 节点执行完必走 B 节点",
+      "条件边：动态路由，根据 State 中的值决定走哪个节点",
+      "实现：定义路由函数（接收 State，返回目标节点名）",
+      "典型场景：评估 Agent 输出后，正确→END，错误→重试",
+      "路由返回值：单节点名 | 多节点名列表（并行）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心用法",
+          "followup": "如果你在条件边里要做的判断很复杂（比如需要调用 LLM 来判断走哪个分支），你会怎么做？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_005",
+    "topic": "langgraph",
+    "sub_topic": "checkpointing",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "LangGraph 的 Checkpointing 是怎么工作的？它解决了什么问题？",
+    "answer_key_points": [
+      "Checkpointing：每个节点执行后自动保存 State 快照",
+      "解决：支持暂停/恢复/重放/分支（Time Travel）",
+      "后端：Memory / SQLite / PostgreSQL",
+      "Human-in-the-loop 的基础：暂停执行，等待人工输入，然后从 checkpoint 恢复",
+      "可以回到任意历史状态创建分支（类似 git branch）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心概念",
+          "followup": "如果 Checkpoint 太多，存储量会很大。你怎么设置 Checkpoint 的保留策略？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到保留策略/清理机制",
+              "followup": "Checkpoint 回到过去后，用户可能重新开始一条不同的执行路径。这个分支你怎么管理和展示？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_006",
+    "topic": "langchain",
+    "sub_topic": "tool_definition",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "LangChain 里怎么给 Agent 定义 Tool？@tool 装饰器和 StructuredTool 有什么区别？",
+    "answer_key_points": [
+      "@tool 装饰器：最简单的定义方式，函数变 Tool",
+      "StructuredTool：需要复杂的参数 Schema 时使用",
+      "核心：函数名 = 工具名，docstring = 工具描述，参数类型注解 = 参数 Schema",
+      "Tool 的描述会被放进 System Prompt，直接影响 LLM 的调用准确率",
+      "返回可以是字符串（普通结果）或 ToolMessage（格式化结果）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "知道两种方式",
+          "followup": "如果 Tool 返回的不是简单字符串，而是一个很大的 JSON 对象，你怎么处理它再传回给 LLM？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_007",
+    "topic": "langgraph",
+    "sub_topic": "multi_agent_graph",
+    "difficulty": 5,
+    "round": "round2",
+    "question_text": "用 LangGraph 实现 Multi-Agent 系统，你会怎么设计图结构？",
+    "answer_key_points": [
+      "方案一：单图多节点，每个 Agent 是一个节点，通过条件边路由",
+      "方案二：子图模式，每个 Agent 是独立的子图，主图做编排",
+      "方案三：Supervisor 模式，一个主 Agent 调用其他 Agent 作为 Tool",
+      "状态共享：各 Agent 通过共享 State 或消息传递来通信",
+      "选择取决于：Agent 之间的耦合度、是否需要独立开发/部署"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多种方案",
+          "followup": "子图方案听起来解耦最好，但如果一个任务需要 Agent A 和 Agent B 来回协作很多次，子图还好用吗？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_008",
+    "topic": "langgraph",
+    "sub_topic": "streaming",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "LangGraph 支持哪些流式模式？stream() 和 astream_events() 分别用于什么场景？",
+    "answer_key_points": [
+      "stream(values)：返回每个节点执行后的 State 快照（values 模式）",
+      "stream(updates)：只返回 State 变化的部分（updates 模式）",
+      "astream_events()：细粒度事件流，包括 LLM token 级别的流式输出",
+      "values 适合展示整体进度，events 适合实时展示 LLM 输出",
+      "自定义 streaming：节点里也可以手动 yield 自定义数据"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出几种模式",
+          "followup": "如果你想在 UI 上同时显示'Agent 当前在哪个节点'和'LLM 的流式输出'，你会怎么设计这个流式方案？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_009",
+    "topic": "langgraph",
+    "sub_topic": "error_handling",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "LangGraph 的图执行过程中如果某个节点抛异常了，你怎么处理？",
+    "answer_key_points": [
+      "图级 try/except：在定义图时添加错误处理节点",
+      "Retry 策略：在节点内或图级实现重试逻辑",
+      "Fallback 节点：错误时路由到专门的错误处理节点",
+      "Checkpoint 恢复：从出错前的 checkpoint 恢复继续执行",
+      "故障模式：区分可重试错误（网络超时）和不可重试错误（参数错误）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "有错误处理策略",
+          "followup": "如果一个节点重试了 3 次还是失败，你希望 Agent 怎么给用户交代？默默地失败还是透明告知？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "lang_010",
+    "topic": "langgraph",
+    "sub_topic": "langgraph_vs_langchain",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "LangGraph 和 LangChain 的关系是什么？什么情况下你只用 LangChain 就够了，什么情况下必须用 LangGraph？",
+    "answer_key_points": [
+      "LangChain 是上层框架（模型调用、工具、检索、Chain）",
+      "LangGraph 是底层编排引擎（状态图、循环、分支）",
+      "只有直线流程 → LangChain LCEL 就够了",
+      "需要循环/条件分支/状态管理/Human-in-the-loop → LangGraph",
+      "两者可以共用：用 LangChain 的组件在 LangGraph 的节点里调用"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出分层关系",
+          "followup": "你实际项目中 LangGraph 和 LangChain 怎么配合的？能不能描述一下你的实际架构？",
+          "depth": 2
+        }
+      ]
+    }
+  }
+]

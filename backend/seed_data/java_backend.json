@@ -1,0 +1,147 @@
+[
+  {
+    "id": "java_001",
+    "topic": "java",
+    "sub_topic": "jvm_memory",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "JVM 的内存模型是什么样的？堆和栈分别存什么？方法区和元空间呢？",
+    "answer_key_points": [
+      "堆（Heap）：存对象实例和数组，所有线程共享，GC 主要区域",
+      "栈（Stack）：每个线程私有，存局部变量、操作数栈、方法返回地址",
+      "方法区（MetaSpace，Java 8+）：存类元数据、常量、静态变量",
+      "程序计数器：记录当前线程执行位置",
+      "本地方法栈：Native 方法调用"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出完整分区",
+          "followup": "Java 8 把永久代换成了元空间，为什么要换？解决了什么问题？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "答出 PermGen OOM 问题",
+              "followup": "元空间就完全没有 OOM 风险了吗？什么情况下元空间也会溢出？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只答出堆和栈",
+          "action": "probe",
+          "followup": "那类信息（比如一个类的字节码）存在哪里？不同 JDK 版本有区别吗？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "java_002",
+    "topic": "java",
+    "sub_topic": "gc",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "Java 的 GC 回收器有哪些？你熟悉哪个？它怎么工作的？",
+    "answer_key_points": [
+      "Serial GC：单线程，适合小应用",
+      "Parallel GC：多线程，吞吐量优先",
+      "CMS：并发标记清除，低延迟但已废弃",
+      "G1：分区域回收，平衡吞吐量和延迟，Java 9+ 默认",
+      "ZGC：超低延迟（<10ms），Java 15+；Shenandoah：并发回收"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多种 GC 且有对比",
+          "followup": "G1 和 CMS 相比优势在哪？为什么 CMS 被废弃了？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "答出碎片化和并发失败",
+              "followup": "你在生产环境调过 GC 参数吗？遇到过什么 GC 相关的问题？怎么排查的？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "java_003",
+    "topic": "java",
+    "sub_topic": "concurrency",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "Java 的线程池怎么用？核心参数有哪些？线程池满了我再提交任务会发生什么？",
+    "answer_key_points": [
+      "核心参数：corePoolSize / maximumPoolSize / keepAliveTime / workQueue",
+      "线程池满的处理：取决于拒绝策略（RejectedExecutionHandler）",
+      "拒绝策略：Abort（抛异常）/ CallerRuns（调用方执行）/ Discard（丢弃）/ DiscardOldest（丢弃最老）",
+      "ThreadPoolExecutor 的 execute 和 submit 的区别",
+      "注意：不要用 Executors 的快捷方法（容易 OOM），手动指定参数"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出完整参数和拒绝策略",
+          "followup": "你说不要用 Executors.newCachedThreadPool()，为什么？具体会出什么问题？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "java_004",
+    "topic": "java",
+    "sub_topic": "spring",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "Spring Boot 的自动配置原理是什么？@SpringBootApplication 背后做了什么？",
+    "answer_key_points": [
+      "@SpringBootApplication = @Configuration + @EnableAutoConfiguration + @ComponentScan",
+      "@EnableAutoConfiguration：通过 spring.factories 加载自动配置类",
+      "@ConditionalOnClass/@ConditionalOnBean 等条件注解决定是否生效",
+      "自动配置在用户自定义 Bean 之后，用户配置优先",
+      "可以 exclude 不需要的自动配置类"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心原理",
+          "followup": "如果想自己写一个 Starter 给其他项目用，你会包含哪些部分？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "java_005",
+    "topic": "java",
+    "sub_topic": "lock",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "synchronized 和 ReentrantLock 的区别是什么？什么时候用哪个？",
+    "answer_key_points": [
+      "synchronized：JVM 层面关键字，自动加锁释放，代码简洁",
+      "ReentrantLock：API 层面，手动 lock/unlock，功能更强",
+      "ReentrantLock 特有：可中断加锁、超时加锁、公平锁、条件变量绑定",
+      "性能：低竞争下性能差别不大，高竞争下 ReentrantLock 在旧版 JDK 更有优势",
+      "选择：简单场景 synchronized，需要高级特性（超时、公平）用 ReentrantLock"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出关键区别",
+          "followup": "你提到公平锁。公平锁和非公平锁在性能上的差异有多大？为什么默认是非公平的？",
+          "depth": 2
+        }
+      ]
+    }
+  }
+]

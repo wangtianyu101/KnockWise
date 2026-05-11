@@ -1,0 +1,62 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: codemock
+      MYSQL_USER: codemock
+      MYSQL_PASSWORD: codemock
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  whisper-live:
+    image: ghcr.io/collabora/whisperlive:latest
+    ports:
+      - "9090:9090"
+    environment:
+      WHISPER_MODEL: base
+    restart: unless-stopped
+
+  livekit:
+    image: livekit/livekit-server:v1.7.3
+    command: --config /etc/livekit.yaml --node-ip=127.0.0.1
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+aiomysql://codemock:codemock@mysql:3306/codemock
+      WHISPER_LIVE_URL: ws://whisper-live:9090
+      LIVEKIT_URL: ws://livekit:7880
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+    depends_on:
+      - mysql
+      - livekit
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:

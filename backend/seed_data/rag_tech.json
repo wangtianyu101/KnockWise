@@ -1,0 +1,459 @@
+[
+  {
+    "id": "rag_001",
+    "topic": "rag",
+    "sub_topic": "retrieval_strategy",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "RAG 的检索策略中，稠密检索和稀疏检索分别怎么工作？各自的优劣是什么？",
+    "answer_key_points": [
+      "稠密检索（Dense）：用 Embedding 模型将 query 和文档转为向量，计算余弦相似度",
+      "稀疏检索（Sparse）：如 BM25，基于词频和逆文档频率的文本匹配",
+      "稠密优势：语义理解、跨语言泛化",
+      "稀疏优势：关键词精确匹配、可解释、不需要训练",
+      "混合检索：结合两者，取各自 top-K 做融合排序"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出两种检索方式且有对比",
+          "followup": "混合检索的结果怎么融合排序？两个列表来自不同的评分体系（向量相似度 vs BM25 分数），直接比有意义吗？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到分数归一化/RRF/加权融合",
+              "followup": "RRF（Reciprocal Rank Fusion）的原理是什么？为什么不直接用分数加权？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只答出一种",
+          "action": "probe",
+          "followup": "那你了解另一种检索方式吗？比如基于关键词的 BM25？它和我们用的向量检索有什么不同？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_002",
+    "topic": "rag",
+    "sub_topic": "embedding_model",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "做中文 RAG 系统，你怎么选 Embedding 模型？有哪些值得考虑的模型？选型的时候看哪些指标？",
+    "answer_key_points": [
+      "中文模型：BGE-M3（多语言，MTEB 中文榜领先）/ stella-base-zh-v3 / text2vec",
+      "关键指标：MTEB 中文评测 / 检索精度 @k / 推理速度",
+      "维度考虑：高维精度好但存储和检索成本高，低维反之",
+      "是否支持指令（instruction-aware embedding）：可以提升检索精度",
+      "模型大小：与推理延迟和部署成本的权衡"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出具体模型名和评估维度",
+          "followup": "BGE-M3 的 M3 是指什么？它的三个特点是什么？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "答出 Dense + Sparse + ColBERT",
+              "followup": "那你实际用过 BGE-M3 的 Sparse 检索吗？它和纯 BM25 比怎么样？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只知道通用指标",
+          "action": "probe",
+          "followup": "你提到 MTEB 榜单，那中文榜单上现在排前面的你了解哪几个？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_003",
+    "topic": "rag",
+    "sub_topic": "chunking",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "RAG 里文档分块（Chunking）为什么重要？有哪些分块策略？各适用于什么场景？",
+    "answer_key_points": [
+      "重要性：块太大→相关性稀释；块太小→上下文断裂",
+      "固定大小分块：简单，但可能切断语义单元（一句被切成两半）",
+      "语义分块：基于段落/句子边界，更自然但需额外处理",
+      "Recursive 分块：按分隔符层级递归切（段落→句子→词）",
+      "Late Chunking（Jina AI）：先对整个文档编码，再切块"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出 3 种以上策略",
+          "followup": "Late Chunking 听起来很好，它的原理是什么？和传统先分块再编码的流程有什么本质区别？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "答出先编码后分块 vs 先分块后编码",
+              "followup": "那 Late Chunking 的代价是什么？为什么不是所有人都用它？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只答出固定大小分块",
+          "action": "probe",
+          "followup": "如果文档是对话记录，固定大小分块一刀切会有什么问题？要怎么改进？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_004",
+    "topic": "rag",
+    "sub_topic": "reranker",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "Reranker（重排序）在 RAG 流程中起什么作用？不加 Reranker 直接用向量检索的结果有什么问题？",
+    "answer_key_points": [
+      "作用：对初步检索的结果做二次精排，把最相关的排在前面",
+      "为什么需要：向量相似度高 ≠ 语义真正相关，Embedding 可能被表面词匹配误导",
+      "Cross-encoder vs Bi-encoder：Reranker 用 Cross-encoder，把 query 和 doc 一起编码，精度更高但更慢",
+      "常用 Reranker：BGE-Reranker-v2 / Cohere Rerank",
+      "位置：先检索 top-K（如 20-50），再 Rerank 取 top-N（如 3-5）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出原理和位置",
+          "followup": "Reranker 虽然精度高但速度慢。在一个需要低延迟的实时 RAG 系统中，你怎么平衡？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到多阶段/异步/缓存",
+              "followup": "如果你用了 Reranker 但延迟还是太高，有没有可能不 Rerank 也能拿到靠谱的结果？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_005",
+    "topic": "rag",
+    "sub_topic": "graph_rag",
+    "difficulty": 5,
+    "round": "round2",
+    "question_text": "GraphRAG 是什么？它解决了传统 RAG 的什么问题？",
+    "answer_key_points": [
+      "GraphRAG：结合知识图谱的 RAG，微软 2024 年开源",
+      "解决：传统 RAG 只能检索局部片段，无法回答需要全局理解的问题",
+      "原理：从文档中提取实体和关系构建知识图，查询时基于图结构做检索",
+      "典型场景：'总结这个数据集的主要主题'这类需要宏观理解的问题",
+      "vs 传统 RAG：GraphRAG 适合全局总结和关系推理，传统 RAG 适合事实查找"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心原理和场景差异",
+          "followup": "GraphRAG 的建图成本很高。在什么场景下值得花这个成本，什么场景下传统 RAG 就够了？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "给出判断标准",
+              "followup": "GraphRAG 图中的实体和关系怎么保证质量？如果提取错了实体关系，会对检索结果有什么影响？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_006",
+    "topic": "rag",
+    "sub_topic": "hyde",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "HyDE（Hypothetical Document Embeddings）是什么？它的工作原理和适用场景？",
+    "answer_key_points": [
+      "HyDE：先让 LLM 生成一个假设性的答案文档，再用这个假设文档的 Embedding 去检索",
+      "原理：假设文档和真实相关文档在语义空间更接近，比直接用 query embedding 效果好",
+      "适用：开放域问答，尤其 query 很短信息量少时",
+      "代价：多一次 LLM 调用，增加延迟和成本",
+      "改进：HyDE 的假设文档不需要准确，只要在语义空间里靠近相关文档就行"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出原理",
+          "followup": "HyDE 生成假设文档这一步本身就可能产生幻觉（生成的内容不准确），这会影响检索质量吗？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "答出不要求准确只要语义靠近",
+              "followup": "那什么情况下 HyDE 反而会降低检索质量？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_007",
+    "topic": "rag",
+    "sub_topic": "self_rag",
+    "difficulty": 5,
+    "round": "round2",
+    "question_text": "Self-RAG 和 Corrective RAG 分别是什么？它们怎么改进传统 RAG？",
+    "answer_key_points": [
+      "Self-RAG：让 LLM 在生成过程中自我反思，判断是否需要检索、检索内容是否相关、生成是否忠实于检索结果",
+      "Corrective RAG：检索后发现文档质量不高时，自动修正查询重新检索",
+      "Self-RAG 的反思标记：Retrieve/Relevance/Support",
+      "CRAG 的修正逻辑：评估检索结果→不理想则改写 query→重新检索",
+      "共同目标：让检索更精准、生成更靠谱、减少幻觉"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出两种方法",
+          "followup": "Self-RAG 需要在训练时就加入反思标记，这意味着它和特定模型绑定。你实际用过 Self-RAG 吗？还是觉得推理时的反思就够了？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_008",
+    "topic": "rag",
+    "sub_topic": "contextual_rag",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "Contextual RAG（Anthropic 2024 年提出）是什么？解决了传统 chunk 检索的什么问题？",
+    "answer_key_points": [
+      "Contextual RAG：在索引前对每个 chunk 预生成一段上下文说明（这个 chunk 在整篇文档的什么位置、上下文是什么）",
+      "解决的问题：chunk 脱离原文后语义不完整，导致检索时匹配不到或含义被误解",
+      "实现：用 LLM 为每个 chunk 生成上下文前缀，索引时 chunk+context 一起 Embedding",
+      "效果：Anthropic 报告检索失败率降低 49%（和传统 RAG 相比）",
+      "代价：索引时需要为每个 chunk 额外调用 LLM，索引成本增加"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心思路和效果",
+          "followup": "Contextual RAG 和 Late Chunking 都试图解决 chunk 脱离上下文的问题，它们的方法有什么本质区别？哪个更适合什么场景？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_009",
+    "topic": "rag",
+    "sub_topic": "evaluation",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "RAGAS 是 RAG 评估的常用框架。它的四个核心指标分别衡量什么？",
+    "answer_key_points": [
+      "Faithfulness（忠实度）：回答是否完全基于检索到的内容，有没有编造",
+      "Answer Relevancy（答案相关性）：回答是否切中问题",
+      "Context Precision（上下文精度）：检索结果中相关的文档排得靠不靠前",
+      "Context Recall（上下文召回）：所有相关文档都被检索到了吗",
+      "RAGAS 用 LLM-as-Judge 来评估，所以评估本身也依赖 LLM 的质量"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出所有 4 个指标",
+          "followup": "RAGAS 用 LLM 评估 LLM 的输出，这个循环里最大的风险是什么？你怎么保证 RAGAS 的评估结果是可信的？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到人工抽样验证/多 judge 一致性",
+              "followup": "那你觉得 Context Recall 这个指标在什么场景下特别难测？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_010",
+    "topic": "rag",
+    "sub_topic": "query_rewrite",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "Query Rewriting（查询重写）在 RAG 中的作用是什么？什么时候需要重写 Query？",
+    "answer_key_points": [
+      "作用：把用户原始问题改写成更适合检索的形式",
+      "场景：用户问得太短/太口语化/模糊 → 扩展为完整检索语句",
+      "多轮对话中：结合历史上下文重写当前问题（指代消解）",
+      "分解复杂问题：把一个复杂问题拆成多个子查询分别检索",
+      "实现：LLM 重写 / 规则改写 / 历史上下文拼接"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多个场景",
+          "followup": "Query Rewriting 自己也可能翻车：重写后的查询偏离了用户的原始意图。你怎么防止这个问题？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到保留原始查询/多路检索",
+              "followup": "多轮对话中，上一轮我问了'HashMap 的原理'，这一轮问'它的时间复杂度呢'。你怎么把'它'重写成'HashMap'？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_011",
+    "topic": "rag",
+    "sub_topic": "vector_db",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "向量数据库选型时你关注哪些维度？对比下你熟悉的向量数据库。",
+    "answer_key_points": [
+      "检索精度：ANN 算法的召回率",
+      "检索速度：QPS 和 P99 延迟",
+      "过滤能力：标量过滤 + 向量过滤的混合查询",
+      "扩展性：分布式、分片、副本",
+      "运维成本：自部署复杂度、资源消耗",
+      "代表：Milvus/Qdrant/Weaviate/FAISS/Pinecone"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多维度对比",
+          "followup": "Qdrant 和 Milvus 在中文场景下各自有什么优势？你实际用过哪个？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "有实际经验",
+              "followup": "你选的向量库在生产中最大的坑是什么？数据量多大？检索延迟多少？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_012",
+    "topic": "rag",
+    "sub_topic": "multimodal_rag",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "如果 RAG 的文档不仅有文字，还有图片和表格，你怎么处理？",
+    "answer_key_points": [
+      "图片：用多模态 Embedding 模型（如 CLIP/Jina CLIP）或先用 VLM 描述图片内容再 Embedding",
+      "表格：保持结构化（保留行列关系），可以用专门的表格解析 + 转 Markdown",
+      "混合索引：文字和图表的 Embedding 分开存储，检索时可加权融合",
+      "解析管线：PDF → 文字 + 图片分离 → 各自编码 → 分别索引",
+      "答案生成时：VLM 可以直接看图回答问题（如果检索到图片 chunk）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出处理思路",
+          "followup": "图片用 VLM 描述后再 Embedding，和直接用多模态 Embedding 编码图片，哪个方案更好？各自的 trade-off 是什么？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_013",
+    "topic": "rag",
+    "sub_topic": "incremental_update",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "RAG 系统上线后，知识库在不断更新。你怎么设计增量更新机制而不需要每次全量重建索引？",
+    "answer_key_points": [
+      "向量库支持按 ID 增删改（如 Qdrant/Milvus 都支持）",
+      "文档版本管理：每个文档带版本号和时间戳",
+      "增量流水线：只对有变化的文档做 parse → chunk → embed → upsert",
+      "缓存失效：更新后需要清除相关 QA 缓存",
+      "灰度验证：先在 staging 环境验证更新后的检索质量"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出增量更新方案",
+          "followup": "如果用户问'根据上个月的政策...'，但你的知识库已经把旧政策更新成新的了。这种时间敏感的查询怎么处理？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_014",
+    "topic": "rag",
+    "sub_topic": "citation",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "RAG 的回答应该怎么引用来源？一个好的引用机制应该满足什么要求？",
+    "answer_key_points": [
+      "可追溯：每个事实陈述能追溯到具体的源文档 chunk",
+      "可验证：用户能直接点开链接查看原文",
+      "引用粒度：chunk 级还是文档级（前者更精确但实现更难）",
+      "不要过度引用：不是每句话都需要引用，常识性内容不需要",
+      "技术上：需要在 prompt 中要求 LLM 标注引用，并在输出中解析"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出关键要素",
+          "followup": "实现 chunk 级引用时，LLM 有时候会张冠李戴（引用的 chunk 实际不支持这个说法）。你怎么检测这种情况？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "rag_015",
+    "topic": "rag",
+    "sub_topic": "llm_utilization",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "RAG 中经典的'Lost in the Middle'问题是什么？你怎么缓解？",
+    "answer_key_points": [
+      "Lost in the Middle：LLM 倾向于关注 context 开头和结尾的信息，中间的信息容易被忽略",
+      "影响：如果最相关的文档被排在 context 中间位置，LLM 可能用不好",
+      "缓解策略：把最相关的文档放在 context 的前面和后面",
+      "分块重排：用 Reranker 对文档排序后，将 top-1 放最前，top-2 放最后",
+      "或者减少 context 量，只给 LLM 最相关的 2-3 个 chunk"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出问题和策略",
+          "followup": "除了文档排序，你觉得目前的 LLM（比如 Claude 200K 或 GPT-4 128K）对这个问题有缓解吗？还是依然存在？",
+          "depth": 2
+        }
+      ]
+    }
+  }
+]

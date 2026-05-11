@@ -1,0 +1,725 @@
+[
+  {
+    "id": "agent_001",
+    "topic": "agent_architecture",
+    "sub_topic": "react_agent",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "ReAct Agent 模式的核心循环是什么？每一步分别做什么？",
+    "answer_key_points": [
+      "Thought → Action → Observation 循环",
+      "Thought: 基于当前上下文和历史，推理下一步应该做什么",
+      "Action: 选择一个工具并执行，传入合适的参数",
+      "Observation: 接收工具执行结果，作为新的上下文输入",
+      "循环直到 Agent 判断任务完成（Final Answer）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "完整答出循环且能举例",
+          "followup": "ReAct 和 Plan-and-Execute 这两种 Agent 模式各自适合什么场景？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "能对比并给出具体场景",
+              "followup": "如果一个 Agent 需要调用 50 个不同的工具，你会怎么设计工具选择策略？",
+              "depth": 3,
+              "branches": [
+                {
+                  "condition": "提到工具分组/路由/动态筛选",
+                  "followup": "工具描述（tool description）太长塞不进 context window 怎么办？有什么优化策略？",
+                  "depth": 4
+                },
+                {
+                  "condition": "答不上来",
+                  "action": "give_hint",
+                  "hint": "想想工具分组、动态检索工具描述、tool description 压缩这些思路",
+                  "depth": 3
+                }
+              ]
+            },
+            {
+              "condition": "只能说出表面区别",
+              "action": "probe",
+              "followup": "什么场景下 Plan-and-Execute 比 ReAct 更好？举个你项目里的例子",
+              "depth": 3
+            },
+            {
+              "condition": "答不上来",
+              "action": "degrade",
+              "followup": "没关系，先聊聊你实际项目里用的 Agent 是什么模式的？为什么选它？",
+              "depth": 2
+            }
+          ]
+        },
+        {
+          "condition": "只说出部分循环（如只说 Thought-Action，没说 Observation）",
+          "action": "probe",
+          "followup": "你提到了 Thought 和 Action，那工具执行完的结果怎么回到 Agent 的决策流程里？",
+          "depth": 2
+        },
+        {
+          "condition": "完全答不上来",
+          "action": "skip_and_record",
+          "record_blind_spot": "agent_basics_reasoning_loop",
+          "next_question_hint": "切换到更基础的话题",
+          "depth": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_002",
+    "topic": "agent_architecture",
+    "sub_topic": "tool_use",
+    "difficulty": 4,
+    "round": "round1",
+    "question_text": "在设计 Agent 的 Tool Use 时，工具的 description 写得好不好直接影响调用准确率。你认为一个好的 tool description 应该包含哪些要素？",
+    "answer_key_points": [
+      "工具名称简洁语义化（如 search_web 而非 tool_1）",
+      "功能描述清晰，说明工具做什么、什么时候用",
+      "参数描述含类型、约束、示例值",
+      "使用场景提示（什么情况下该用、什么情况下不该用）",
+      "输出格式说明（返回什么类型的数据）"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出 4 个以上要素且有实操经验",
+          "followup": "如果两个工具功能很相近但参数不同，比如 search_by_keyword 和 search_by_semantic，你怎么帮 LLM 在它们之间做正确选择？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到区分关键词、给出决策规则",
+              "followup": "你遇到过工具被错误调用的情况吗？你是怎么排查和修复的？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只答出 2-3 个要素",
+          "action": "probe",
+          "followup": "参数设计上有什么坑？比如 optional vs required 参数怎么处理？",
+          "depth": 2
+        },
+        {
+          "condition": "答不上来",
+          "action": "give_hint",
+          "hint": "想想如果你自己是一个 Agent，拿到一个工具列表，你需要哪些信息才能正确调用？",
+          "depth": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_003",
+    "topic": "agent_architecture",
+    "sub_topic": "multi_agent",
+    "difficulty": 5,
+    "round": "round2",
+    "question_text": "Multi-Agent 系统的设计中，Agent 之间怎么通信和协作？举一个你见过或实现过的例子。",
+    "answer_key_points": [
+      "Agent 通信方式：消息传递 / 共享记忆 / 工具调用",
+      "协作模式：顺序流水线 / 并行 + 汇总 / 辩论式 / 层级式",
+      "编排方式：中心化编排者 vs 去中心化 P2P",
+      "状态共享：短期（消息传递）vs 长期（共享知识库）",
+      "实际例子：如 code review agent + code generation agent 协作"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多种模式并有实例",
+          "followup": "Multi-Agent 场景下，如果两个 Agent 给出矛盾的结论，你怎么设计仲裁机制？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到投票/仲裁 Agent/置信度加权",
+              "followup": "这种仲裁本身的可靠性怎么保证？仲裁 Agent 会不会也犯错？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只答出一种模式",
+          "action": "probe",
+          "followup": "除了你提到的这种，还有别的协作模式吗？比如多个 Agent 观点不一致的时候怎么处理？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_004",
+    "topic": "agent_architecture",
+    "sub_topic": "safety",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "Agent 可以调用外部工具，甚至可以执行代码。你怎么设计 Agent 的安全边界？",
+    "answer_key_points": [
+      "权限最小化原则：只给 Agent 必要的工具和权限",
+      "沙箱执行：代码在隔离环境中运行",
+      "Human-in-the-loop：关键操作（如删除、发邮件、付款）需要人类确认",
+      "输入输出校验：工具参数白名单校验、输出内容过滤",
+      "调用频率限制和预算控制",
+      "审计日志：记录每次工具调用的参数和结果"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出 4 个以上维度",
+          "followup": "Human-in-the-loop 听起来很安全，但如果每次操作都让人确认，Agent 的效率就没了。你怎么平衡安全和效率？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到风险分级/渐进式授权",
+              "followup": "那你觉得什么样的操作算高风险？这个边界怎么划定？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只提到 1-2 个点",
+          "action": "probe",
+          "followup": "Agent 执行代码这个场景特别危险。有人可能注入恶意指令，你怎么防？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_005",
+    "topic": "agent_architecture",
+    "sub_topic": "mcp",
+    "difficulty": 4,
+    "round": "round1",
+    "question_text": "MCP（Model Context Protocol）协议是什么？它解决什么问题？和传统的 Function Calling 有什么区别？",
+    "answer_key_points": [
+      "MCP 是 Anthropic 提出的模型上下文协议，标准化的工具/资源/提示接入协议",
+      "解决：工具碎片化问题，以前每个 LLM 平台有自己的 tool 格式",
+      "核心概念：Client（LLM 端）、Server（工具提供端）、Transport（通信层）",
+      "三种原语：Resources（数据）、Tools（可执行的函数）、Prompts（预定义提示模板）",
+      "vs Function Calling：MCP 是协议标准，Function Calling 是具体实现方式"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心概念和对比",
+          "followup": "如果你要实现一个 MCP Server 来暴露你的数据库查询能力给 Agent，你会设计哪几个 Tools？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "给出合理设计",
+              "followup": "那 Transport 层你选 stdio 还是 HTTP+SSE？什么场景下选哪个？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只答出基本概念",
+          "action": "probe",
+          "followup": "Resources 和 Tools 的区别是什么？什么时候用 Resource 而不是 Tool？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_006",
+    "topic": "agent_architecture",
+    "sub_topic": "memory",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "Agent 的 Memory（记忆）通常分为哪几种？各自的作用是什么？",
+    "answer_key_points": [
+      "短期记忆（Short-term）：当前对话的上下文，通常就是 context window",
+      "长期记忆（Long-term）：跨会话的信息持久化，如用户偏好、历史知识",
+      "工作记忆（Working Memory）：当前任务相关的临时信息，如中间推理步骤",
+      "语义记忆 vs 情景记忆：知识性 vs 事件性",
+      "实现方式：向量存储、数据库、摘要压缩等"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "分类清晰且有实现思路",
+          "followup": "长期记忆怎么管理？对话越来越多后，怎么保证检索到的记忆是相关的而不淹没 Agent？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到检索策略/记忆衰减/重要度评分",
+              "followup": "那你觉得记忆应该自动管理还是让用户手动管理？各自的 trade-off 是什么？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "分类不完整",
+          "action": "probe",
+          "followup": "Agent 在处理复杂任务时需要临时记一些中间结果，这属于哪种记忆？怎么实现？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_007",
+    "topic": "agent_architecture",
+    "sub_topic": "context_window",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "Agent 对话越来越长，context window 总会满。你有哪些策略来管理上下文窗口？",
+    "answer_key_points": [
+      "滑动窗口：只保留最近 N 轮对话",
+      "摘要压缩：对历史对话做摘要，用摘要代替原文",
+      "选择性保留：根据相关性只保留与当前问题相关的历史",
+      "分层记忆：热数据在 context，冷数据在外部存储",
+      "Token 预算管理：预设 system/user/tool 各占多少 tokens",
+      "工具输出的截断和压缩"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出 3 种以上策略",
+          "followup": "摘要压缩听起来很好，但如果摘要丢掉了关键细节怎么办？你怎么验证摘要的质量？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到评估/冗余保留",
+              "followup": "工具返回的一大段 JSON 或网页内容，在放进 context 之前你怎么处理？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "只有 1-2 种策略",
+          "action": "probe",
+          "followup": "除了删旧消息，还有更智能的方法吗？比如能不能让 Agent 自己决定记住什么？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_008",
+    "topic": "agent_architecture",
+    "sub_topic": "evaluation",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "你怎么评估一个 Agent 系统的质量？有哪些指标和方法？",
+    "answer_key_points": [
+      "任务完成率：Agent 是否成功完成了用户指令",
+      "工具调用准确率：选择了正确的工具、正确的参数",
+      "效率：完成任务所需的步骤数、token 消耗",
+      "鲁棒性：面对异常输入、工具调用失败时的表现",
+      "安全性：是否有越权操作、信息泄露",
+      "评估方法：人工评估 / LLM-as-Judge / 自动化测试集"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多维度且有实操经验",
+          "followup": "LLM-as-Judge 很流行，但它自己也会犯错。你怎么验证 Judge 本身的可靠性？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到人工抽样对比/一致性检验",
+              "followup": "有没有你觉得 LLM-as-Judge 不适合评判的维度？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_009",
+    "topic": "agent_architecture",
+    "sub_topic": "error_handling",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "Agent 调用工具可能失败。你在 Agent 设计中怎么处理工具调用失败的场景？",
+    "answer_key_points": [
+      "重试机制：带指数退避的重试",
+      "降级策略：失败后用替代方案（备选工具/简化方案）",
+      "错误信息传递给 Agent：让 LLM 理解失败原因并调整策略",
+      "超时控制：避免因为一个工具卡住导致整个 Agent 卡住",
+      "失败次数上限：防止无限重试消耗资源"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出 3 种以上策略",
+          "followup": "如果重试了 3 次还是失败，Agent 应该怎么跟用户沟通？直接说'我不会'还是有更好的方式？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到透明告知+替代方案建议",
+              "followup": "这个场景下，Agent 应该把失败信息记录到哪里？对后续优化有什么帮助？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_010",
+    "topic": "agent_architecture",
+    "sub_topic": "routing",
+    "difficulty": 5,
+    "round": "round2",
+    "question_text": "如果一个 Agent 系统需要处理多种完全不同类型的任务（比如客服、数据分析、代码生成），你会怎么设计这个系统的路由？",
+    "answer_key_points": [
+      "意图识别层：先用轻量级分类器判断任务类型",
+      "专业 Agent 池：每种任务有专门的 Agent（或专门的 system prompt + 工具集）",
+      "路由策略：基于规则 / 基于 Embedding 相似度 / 基于 LLM 判断",
+      "Fallback：识别不了的交给通用 Agent 或让人介入",
+      "动态切换：复杂任务可能需要多个 Agent 协作而非单一路由"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多层设计思路",
+          "followup": "意图识别本身也会出错。如果路由错了导致任务给了错误的 Agent，你怎么发现和修复？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到置信度阈值/Agent 内部二次判断",
+              "followup": "那这个方案会不会延迟太大？怎么平衡路由准确性和响应速度？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_011",
+    "topic": "agent_architecture",
+    "sub_topic": "prompt_engineering",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "给 Agent 写 System Prompt 和给普通 Chat 写 System Prompt 有什么区别？Agent 的 System Prompt 需要哪些额外的内容？",
+    "answer_key_points": [
+      "工具调用规范：何时调用工具、如何选择工具、调用格式",
+      "推理步骤引导：鼓励 Agent 先思考再行动（ReAct / Chain-of-Thought）",
+      "边界定义：什么能做、什么不能做",
+      "输出格式要求：最终答案的格式、引用格式等",
+      "与普通 Chat 的区别：Agent Prompt 更结构化、更多约束、更像'工作说明书'"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出 Agent 特有要素",
+          "followup": "你写过的 System Prompt 里，有没有因为 Prompt 写得不好导致 Agent 行为异常的 case？你是怎么排查和修复的？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "分享实际 debug 经验",
+              "followup": "System Prompt 要不要给用户可见？透明性和安全性之间怎么平衡？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_012",
+    "topic": "agent_architecture",
+    "sub_topic": "streaming",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "Agent 做流式输出（Streaming）时，和普通 LLM 流式输出有什么不同？需要额外处理什么？",
+    "answer_key_points": [
+      "工具调用不能流式：必须先完整接收 tool_call 才能执行",
+      "思考过程可流式：Thought/Action 步骤可以流式展示给用户",
+      "中间状态展示：用户可以实时看到 Agent 在做什么",
+      "最终答案才流式：工具返回结果后，最终的回复可以流式输出",
+      "异常处理：流式中途工具调用失败，需要撤销已输出的内容"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出关键区别",
+          "followup": "如果 Agent 在流式输出中检测到你刚才说的内容有误，它会怎么做？TTL 能撤回吗？",
+          "depth": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_013",
+    "topic": "agent_architecture",
+    "sub_topic": "observability",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "Agent 系统的可观测性怎么做？你需要记录哪些信息来 Debug 和优化 Agent？",
+    "answer_key_points": [
+      "每步推理的输入输出（Thought / Action / Observation）",
+      "工具调用的完整链路（工具名、参数、返回结果、耗时）",
+      "Token 消耗（每步和总计）",
+      "LLM 原始响应（用于分析幻觉和错误）",
+      "最终输出和用户反馈",
+      "工具：LangSmith / LangFuse / 自定义 tracing"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出完整维度",
+          "followup": "线上 Agent 出了问题，你怎么快速定位是哪个环节出了错？说下你的排查流程。",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "有实际排查经验",
+              "followup": "Tracing 数据量很大，怎么在不影响性能的前提下做采样和存储？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_014",
+    "topic": "agent_architecture",
+    "sub_topic": "deployment",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "Agent 系统的部署和普通 LLM 应用的部署有什么不同？有什么特殊的挑战？",
+    "answer_key_points": [
+      "长任务管理：Agent 任务可能运行很久（分钟级甚至小时级），需要异步任务管理",
+      "状态持久化：需要 Checkpointing，支持暂停/恢复/重试",
+      "并发控制：限流、排队机制防止工具 API 被打爆",
+      "成本控制：单次 Agent 调用可能产生大量 token 消耗和多次 LLM 调用",
+      "监控告警：Agent 卡住、无限循环、异常高消耗需要告警"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出关键差异",
+          "followup": "如果一个 Agent 任务运行了 10 分钟还没结束，你怎么判断它是正常执行还是卡死了？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到心跳/步骤监控/死循环检测",
+              "followup": "那你怎么设计这个超时策略？不同任务超时时间应该不一样吧？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_015",
+    "topic": "agent_architecture",
+    "sub_topic": "llm_selection",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "你如何为 Agent 系统选择合适的 LLM？选择模型时你关注哪些维度？",
+    "answer_key_points": [
+      "Function Calling 能力：工具调用的准确率和稳定性",
+      "推理能力：复杂多步推理的质量",
+      "上下文窗口大小：能否承载大量工具描述和历史",
+      "延迟：对实时场景的影响",
+      "成本：高频调用的累计成本",
+      "多模型策略：用小模型做简单任务，大模型做复杂推理"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多维度思考",
+          "followup": "你提到多模型策略，那怎么判断一个任务是简单还是复杂？谁来做这个判断？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到分类器/规则/轻量模型判断",
+              "followup": "如果判断错了呢？简单任务给了大模型还只是浪费钱，复杂任务给了小模型可能直接失败。你怎么做降级处理？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_016",
+    "topic": "agent_architecture",
+    "sub_topic": "agent_vs_chain",
+    "difficulty": 2,
+    "round": "round1",
+    "question_text": "LangChain 里 Chain 和 Agent 的核心区别是什么？什么时候用 Chain，什么时候用 Agent？",
+    "answer_key_points": [
+      "Chain：固定的执行流程，预先定义好每一步做什么",
+      "Agent：动态决策，LLM 自主选择下一步做什么",
+      "Chain 适合：流程固定、可预期的任务（如 RAG 问答）",
+      "Agent 适合：开放式任务、需要多步推理和工具选择（如数据分析）",
+      "Chain 更可控、更可预测；Agent 更灵活、更智能但更难控制"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出本质区别",
+          "followup": "有没有一个场景，你一开始用 Chain 实现，后来发现必须换成 Agent？为什么？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "分享实际经历",
+              "followup": "换成 Agent 后引入了什么新的问题？怎么解决的？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_017",
+    "topic": "agent_architecture",
+    "sub_topic": "langgraph_basics",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "LangGraph 的 StateGraph 是什么？和 LCEL 的 Chain 有什么本质不同？",
+    "answer_key_points": [
+      "StateGraph：基于状态图的工作流引擎，节点 + 条件边",
+      "核心概念：State（状态）、Node（节点）、Edge（边）、Conditional Edge（条件路由）",
+      "vs Chain：Chain 是线性的，StateGraph 可以有循环和分支",
+      "适合场景：需要循环、回溯、条件分支的复杂 Agent 工作流",
+      "Checkpointing：状态图的每一步都可以持久化，支持暂停和恢复"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出核心差异",
+          "followup": "你在什么场景下用到了 StateGraph 的循环能力？能不能举个具体的图结构？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "给出具体例子",
+              "followup": "在循环场景下，你怎么防止无限循环？LangGraph 提供了什么机制？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_018",
+    "topic": "agent_architecture",
+    "sub_topic": "human_in_loop",
+    "difficulty": 3,
+    "round": "round1",
+    "question_text": "LangGraph 的 Human-in-the-loop 模式怎么实现？什么时候该让人介入？",
+    "answer_key_points": [
+      "通过 interrupt 机制在指定节点暂停图执行",
+      "暂停后等待人类输入，然后继续执行后续节点",
+      "适用场景：审批流程、敏感操作确认、不确定结果的验证",
+      "实现方式：graph.interrupt() + 外部触发 resume",
+      "Checkpointing 保证暂停状态不丢失"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出实现方式和场景",
+          "followup": "如果人类迟迟不响应，Agent 应该怎么办？是一直等还是有超时策略？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到超时/自动决策/升级机制",
+              "followup": "超时后自动决策如果也错了，谁来负责？你觉得这在生产环境安全吗？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_019",
+    "topic": "agent_architecture",
+    "sub_topic": "plan_execute",
+    "difficulty": 4,
+    "round": "round2",
+    "question_text": "Plan-and-Execute 模式中，Plan 的质量直接决定了执行效果。你怎么保证 Plan 的质量？",
+    "answer_key_points": [
+      "Plan 的结构：分解为清晰、独立、可执行的步骤",
+      "Plan 验证：生成 Plan 后让 LLM 自检一遍（是否有遗漏/矛盾）",
+      "Plan 粒度：太粗执行时容易卡住，太细效率低",
+      "动态调整：执行中发现问题时允许修改 Plan（Re-plan）",
+      "人类审阅：关键任务的 Plan 可以让人看一眼再执行"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "答出多层策略",
+          "followup": "Re-plan 的触发条件是什么？你怎么判断当前 Plan 不行了需要重新规划？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到执行失败次数/置信度下降/新信息出现",
+              "followup": "Re-plan 和从头 Plan 是一样的开销吗？有没有增量更新的方案？",
+              "depth": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "agent_020",
+    "topic": "agent_architecture",
+    "sub_topic": "production_tips",
+    "difficulty": 5,
+    "round": "round2",
+    "question_text": "你上线过 Agent 系统吗？生产环境中遇到的最大的坑是什么？怎么解决的？",
+    "answer_key_points": [
+      "开放性问题，考察实战经验",
+      "期待的回答方向：幻觉导致错误操作 / 工具调用频率爆炸 / 成本失控 / 用户输入注入攻击",
+      "考察：发现问题 → 分析根因 → 解决方案 → 预防措施 的完整链路",
+      "不期待纯理论回答，期待具体 case 和解决路径"
+    ],
+    "followup_tree": {
+      "type": "answer_router",
+      "branches": [
+        {
+          "condition": "分享了具体 case 并有解决思路",
+          "followup": "这个坑之后，你对 Agent 系统的架构做了什么改变来防止类似问题？",
+          "depth": 2,
+          "branches": [
+            {
+              "condition": "提到架构改进/监控/测试",
+              "followup": "如果让你给刚入门 Agent 开发的人一个最重要的建议，会是什么？",
+              "depth": 3
+            }
+          ]
+        },
+        {
+          "condition": "没有实战经验，纯理论",
+          "action": "probe",
+          "followup": "假设你要上线一个客服 Agent，你觉得最担心什么风险？打算怎么防护？",
+          "depth": 2
+        }
+      ]
+    }
+  }
+]
