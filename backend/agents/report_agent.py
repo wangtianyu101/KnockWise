@@ -26,12 +26,18 @@ SKILL_CATEGORIES = [
 
 class ReportAgent:
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model=settings.llm_model,
-            api_key=settings.llm_api_key,
-            base_url=settings.llm_base_url,
-            temperature=0.3,
-        )
+        self._llm = None
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self._llm = ChatOpenAI(
+                model=settings.llm_model,
+                api_key=settings.llm_api_key,
+                base_url=settings.llm_base_url,
+                temperature=0.3,
+            )
+        return self._llm
 
     async def generate_report(
         self,

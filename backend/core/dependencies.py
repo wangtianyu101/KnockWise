@@ -1,5 +1,4 @@
 import logging
-import logging
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, Security
@@ -19,7 +18,7 @@ bearer_scheme = HTTPBearer()
 def _make_virtual_user(user_id_str: str, username: str) -> User:
     """Create an in-memory User object without DB — uses string IDs for MySQL."""
     uid = user_id_str if len(user_id_str) == 36 else str(uuid4())
-    return User(id=uid, github_id=f"dev_{username}", github_username=username)
+    return User(id=uid, github_id=f"dev_{username}", github_username=username, display_name=username)
 
 
 async def get_current_user(

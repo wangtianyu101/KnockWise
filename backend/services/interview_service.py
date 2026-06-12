@@ -47,7 +47,7 @@ class InterviewSessionManager:
         profile: dict,
         round: str = "round1",
         style: str = "standard",
-        session_id: str | None = None,
+        session_id: Optional[str] = None,
     ) -> str:
         """Create a new interview session and return its session ID."""
         if session_id is None:

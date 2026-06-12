@@ -1,6 +1,9 @@
-from pydantic import BaseModel
-from typing import Optional
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserOut(BaseModel):
@@ -10,7 +13,7 @@ class UserOut(BaseModel):
     email: Optional[str] = None
     created_at: Optional[datetime] = None
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TokenResponse(BaseModel):
@@ -22,16 +25,16 @@ class TokenResponse(BaseModel):
 class ProfileOut(BaseModel):
     id: str
     user_id: str
-    tech_stack: list[str] = []
+    tech_stack: list[str] = Field(default_factory=list)
     years_of_exp: int = 0
     current_level: str = "mid"
-    target_companies: list[str] = []
+    target_companies: list[str] = Field(default_factory=list)
     resume_summary: Optional[str] = None
-    skill_map: dict = {}
+    skill_map: dict = Field(default_factory=dict)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProfileUpdate(BaseModel):

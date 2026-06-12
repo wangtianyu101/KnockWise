@@ -4,6 +4,8 @@ Priority: faster-whisper for batch transcription (works everywhere, no network n
 WhisperLive is optional for real-time streaming mode.
 """
 
+from __future__ import annotations
+
 import os
 import json
 import subprocess

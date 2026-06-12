@@ -15,10 +15,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7  # 7 days
 
-    # LLM (DeepSeek 官方 API)
-    llm_api_key: str = ""
-    llm_base_url: str = "https://api.deepseek.com"
-    llm_model: str = "deepseek-chat"
+    # LLM (MiniMax — OpenAI-compatible API)
+    llm_api_key: str = "sk-api-jC9HXrtb3Q5CVmrWsGM3CrehTlgG0gPC0uE_1uz5lyanePE51nigXqPS_TJzse7uoC_DRkcrHA4O1AMNdt_HpIiah41BLSLh8C7DhD7XcUuqdERfcqBvdL4"
+    llm_base_url: str = "https://api.minimax.chat/v1"
+    llm_model: str = "MiniMax-Text-01"
 
     # DashScope (Alibaba ASR)
     dashscope_api_key: str = ""
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 10
 
     class Config:
-        env_file = ".env"
+        env_file = (".env", ".env.local")
 
 
 settings = Settings()

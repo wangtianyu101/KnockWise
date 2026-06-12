@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,7 +70,7 @@ def load_questions_from_files() -> list[dict]:
     return questions
 
 
-def get_question_by_id(question_id: str) -> dict | None:
+def get_question_by_id(question_id: str) -> Optional[dict]:
     """Get a single question by its ID from seed files."""
     for filename, _ in SEED_FILES:
         filepath = SEED_DIR / filename

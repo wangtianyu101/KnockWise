@@ -1,6 +1,9 @@
-from pydantic import BaseModel
-from typing import Optional
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class InterviewStart(BaseModel):
@@ -20,7 +23,7 @@ class InterviewOut(BaseModel):
     total_questions: int = 0
     overall_score: Optional[float] = None
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class QuestionRecordOut(BaseModel):
@@ -29,13 +32,13 @@ class QuestionRecordOut(BaseModel):
     question_id: Optional[str] = None
     question_text: str
     user_answer: Optional[str] = None
-    followup_chain: list = []
+    followup_chain: list = Field(default_factory=list)
     score: Optional[int] = None
-    blind_spots: list = []
+    blind_spots: list = Field(default_factory=list)
     time_spent: int = 0
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AnswerSubmit(BaseModel):

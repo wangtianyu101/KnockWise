@@ -55,6 +55,24 @@ export function clearToken() {
 }
 
 // Auth
+export async function login(email: string, password: string) {
+  const data = await request("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+  if (data.access_token) setToken(data.access_token);
+  return data;
+}
+
+export async function register(email: string, password: string, display_name: string) {
+  const data = await request("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, display_name }),
+  });
+  if (data.access_token) setToken(data.access_token);
+  return data;
+}
+
 export async function getGitHubLoginUrl() {
   return request("/api/auth/github/url");
 }

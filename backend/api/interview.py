@@ -302,9 +302,13 @@ async def transcribe_audio(
             from voice.stt import DashScopeSTT
             stt = DashScopeSTT()
             text = stt.transcribe_file(tmp_path)
-        except ImportError as e:
-            logger.error(f"STT import failed: {e}")
-            raise HTTPException(status_code=500, detail="STT engine not available")
+        except ImportError:
+            try:
+                from voice.stt import SimpleSTT
+                text = SimpleSTT().transcribe_file(tmp_path)
+            except ImportError as e:
+                logger.error(f"STT import failed: {e}")
+                raise HTTPException(status_code=500, detail="STT engine not available")
         except Exception as e:
             logger.error(f"STT failed: {e}")
             text = ""

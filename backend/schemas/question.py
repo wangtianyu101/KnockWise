@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -15,13 +15,17 @@ class QuestionOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    @field_validator('answer_key_points', 'followup_tree', mode='before')
+    @field_validator('answer_key_points', mode='before')
     @classmethod
-    def coerce_none(cls, v, info):
-        """SQLAlchemy defaults may not be applied before flush — coerce None."""
-        if v is None:
-            return [] if info.field_name == 'answer_key_points' else {}
-        return v
+    def _coerce_answer_key_points(cls, v: Any) -> Any:
+        """SQLAlchemy default may not be applied before flush — coerce None → []."""
+        return [] if v is None else v
+
+    @field_validator('followup_tree', mode='before')
+    @classmethod
+    def _coerce_followup_tree(cls, v: Any) -> Any:
+        """SQLAlchemy default may not be applied before flush — coerce None → {}."""
+        return {} if v is None else v
 
 
 class QuestionListResponse(BaseModel):

@@ -58,7 +58,7 @@ async def generate_report(
 
     # Stub report
     report = Report(
-        interview_id=interview_id,
+        interview_id=str(interview_id),
         user_id=user.id,
         radar_data={
             "agent_architecture": 3,

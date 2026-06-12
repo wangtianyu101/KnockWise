@@ -27,10 +27,12 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String(36), primary_key=True, default=_new_uuid)
-    github_id = Column(String(64), unique=True, nullable=False)
-    github_username = Column(String(128), nullable=False)
+    github_id = Column(String(64), unique=True, nullable=True)       # nullable for email-password users
+    github_username = Column(String(128), nullable=True)              # nullable for email-password users
     avatar_url = Column(String(512), nullable=True)
-    email = Column(String(256), nullable=True)
+    email = Column(String(256), nullable=True, unique=True)           # unique — used as login credential
+    password_hash = Column(String(256), nullable=True)                # bcrypt hash, nullable for GitHub OAuth users
+    display_name = Column(String(128), nullable=True)                 # user-chosen display name
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow)
 
