@@ -20,11 +20,11 @@ export default function Home() {
     const code = router.query.code as string;
     if (code) {
       handleGitHubCallback(code)
-        .then((data) => data.user && router.push("/onboarding"))
+        .then((data) => data.user && router.push("/dashboard"))
         .catch(() => setLoading(false));
     } else if (getToken()) {
       getProfile()
-        .then(() => router.push("/onboarding"))
+        .then(() => router.push("/dashboard"))
         .catch(() => { clearToken(); setLoading(false); });
     } else {
       setLoading(false);
@@ -40,7 +40,7 @@ export default function Home() {
       const data = await (mode === "register"
         ? register(email, password, displayName)
         : login(email, password));
-      if (data.user) router.push("/onboarding");
+      if (data.user) router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "操作失败");
     } finally {
@@ -153,7 +153,7 @@ export default function Home() {
 
         {/* Dev Login */}
         <button
-          onClick={() => devLogin("dev_user").then(() => router.push("/onboarding"))}
+          onClick={() => devLogin("dev_user").then(() => router.push("/dashboard"))}
           className="w-full py-2.5 rounded-xl text-xs text-gray-500 hover:text-gray-300 border border-gray-700/20 hover:border-gray-600/40 transition-all"
         >
           Dev Login (跳过认证)
