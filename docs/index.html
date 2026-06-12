@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeMock — AI 面试官</title>
+<title>DevBrain — 个人 AI 工作台</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -293,9 +293,9 @@
 <!-- Nav -->
 <nav class="nav-tabs" id="mainNav" style="display:none">
   <button class="nav-tab active" onclick="showPage('dashboard')">仪表盘</button>
-  <button class="nav-tab" onclick="showPage('profile')">个人信息</button>
-  <button class="nav-tab" onclick="showPage('history')">面试记录</button>
-  <button class="nav-tab" onclick="showPage('analytics')">能力分析</button>
+  <button class="nav-tab" onclick="showPage('interview')">面试</button>
+  <button class="nav-tab" onclick="showPage('knowledge')">知识库</button>
+  <button class="nav-tab" onclick="showPage('news')">信息流</button>
 </nav>
 
 <!-- ═══════════ LOGIN ═══════════ -->
@@ -310,8 +310,8 @@
         <circle cx="48" cy="38" r="8" fill="url(#lg)" opacity="0.25"/>
         <circle cx="48" cy="38" r="4" fill="#a78bfa"/>
       </svg>
-      <h1>CodeMock</h1>
-      <p>AI 面试官 · 真正会追问</p>
+      <h1>DevBrain</h1>
+      <p>个人 AI 工作台 · 面试 · 知识 · 信息</p>
     </div>
     <div class="login-card">
       <div class="input-group"><label>邮箱</label><input class="input" type="email" placeholder="user@example.com" value="wangtianyu@example.com"></div>
@@ -338,45 +338,54 @@
     </div>
   </div>
   <div class="cards-row">
-    <div class="dash-card" onclick="showPage('login')">
+    <div class="dash-card" onclick="showPage('interview')">
       <svg class="card-icon" viewBox="0 0 44 44" fill="none"><rect x="6" y="8" width="32" height="28" rx="4" stroke="currentColor" stroke-width="2"/><path d="M14 18h16M14 24h12M14 30h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="36" cy="26" r="5" fill="currentColor" opacity="0.3"/></svg>
-      <h3>开始面试</h3><p>AI 追问引擎，模拟真实面试官<br>深度评估你的技术能力</p>
-      <div class="card-tag"><span class="badge badge-purple">新面试</span></div>
+      <h3>面试练习</h3><p>AI 追问引擎 · 实时语音<br>50+ 题库 · 能力雷达图</p>
+      <div class="card-tag"><span class="badge badge-purple">3次 · 得分 3.8</span></div>
     </div>
-    <div class="dash-card" onclick="showPage('profile')">
-      <svg class="card-icon" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="14" r="8" stroke="currentColor" stroke-width="2"/><path d="M8 38c0-8 6.3-14 14-14s14 6 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <h3>个人信息</h3><p>管理技能栈与简历<br>AI 自动解析技能标签</p>
-      <div class="card-tag"><span class="badge badge-green">已完善 80%</span></div>
+    <div class="dash-card" onclick="showPage('knowledge')">
+      <svg class="card-icon" viewBox="0 0 44 44" fill="none"><path d="M8 6h18l10 10v22a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z" stroke="currentColor" stroke-width="2"/><path d="M26 6v10h10M14 20h16M14 26h10M14 32h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <h3>知识管理</h3><p>Obsidian 集成 · 全文检索<br>知识图谱 · 38 篇笔记</p>
+      <div class="card-tag"><span class="badge badge-green">3 个领域活跃</span></div>
     </div>
-    <div class="dash-card" onclick="showPage('history')">
-      <svg class="card-icon" viewBox="0 0 44 44" fill="none"><rect x="6" y="6" width="32" height="32" rx="4" stroke="currentColor" stroke-width="2"/><path d="M14 16h16M14 22h12M14 28h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <h3>面试记录</h3><p>共 3 次面试 · 趋势向好<br>最近得分 3.8 / 5.0</p>
-      <div class="card-tag"><span class="badge badge-amber">查看历史 →</span></div>
+    <div class="dash-card" onclick="showPage('news')">
+      <svg class="card-icon" viewBox="0 0 44 44" fill="none"><path d="M8 8h28a4 4 0 014 4v18a4 4 0 01-4 4H8a4 4 0 01-4-4V12a4 4 0 014-4z" stroke="currentColor" stroke-width="2"/><path d="M4 16h36M14 22l4 4 6-6 8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h3>信息推送</h3><p>AI 日报 · 周报分析<br>代码统计 · 自定义源</p>
+      <div class="card-tag"><span class="badge badge-amber">今日已更新</span></div>
     </div>
   </div>
   <div class="overview-grid">
     <div class="glass glass-lg">
-      <h3 style="font-size:15px;margin-bottom:18px;font-weight:600">能力概览</h3>
-      <div class="progress-bar" style="margin-bottom:10px"><span class="plabel">Agent 架构</span><span class="track"><span class="fill fill-indigo" style="width:84%"></span></span><span class="pscore" style="color:#818cf8">4.2</span></div>
-      <div class="progress-bar" style="margin-bottom:10px"><span class="plabel">工具调用</span><span class="track"><span class="fill fill-indigo" style="width:70%"></span></span><span class="pscore">3.5</span></div>
-      <div class="progress-bar" style="margin-bottom:10px"><span class="plabel">记忆管理</span><span class="track"><span class="fill fill-red" style="width:56%"></span></span><span class="pscore" style="color:#ef4444">2.8</span></div>
-      <div class="progress-bar" style="margin-bottom:10px"><span class="plabel">RAG</span><span class="track"><span class="fill fill-green" style="width:78%"></span></span><span class="pscore" style="color:#22c55e">3.9</span></div>
-      <div class="progress-bar"><span class="plabel">LangGraph</span><span class="track"><span class="fill fill-indigo" style="width:90%"></span></span><span class="pscore" style="color:#818cf8">4.5</span></div>
+      <h3 style="font-size:15px;margin-bottom:18px;font-weight:600">本周概览</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div style="padding:14px;background:rgba(99,102,241,0.06);border-radius:var(--radius-sm);text-align:center">
+          <div style="font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:var(--accent-glow)">3.8</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">面试得分</div>
+        </div>
+        <div style="padding:14px;background:rgba(34,197,94,0.06);border-radius:var(--radius-sm);text-align:center">
+          <div style="font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:var(--green)">38</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">知识笔记</div>
+        </div>
+        <div style="padding:14px;background:rgba(245,158,11,0.06);border-radius:var(--radius-sm);text-align:center">
+          <div style="font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:var(--amber)">686K</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Token 消耗</div>
+        </div>
+        <div style="padding:14px;background:rgba(99,102,241,0.06);border-radius:var(--radius-sm);text-align:center">
+          <div style="font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:var(--accent-glow)">6.8K</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">代码变更行</div>
+        </div>
+      </div>
     </div>
     <div class="glass glass-lg">
-      <h3 style="font-size:15px;margin-bottom:18px;font-weight:600">今日推荐练习</h3>
-      <div class="rec-item"><span class="rec-num">1</span><div><strong style="font-size:14px">记忆管理</strong><span style="color:var(--text-muted);font-size:12px;display:block">上下文压缩与摘要策略（薄弱项 · 高频考点）</span></div></div>
-      <div class="rec-item"><span class="rec-num">2</span><div><strong style="font-size:14px">MCP 协议</strong><span style="color:var(--text-muted);font-size:12px;display:block">手写一个 MCP Server（得分最低 · 实操性强）</span></div></div>
-      <div class="rec-item"><span class="rec-num">3</span><div><strong style="font-size:14px">高级 RAG</strong><span style="color:var(--text-muted);font-size:12px;display:block">HyDE & Self-RAG 原理与实现（涨分快）</span></div></div>
+      <h3 style="font-size:15px;margin-bottom:18px;font-weight:600">AI 智能推荐</h3>
+      <div class="rec-item"><span class="rec-num">1</span><div><strong style="font-size:14px">面试薄弱项「记忆管理」</strong><span style="color:var(--text-muted);font-size:12px;display:block">你的知识库有 3 篇记忆相关笔记 → <a style="color:var(--accent-glow)">去复习</a></span></div></div>
+      <div class="rec-item"><span class="rec-num">2</span><div><strong style="font-size:14px">arXiv 新论文</strong><span style="color:var(--text-muted);font-size:12px;display:block">Contextual Memory for Agents — 与你的 RAG 笔记高度相关</span></div></div>
+      <div class="rec-item"><span class="rec-num">3</span><div><strong style="font-size:14px">今日 AI 日报已生成</strong><span style="color:var(--text-muted);font-size:12px;display:block">50 条精选 · 小米1T模型 · 3D创作Agent · <a style="color:var(--accent-glow)">查看</a></span></div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════ PROFILE ═══════════ -->
-<div id="profile" class="page">
+<!-- ═══════════ INTERVIEW MODULE ═══════════ -->
+<div id="interview" class="page">
   <div class="page-header">
     <span class="back-link" onclick="showPage('dashboard')">← 仪表盘</span>
-    <h2>个人信息</h2>
+    <h2>面试练习</h2>
   </div>
   <div class="profile-grid">
     <div class="glass glass-lg">
@@ -489,6 +498,104 @@
   </div>
 </div>
 
+<!-- ═══════════ KNOWLEDGE ═══════════ -->
+<div id="knowledge" class="page">
+  <div class="page-header">
+    <span class="back-link" onclick="showPage('dashboard')">← 仪表盘</span>
+    <h2>知识管理</h2>
+  </div>
+  <div class="profile-grid">
+    <div class="glass glass-lg">
+      <h3 style="font-size:16px;margin-bottom:18px;font-weight:600">Obsidian 知识库</h3>
+      <div style="margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input class="input" style="border:none;background:transparent;padding:0;flex:1" placeholder="搜索 38 篇笔记...">
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:2">
+        <div style="padding:6px 10px;border-radius:6px;cursor:pointer;transition:background var(--transition)" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+          <span style="color:var(--text-muted)">📁 agent/</span> Agent记忆系统设计文档.md
+        </div>
+        <div style="padding:6px 10px;border-radius:6px;cursor:pointer;transition:background var(--transition)" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+          <span style="color:var(--text-muted)">📁 java/</span> Java并发核心体系.md
+        </div>
+        <div style="padding:6px 10px;border-radius:6px;cursor:pointer;transition:background var(--transition)" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+          <span style="color:var(--text-muted)">📁 database/</span> Redis核心体系.md
+        </div>
+        <div style="padding:6px 10px;border-radius:6px;cursor:pointer;transition:background var(--transition)" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+          <span style="color:var(--text-muted)">📁 ai/</span> AI 日报 2026-06-12.md
+        </div>
+        <div style="padding:6px 10px;color:var(--text-muted);font-size:12px">... 共 38 篇笔记</div>
+      </div>
+    </div>
+    <div class="glass glass-lg">
+      <h3 style="font-size:16px;margin-bottom:18px;font-weight:600">知识图谱</h3>
+      <div style="text-align:center;padding:20px">
+        <svg viewBox="0 0 300 200" style="max-width:100%">
+          <circle cx="150" cy="60" r="18" fill="none" stroke="#6366f1" stroke-width="2"/>
+          <text x="150" y="64" text-anchor="middle" font-size="9" fill="#94a3b8">Agent</text>
+          <circle cx="80" cy="140" r="14" fill="none" stroke="#22c55e" stroke-width="2"/>
+          <text x="80" y="144" text-anchor="middle" font-size="9" fill="#94a3b8">Redis</text>
+          <circle cx="220" cy="140" r="16" fill="none" stroke="#f59e0b" stroke-width="2"/>
+          <text x="220" y="144" text-anchor="middle" font-size="9" fill="#94a3b8">Java</text>
+          <line x1="140" y1="76" x2="90" y2="128" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <line x1="160" y1="76" x2="210" y2="128" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <line x1="95" y1="148" x2="205" y2="148" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        </svg>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:8px">5 个领域 · 基于 [[双链]] 自动构建</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--accent-glow)">38</div><div style="font-size:11px;color:var(--text-muted)">笔记</div>
+        </div>
+        <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--green)">5</div><div style="font-size:11px;color:var(--text-muted)">领域</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ NEWS ═══════════ -->
+<div id="news" class="page">
+  <div class="page-header">
+    <span class="back-link" onclick="showPage('dashboard')">← 仪表盘</span>
+    <h2>信息推送</h2>
+  </div>
+  <div class="profile-grid">
+    <div class="glass glass-lg">
+      <h3 style="font-size:16px;margin-bottom:18px;font-weight:600">AI 日报</h3>
+      <div class="rec-item"><strong>06-12 日报</strong><span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px">50 条 · 量子位/36氪/HF/arXiv · 小米1T模型、3D创作Agent</span><span class="badge badge-purple" style="margin-left:auto">查看</span></div>
+      <div style="padding:6px 16px;color:var(--text-muted);font-size:12px">每天早上 8:03 自动生成 → Obsidian</div>
+    </div>
+    <div class="glass glass-lg">
+      <h3 style="font-size:16px;margin-bottom:18px;font-weight:600">AI 周报</h3>
+      <div class="rec-item"><strong>W24 周报</strong><span style="color:var(--text-muted);font-size:12px;display:block;margin-top:2px">3 个趋势信号 · 5 大事件 · 练习推荐</span><span class="badge badge-purple" style="margin-left:auto">查看</span></div>
+      <div style="padding:6px 16px;color:var(--text-muted);font-size:12px">每周一 9:03 自动生成 → Obsidian</div>
+    </div>
+  </div>
+  <div class="glass glass-lg" style="margin-top:20px">
+    <h3 style="font-size:16px;margin-bottom:18px;font-weight:600">代码统计</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+      <div style="padding:14px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:var(--accent-glow)">686K</div><div style="font-size:11px;color:var(--text-muted)">总 Token</div></div>
+      <div style="padding:14px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:var(--green)">6.8K</div><div style="font-size:11px;color:var(--text-muted)">代码行</div></div>
+      <div style="padding:14px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-family:'Fira Code',monospace;font-size:22px;font-weight:700;color:var(--amber)">5</div><div style="font-size:11px;color:var(--text-muted)">活跃天数</div></div>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted);padding:0 6px">每天 23:07 自动采集 · 数据来源：~/.claude/projects/ + git log</div>
+  </div>
+  <div class="glass glass-lg" style="margin-top:20px">
+    <h3 style="font-size:16px;margin-bottom:18px;font-weight:600">信息来源</h3>
+    <div style="font-size:13px;color:var(--text-secondary);line-height:2.2">
+      <div>✅ 量子位 RSS — 每日 ~10 篇</div>
+      <div>✅ 36氪 RSS — AI 过滤 ~12 篇</div>
+      <div>✅ Hugging Face Daily Papers — ~15 篇</div>
+      <div>✅ arXiv cs.AI — ~15 篇</div>
+    </div>
+  </div>
+</div>
+
 <script>
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -496,7 +603,7 @@ function showPage(id) {
   var nav = document.getElementById('mainNav');
   nav.style.display = (id === 'login') ? 'none' : 'flex';
   document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
-  var tabMap = {dashboard:0, profile:1, history:2, analytics:3};
+  var tabMap = {dashboard:0, interview:1, knowledge:2, news:3};
   if(tabMap[id]!==undefined) nav.children[tabMap[id]].classList.add('active');
 }
 function login(){ showPage('dashboard'); }
