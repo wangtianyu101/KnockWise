@@ -1,0 +1,182 @@
+# DevBrain — 技术文档
+
+> 技术架构、技术选型、数据模型、部署方案
+
+---
+
+## 一、技术栈
+
+| 层 | 技术 | 版本 |
+|---|---|---|
+| Agent 引擎 | LangGraph + LangChain | 1.2+ / 1.3+ |
+| 后端框架 | FastAPI (async) | 0.115 |
+| ORM | SQLAlchemy 2.0 (async) | 2.0.50 |
+| 数据库 | MySQL | 8.4 |
+| 语音 | LiveKit WebRTC + WhisperLive + Piper TTS | — |
+| LLM | DeepSeek V3 (OpenAI-compatible) | — |
+| 前端框架 | Next.js (Pages Router) | 15.1 |
+| 前端样式 | Tailwind CSS | 4.0 |
+| 图表 | Recharts (雷达图) + SVG (仪表盘) | 2.15 |
+| 认证 | JWT (HS256) + PBKDF2-SHA256 | — |
+| 定时任务 | macOS launchd | — |
+
+## 二、架构全景
+
+```
+┌──────────────────────────────────────────┐
+│           Frontend (Next.js 15)           │
+│  /dashboard  /interview/*  /knowledge    │
+│  /news       /login                      │
+└────────────────┬─────────────────────────┘
+                 │ REST API (JSON)
+┌────────────────▼─────────────────────────┐
+│             Backend (FastAPI)            │
+│                                          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│  │ interview│ │knowledge │ │  news    │ │
+│  │ router   │ │ router   │ │ router   │ │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ │
+│       │              │             │      │
+│  ┌────▼─────┐  ┌────▼──────┐ ┌───▼─────┐ │
+│  │LangGraph │  │Obsidian   │ │RSS+LLM  │ │
+│  │Agents    │  │FS Reader  │ │Summarizer│ │
+│  └──────────┘  └───────────┘ └─────────┘ │
+│                                          │
+│  ┌──────────────────────────────────┐    │
+│  │  Shared: MySQL + Auth + Profile  │    │
+│  └──────────────────────────────────┘    │
+└─────────────────────────────────────────┘
+```
+
+## 三、Agent 架构（追问引擎）
+
+```
+用户语音 → LiveKit → WhisperLive STT
+                         ↓
+              LangGraph StateGraph
+                         │
+    ┌────────────────────┼────────────────────┐
+    │                    │                    │
+    ▼                    ▼                    ▼
+question_agent     followup_agent     evaluate_agent
+(选题)              (追问匹配)           (多维评分)
+    │                    │                    │
+    │  - 难度匹配        │  - LLM 分支匹配    │  - 1-5 分
+    │  - 盲点优先        │  - 追问自然化      │  - 盲点识别
+    │  - 话题加权        │  - 动作路由        │  - 反馈生成
+    │                    │    (followup/      │
+    │                    │     probe/hint/    │
+    │                    │     degrade/skip)  │
+    └────────────────────┴────────────────────┘
+                         │
+                         ▼
+                   report_agent
+                   (11维雷达图 + 改进计划)
+                         │
+                         ▼
+                  Piper TTS → 语音输出
+```
+
+## 四、数据模型
+
+```
+User ──< Profile ──< Interview ──< QuestionRecord
+  │                    │
+  └──< Report ─────────┘
+
+Question (种子题库，独立表)
+```
+
+### 核心表
+
+| 表 | 关键字段 | 说明 |
+|---|---|---|
+| users | id, email(unique), password_hash, display_name, github_id | 支持邮箱+GitHub双登录 |
+| profiles | user_id(FK), tech_stack(JSON), years_of_exp, current_level, resume_summary | 用户画像 |
+| interviews | user_id(FK), profile_id(FK), round, style, status, state_snapshot(JSON), overall_score | 面试会话+持久化 |
+| question_records | interview_id(FK), question_text, user_answer, followup_chain(JSON), score, blind_spots(JSON) | 每题记录 |
+| questions | id(语义PK), topic, difficulty, question_text, followup_tree(JSON) | 种子题库(50题) |
+| reports | interview_id(FK), radar_data(JSON), top_blind_spots(JSON), improvement_plan(JSON) | 面试报告 |
+
+### 设计决策
+
+- 所有 PK 用 `String(36)`（UUID-as-string），不用 `UUID` 原生类型
+- JSON 列用 `sqlalchemy.JSON`，MySQL 8.4 原生支持
+- 枚举值用 String 列，不用 MySQL ENUM
+- 密码哈希用 stdlib `hashlib.pbkdf2_hmac`（零依赖）
+
+## 五、Session 持久化
+
+InterviewSessionManager 使用 **两层存储**：
+
+```
+内存 dict (快速读写)
+     │
+     ▼ 每次状态变更
+MySQL interviews.state_snapshot (JSON)
+     │
+     ▼ 服务重启后
+restore_from_db() → 内存 dict
+```
+
+关键设计：
+- JSON snapshot 方式（不用 LangGraph SqliteSaver）
+- 非 JSON 安全值自动过滤（`_serializable_state()`）
+- Best-effort 语义：save 失败不影响面试
+
+## 六、Obsidian 集成
+
+`ObsidianService` 直读文件系统：
+
+- **文件遍历**：`os.walk` → 过滤 `.md` 文件
+- **Frontmatter**：正则解析 YAML frontmatter
+- **Wikilink**：正则 `\[\[([^\]]+)\]\]` 提取双链
+- **知识图谱**：节点=笔记，边=wikilink 引用关系
+- **搜索**：全文遍历 + 大小写不敏感匹配
+
+无需 Obsidian API / plugin，直接操作 `~/Obsidian/coding/` 目录。
+
+## 七、目录结构
+
+```
+Intervue/
+├── backend/
+│   ├── agents/          LangGraph 5 Agent
+│   ├── api/             9 个路由模块
+│   ├── core/            数据库 + 配置 + 认证
+│   ├── models/          6 个 ORM 模型
+│   ├── schemas/         Pydantic 请求/响应
+│   ├── services/        6 个业务服务
+│   ├── voice/           STT + TTS + LiveKit
+│   └── seed_data/       50 道种子题 (4 JSON)
+├── frontend/
+│   ├── pages/           10 个页面
+│   ├── components/      可复用组件
+│   ├── lib/             API 客户端 + LiveKit
+│   └── styles/          Tailwind CSS
+└── docs/                设计 + 技术 + 接口 + 功能介绍
+```
+
+## 八、部署
+
+```bash
+# 启动全部服务
+docker-compose up -d
+
+# 服务列表
+mysql:8.4          → localhost:3306
+whisper-live       → localhost:9090
+livekit-server     → localhost:7880
+backend (FastAPI)  → localhost:8000
+frontend (Next.js) → localhost:3000
+```
+
+## 九、定时任务
+
+macOS launchd 管理，plist 文件在 `scripts/` 下：
+
+```
+com.agentmemory.daily-stats     → stats.py sync      每天 23:07
+com.agentmemory.ai-daily-news   → ai_news.py daily    每天 08:03
+com.agentmemory.ai-weekly-news  → ai_news.py weekly   每周一 09:03
+```

@@ -1,0 +1,134 @@
+# DevBrain — 设计文档
+
+> 产品设计、交互设计、视觉设计、信息架构
+
+---
+
+## 一、产品设计
+
+### 设计理念
+
+**不是又一个 ChatBot**。DevBrain 的三个模块各解决一个具体场景：
+
+- **面试练习**：模拟真实面试官的追问行为，不是题库展示
+- **知识管理**：增强已有 Obsidian 工作流，不新建笔记系统
+- **信息推送**：AI 摘要 + 主动投递，不需要用户每天刷信息源
+
+### 核心差异化
+
+| 竞品 | 模式 | DevBrain |
+|---|---|---|
+| LeetCode / 牛客 | 静态题库 | AI 追问引擎——根据回答动态调整 |
+| Notion AI | 通用笔记 | Obsidian 集成——不迁移，增强现有 |
+| 36氪 / RSS 阅读器 | 信息流 | AI 摘要 + 点评 + 周报趋势分析 |
+
+---
+
+## 二、信息架构
+
+```
+/login                    邮箱/GitHub 登录
+  │
+/dashboard                 三模块入口 + 跨模块推荐
+  │
+  ├── /interview/profile   面试模块 → 个人信息 + 简历
+  │   /interview/history   面试记录 → 列表 + 筛选
+  │   /interview/analytics  能力分析 → 雷达图 + 趋势
+  │   /interview/setup      面试配置 → 公司/轮次/角色
+  │   /interview/{id}       面试中 → 语音对话
+  │   /interview/report     面试报告
+  │
+  ├── /knowledge            知识管理
+  │   ├── 浏览 (browse)     文件树
+  │   ├── 图谱 (graph)      知识图谱可视化
+  │   └── 统计 (stats)      写作统计
+  │
+  └── /news                 信息推送
+      ├── 日报 (daily)      日报列表 + 阅读
+      ├── 周报 (weekly)     周报列表 + 阅读
+      ├── 统计 (stats)      代码统计 + 图表
+      └── 信源 (sources)    RSS 源管理
+```
+
+---
+
+## 三、面试追问引擎设计
+
+### 不是模板驱动
+
+传统 AI 面试 = "题库 + GPT 打分"。DevBrain 的追问引擎是一个 **LangGraph 多 Agent 协作系统**：
+
+```
+选题 Agent (question)
+  ├── 根据用户画像（技能栈、经验、目标公司）选择题目
+  ├── 难度匹配：1年经验→难度1-3，3年+→难度3-5
+  └── 盲点优先：上次没答好的 topic 优先出
+
+追问 Agent (followup)
+  ├── LLM 分析用户回答 → 匹配追问分支
+  ├── 动作路由：
+  │   ├── followup: 深入追问更深层细节
+  │   ├── probe: 探测相关知识边界
+  │   ├── give_hint: 给出提示后重新作答
+  │   ├── degrade: 回答太差，降级到更基础的问题
+  │   └── skip_and_record: 标记盲点，跳到下一题
+  └── 追问自然化：LLM 将追问转为口语化面试官语言
+
+评估 Agent (evaluate)
+  ├── 1-5 分评分（LLM 多维度）
+  ├── 盲点识别
+  └── 改进建议
+
+报告 Agent (report)
+  ├── 11 维度雷达图
+  ├── Top 薄弱项
+  └── 个性化练习计划
+```
+
+---
+
+## 四、视觉设计
+
+### 设计系统
+
+| 属性 | 值 |
+|---|---|
+| 风格 | Dark Mode (OLED) + Glassmorphism |
+| 主色 | Indigo #6366f1 → Violet #7c3aed |
+| 背景 | Deep #050914 / Surface #0c1024 |
+| 卡片 | `rgba(15,20,45,0.7)` + `backdrop-blur(20px)` |
+| 字体 | Fira Code (等宽·数字) + Fira Sans (正文) |
+| 语义色 | 🟢 Emerald #22c55e · 🟡 Amber #f59e0b · 🔴 Red #ef4444 |
+| 圆角 | sm:10px / md:14px / lg:20px |
+| 过渡 | 200-280ms cubic-bezier(0.4, 0, 0.2, 1) |
+
+### 组件规范
+
+- **玻璃卡片**：`bg-[var(--bg-card)] backdrop-blur-xl border border-indigo-500/10 rounded-2xl`
+- **按钮主色**：`bg-gradient-to-r from-indigo-500 to-purple-500`
+- **进度条**：渐变填充 + 语义着色
+- **SVG 图标**：内联 `<svg>`，24x24 viewBox，stroke-width 1.5
+
+### 页面状态
+
+每个页面覆盖三种状态：
+- **加载中**：居中 spinner / 文字提示
+- **空数据**：图标 + 引导文案 + CTA 按钮
+- **错误**：内联错误信息 + 重试按钮
+
+---
+
+## 五、交互规范
+
+- **Hover**：所有可点击元素有 `cursor-pointer` + 280ms 过渡
+- **Loading**：异步操作期间按钮 disabled + 文字变为 "请稍候..."
+- **表单**：邮箱/密码验证（前端 + 后端双重校验）
+- **导航**：顶部 sticky 导航 + 面试模块子导航
+- **响应式**：768px 断点，移动端单列布局
+- **无障碍**：`focus-visible` 轮廓 + `prefers-reduced-motion`
+
+---
+
+## 六、实施路线
+
+已完成的 5 阶段在 `IMPLEMENTATION-PLAN.md`，详见 TECH.md 第九章。
