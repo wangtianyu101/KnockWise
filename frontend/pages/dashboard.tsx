@@ -7,7 +7,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export default function Dashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
-  const [dashData, setDashData] = useState<any>(null);
+  const [dashData, setDashData] = useState<any>({});
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
@@ -18,6 +18,9 @@ export default function Dashboard() {
   }, []);
 
   const iv = dashData?.interview || {};
+  const kn = dashData?.knowledge || {};
+  const st = dashData?.stats || {};
+  const recs = dashData?.recommendations || [];
   const displayName = profile?.display_name || profile?.github_username || "用户";
 
   return (
@@ -56,8 +59,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           {[
             { icon: M_Interview, title: "面试练习", desc: "AI 追问引擎 · 实时语音对话\n50+ 题库 · 能力雷达图", badge: `${iv.total || 0}次 · 得分 ${iv.latest_score || "-"}`, badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", href: "/interview/profile" },
-            { icon: M_Knowledge, title: "知识管理", desc: "Obsidian 集成 · 全文检索\n知识图谱 · 智能关联", badge: "即将上线", badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", href: "/knowledge" },
-            { icon: M_News, title: "信息推送", desc: "AI 日报 · 周报深度分析\n代码统计 · 信源管理", badge: "即将上线", badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20", href: "/news" },
+            { icon: M_Knowledge, title: "知识管理", desc: "Obsidian 集成 · 全文检索\n知识图谱 · 智能关联", badge: `${kn.total_notes || 0} 篇笔记`, badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", href: "/knowledge" },
+            { icon: M_News, title: "信息推送", desc: "AI 日报 · 周报深度分析\n代码统计 · 信源管理", badge: `${(st.total_tokens || 0) >= 1000 ? ((st.total_tokens || 0) / 1000).toFixed(0) + 'K' : st.total_tokens || 0} tokens`, badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20", href: "/news" },
           ].map(card => (
             <div key={card.title} onClick={() => router.push(card.href)}
               className="group relative bg-white/[0.03] backdrop-blur-xl border border-indigo-500/10 rounded-2xl p-7 cursor-pointer hover:border-indigo-500/30 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
@@ -94,16 +97,21 @@ export default function Dashboard() {
           <div className="bg-white/[0.03] backdrop-blur-xl border border-indigo-500/10 rounded-2xl p-7">
             <h3 className="text-base font-semibold mb-5">AI 智能推荐</h3>
             <div className="space-y-3">
-              {[
-                { n: "1", t: "面试薄弱项「记忆管理」", d: "完成一次面试后获取个性化推荐" },
-                { n: "2", t: "完善个人信息", d: "上传简历，AI 自动提取技能标签" },
-                { n: "3", t: "开始首次面试", d: "选择 AI Agent 方向，体验追问引擎" },
+              {recs.length > 0 ? recs.map((r: any, i: number) => (
+                <div key={i} className="flex gap-3 p-3.5 bg-indigo-500/[0.03] rounded-xl border-l-3 border-indigo-500">
+                  <span className="font-mono font-bold text-indigo-400 text-sm">{i + 1}</span>
+                  <div><div className="text-sm font-medium">{r.title}</div><div className="text-xs text-gray-500 mt-0.5">{r.detail}</div></div>
+                </div>
+              )) : [
+                { n: "1", t: "完善个人信息", d: "上传简历，AI 自动提取技能标签" },
+                { n: "2", t: "开始首次面试", d: "选择 AI Agent 方向，体验追问引擎" },
+                { n: "3", t: "浏览知识库", d: "Obsidian 集成 · 47 篇笔记可搜索" },
               ].map(r => (
                 <div key={r.n} className="flex gap-3 p-3.5 bg-indigo-500/[0.03] rounded-xl border-l-3 border-indigo-500">
                   <span className="font-mono font-bold text-indigo-400 text-sm">{r.n}</span>
                   <div><div className="text-sm font-medium">{r.t}</div><div className="text-xs text-gray-500 mt-0.5">{r.d}</div></div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
