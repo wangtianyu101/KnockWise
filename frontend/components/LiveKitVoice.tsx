@@ -2,10 +2,11 @@
  * LiveKitVoice — full-duplex audio component.
  * Publishes user mic continuously, subscribes to AI audio track.
  * No PTT button — always-on, like a phone call.
+ * Compatible with livekit-client v2.x
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Room, Track, TrackEvent, RemoteParticipant, DataPacketEvent } from "livekit-client";
+import { Room, RoomEvent, Track, RemoteTrackPublication } from "livekit-client";
 
 type VoiceState = "connecting" | "connected" | "listening" | "speaking" | "disconnected" | "error";
 
@@ -18,7 +19,6 @@ interface Props {
 
 export default function LiveKitVoice({ roomName, token, onTranscript, onStateChange }: Props) {
   const [state, setState] = useState<VoiceState>("connecting");
-  const [aiSpeaking, setAiSpeaking] = useState(false);
   const roomRef = useRef<Room | null>(null);
 
   const updateState = useCallback((s: VoiceState) => {
@@ -42,50 +42,42 @@ export default function LiveKitVoice({ roomName, token, onTranscript, onStateCha
       try {
         updateState("connecting");
 
-        // Attach event listeners BEFORE connecting
-        room.on(TrackEvent.TrackSubscribed, (_track: Track, publication, participant) => {
-          if (_track.kind === "audio" && participant.isRemote) {
-            setAiSpeaking(true);
+        // Track subscriptions — v2 uses RoomEvent
+        room.on(RoomEvent.TrackSubscribed, (track: RemoteTrackPublication) => {
+          if (track.kind === Track.Kind.Audio && track.track) {
             updateState("speaking");
-            const el = _track.attach();
+            const el = track.track.attach();
             el.setAttribute("autoplay", "true");
             document.getElementById("ai-audio-sink")?.appendChild(el);
-
-            _track.on("ended", () => {
-              setAiSpeaking(false);
-              updateState("listening");
-            });
           }
         });
 
-        room.on(TrackEvent.TrackUnsubscribed, (_track) => {
-          setAiSpeaking(false);
+        room.on(RoomEvent.TrackUnsubscribed, (track: RemoteTrackPublication) => {
+          if (track.kind === Track.Kind.Audio) {
+            updateState("listening");
+          }
+        });
+
+        // Connection events
+        room.on(RoomEvent.Connected, () => {
+          updateState("connected");
           updateState("listening");
         });
 
-        // Data channel for live transcripts
-        room.on(DataPacketEvent.Data, (payload: Uint8Array) => {
-          try {
-            const text = new TextDecoder().decode(payload);
-            onTranscript?.(text, "ai");
-          } catch {}
-        });
-
-        // Local participant events
-        room.on("localTrackPublished", () => {
-          updateState("listening");
-        });
-
-        room.on("disconnected", () => {
+        room.on(RoomEvent.Disconnected, () => {
           updateState("disconnected");
         });
 
-        await room.connect(process.env.NEXT_PUBLIC_LIVEKIT_URL || "ws://localhost:7880", token);
+        // Local participant events
+        room.on(RoomEvent.LocalTrackPublished, () => {
+          // Mic track is being sent
+        });
 
-        // Enable mic — starts publishing audio track immediately
+        const lkUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "ws://localhost:7880";
+        await room.connect(lkUrl, token);
+
+        // Auto-enable microphone
         await room.localParticipant.setMicrophoneEnabled(true);
-        updateState("connected");
-        updateState("listening");
 
       } catch (err) {
         console.error("LiveKitVoice connect error:", err);
@@ -121,10 +113,7 @@ export default function LiveKitVoice({ roomName, token, onTranscript, onStateCha
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Hidden audio sink for AI speech */}
       <div id="ai-audio-sink" className="hidden" />
-
-      {/* State indicator */}
       <div className={`flex items-center gap-2 text-sm ${stateColor[state]}`}>
         <span className={`w-2 h-2 rounded-full inline-block ${
           state === "speaking" ? "bg-indigo-400 animate-pulse" :
@@ -134,8 +123,6 @@ export default function LiveKitVoice({ roomName, token, onTranscript, onStateCha
         }`} />
         <span className="text-xs">{stateLabel[state]}</span>
       </div>
-
-      {/* Mic status */}
       <div className="text-xs text-gray-500">
         🎤 {state === "listening" ? "麦克风已开启，请自由说话" :
             state === "speaking" ? "面试官正在说话..." :

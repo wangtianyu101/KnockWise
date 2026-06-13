@@ -36,7 +36,8 @@ class ObsidianService:
                     "path": str(entry.relative_to(self.vault)),
                     "children_count": len([f for f in entry.iterdir() if f.suffix == ".md"])})
             elif entry.suffix == ".md":
-                stat = entry.stat()
+                try: stat = entry.stat()
+                except Exception: continue
                 items.append({"name": entry.name, "type": "file",
                     "path": str(entry.relative_to(self.vault)),
                     "size": stat.st_size,
@@ -64,7 +65,8 @@ class ObsidianService:
     def read_note(self, rel_path: str) -> Optional[dict]:
         full = self.vault / rel_path
         if not full.exists() or not full.is_file(): return None
-        content = full.read_text(encoding="utf-8")
+        try: content = full.read_text(encoding="utf-8")
+        except Exception: return None
         fm = self._parse_frontmatter(content)
         links = list(set(WIKILINK_RE.findall(content)))
         return {"path": rel_path, "name": full.name, "content": content,

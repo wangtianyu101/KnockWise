@@ -368,16 +368,21 @@ async def get_livekit_token(
 ):
     """Generate a LiveKit access token for joining a voice room."""
     from core.config import settings
-    try:
-        from livekit import api
-        token = api.AccessToken(
-            api_key=settings.livekit_api_key or "devkey",
-            api_secret=settings.livekit_api_secret or "devsecret",
-        ).with_identity(data.participant_name).with_name(
-            data.participant_name
-        ).with_grants(
-            api.VideoGrants(room_join=True, room=data.room_name)
-        ).to_jwt()
-        return {"token": token}
-    except ImportError:
-        return {"token": "dev_token_placeholder"}
+    import time
+    from jose import jwt
+
+    api_key = settings.livekit_api_key or "devkey"
+    api_secret = settings.livekit_api_secret or "devsecret"
+
+    now = int(time.time())
+    payload = {
+        "iss": api_key,
+        "sub": data.participant_name,
+        "nbf": now,
+        "exp": now + 3600 * 6,  # 6 hours
+        "room": data.room_name,
+        "name": data.participant_name,
+        "video": {"roomJoin": True, "room": data.room_name, "canPublish": True, "canSubscribe": True},
+    }
+    token = jwt.encode(payload, api_secret, algorithm="HS256")
+    return {"token": token}
