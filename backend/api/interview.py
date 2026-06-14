@@ -17,6 +17,7 @@ from agents.question_agent import question_engine
 from agents.followup_agent import followup_engine
 from agents.evaluate_agent import evaluate_agent
 from services.interview_service import session_manager
+from agents.states import create_initial_state
 
 logger = logging.getLogger("codemock")
 
@@ -382,6 +383,68 @@ async def transcribe_audio(
         return {"text": text.strip()}
     finally:
         os.unlink(tmp_path)
+
+
+class VoiceRespondRequest(BaseModel):
+    interview_id: str
+    user_answer: str
+
+
+@router.post("/voice/respond")
+async def voice_respond(
+    data: VoiceRespondRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Browser SpeechRecognition → backend interview agent → text response."""
+    from voice.persona import InterviewerPersona
+    persona = InterviewerPersona(name="Alex")
+
+    # Try session manager first for stateful interview
+    try:
+        state = session_manager.get_state(data.interview_id)
+        phase = state.get("interview_phase", "intro")
+    except Exception:
+        phase = "intro"
+        state = create_initial_state(
+            user_id=user.id,
+            profile={"tech_stack": ["LangChain", "LangGraph", "RAG"], "years_of_exp": 3, "current_level": "mid"},
+            round="round1",
+        )
+
+    if phase == "intro":
+        keywords = ["langchain","langgraph","rag","python","go","java","k8s","docker","agent","llm","spring","react","vue"]
+        found = [t for t in keywords if t.lower() in data.user_answer.lower()]
+        if found:
+            state["profile"]["tech_stack"] = list(set(found))
+        next_q = question_engine.select_next_question(
+            round="round1", profile=state["profile"], questions_asked=[], blind_spots=[])
+        if next_q:
+            response = persona.wrap({"action": "next_question", "question_text": next_q["question_text"]})
+        else:
+            response = persona.wrap({"action": "next_question", "question_text": "请简单说一下你对 AI Agent 架构的理解？"})
+    else:
+        state["user_answer"] = data.user_answer
+        q = state.get("current_question", {})
+        result = await followup_engine.determine_action(
+            question=q, user_answer=data.user_answer,
+            current_depth=state.get("current_depth", 0),
+            followup_count=state.get("followup_count", 0), max_depth=4)
+        action = result.get("action", "next_question")
+        if action == "skip_and_record":
+            nq = question_engine.select_next_question(
+                round=state.get("round", "round1"), profile=state["profile"],
+                questions_asked=state.get("questions_asked", []), blind_spots=state.get("blind_spots", []))
+            response = persona.wrap({"action": "next_question", "question_text": nq["question_text"] if nq else "好的，我们继续。"})
+        elif action in ("followup", "probe", "give_hint", "degrade"):
+            response = persona.wrap({"action": "probe", "followup_text": result.get("followup_text", "能再详细说说吗？")})
+        else:
+            nq = question_engine.select_next_question(
+                round=state.get("round", "round1"), profile=state["profile"],
+                questions_asked=state.get("questions_asked", []), blind_spots=state.get("blind_spots", []))
+            response = persona.wrap({"action": "next_question", "question_text": nq["question_text"] if nq else "面试结束！"})
+
+    return {"response": response}
 
 
 class LiveKitTokenRequest(BaseModel):
