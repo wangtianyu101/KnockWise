@@ -168,6 +168,17 @@ class InterviewSessionManager:
         session = self._get_session(session_id)
         return dict(session["state"])
 
+    def set_state(self, session_id: str, state: dict) -> None:
+        """Replace the in-memory state for a session.
+
+        `get_state` returns a shallow copy, so callers that mutate phase /
+        current_question / blind_spots must write back via this method —
+        otherwise the next /voice/respond call re-reads the old phase and
+        the interview never advances past intro.
+        """
+        self._get_session(session_id)  # raises ValueError if missing
+        self._sessions[session_id]["state"] = dict(state)
+
     def is_complete(self, session_id: str) -> bool:
         """Check if the interview is complete."""
         session = self._get_session(session_id)

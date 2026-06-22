@@ -92,7 +92,14 @@ export default function InterviewPage() {
     }, 150);
   }
 
+  // Guard against React 18+ StrictMode double-invocation in dev — without
+  // this, initInterview() fires twice on mount and creates two interview
+  // rows. The backend now also dedups, but we keep the guard so we don't
+  // waste a request round-trip.
+  const initRef = useRef(false);
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
     const raw = localStorage.getItem("codemock_setup");
     if (raw) {
       try { setSetupInfo(JSON.parse(raw)); } catch {}
@@ -294,7 +301,7 @@ export default function InterviewPage() {
         <VoiceRoom
           interviewId={interviewId}
           onSpeech={onUserSpeech}
-          disabled={isThinking || phase === "done"}
+          disabled={isThinking}
           onTranscribing={handleLiveTranscript}
         />
 
@@ -312,7 +319,7 @@ export default function InterviewPage() {
                 }
               }}
               placeholder="或直接输入文字回答..."
-              disabled={isThinking || phase === "done"}
+              disabled={isThinking}
               className="flex-1 bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-40"
             />
             <button
@@ -322,7 +329,7 @@ export default function InterviewPage() {
                   setTextInput("");
                 }
               }}
-              disabled={!textInput.trim() || isThinking || phase === "done"}
+              disabled={!textInput.trim() || isThinking}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg shadow-purple-500/20 flex-shrink-0"
             >
               发送

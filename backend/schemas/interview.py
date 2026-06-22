@@ -22,6 +22,7 @@ class InterviewOut(BaseModel):
     ended_at: Optional[datetime] = None
     total_questions: int = 0
     overall_score: Optional[float] = None
+    is_favorite: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
