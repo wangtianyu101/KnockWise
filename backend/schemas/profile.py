@@ -43,3 +43,4 @@ class ProfileUpdate(BaseModel):
     current_level: Optional[str] = None
     target_companies: Optional[list[str]] = None
     resume_text: Optional[str] = None
+    skill_map: Optional[dict] = None
