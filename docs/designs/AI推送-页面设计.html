@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 推送 — 页面设计图（独立模块 · 2026-06-22）</title>
+<style>
+:root {
+  --bg-deep: #050914;
+  --bg-surface: #0c1024;
+  --bg-card: rgba(15, 20, 45, 0.7);
+  --bg-card-hover: rgba(20, 26, 56, 0.85);
+  --border-subtle: rgba(99, 102, 241, 0.12);
+  --border-glow: rgba(99, 102, 241, 0.35);
+  --accent: #6366f1;
+  --accent-glow: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.15);
+  --accent-2: #7c3aed;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+  --red: #ef4444;
+  --red-soft: rgba(239, 68, 68, 0.15);
+  --blue: #3b82f6;
+  --purple: #a78bfa;
+  --purple-soft: rgba(139, 92, 246, 0.15);
+  --gray-3: #94a3b8;
+  --gray-5: #475569;
+  --gray-6: #334155;
+  --gray-7: #1e293b;
+  --gray-8: #0f172a;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --blur: 20px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Fira Sans', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 80% 60% at 30% 0%, rgba(139, 92, 246, 0.06), transparent),
+              radial-gradient(ellipse 60% 50% at 80% 100%, rgba(99, 102, 241, 0.04), transparent);
+}
+.nav-tabs {
+  display: flex; gap: 6px;
+  padding: 14px 24px;
+  background: rgba(12, 16, 36, 0.85);
+  backdrop-filter: blur(var(--blur));
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky; top: 0; z-index: 100;
+  flex-wrap: wrap;
+}
+.nav-tab {
+  padding: 9px 18px; border: none; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); background: transparent;
+  transition: all var(--transition);
+}
+.nav-tab:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.04); }
+.nav-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--purple), var(--accent));
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+.nav-meta { margin-left: auto; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 12px; }
+.page { display: none; padding: 32px 24px 80px; max-width: 1320px; margin: 0 auto; position: relative; z-index: 1; }
+.page.active { display: block; }
+.page-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle); }
+.page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.page-desc { font-size: 13px; color: var(--text-secondary); }
+.page-tag {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-size: 11px; margin-left: 8px; vertical-align: middle;
+}
+.page-tag.new { background: var(--purple-soft); color: var(--purple); }
+.glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all var(--transition);
+}
+.glass:hover { border-color: var(--border-glow); }
+.glass-sm { padding: 14px; border-radius: var(--radius); }
+.glass-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* === Daily Card（核心） === */
+.daily-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  transition: all var(--transition);
+  position: relative;
+}
+.daily-card.read { opacity: 0.5; }
+.daily-card.read::after {
+  content: '✅ 已读';
+  position: absolute; top: 16px; right: 18px;
+  font-size: 11px; color: var(--green);
+}
+.daily-card-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+.daily-card .quality {
+  font-size: 11px; padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.quality-5 { background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; }
+.quality-4 { background: var(--amber-soft); color: var(--amber); }
+.quality-3 { background: var(--blue-soft); color: var(--blue); }
+.quality-2 { background: var(--gray-7); color: var(--gray-3); }
+.daily-card .category {
+  font-size: 11px; padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.cat-头条 { background: var(--red-soft); color: var(--red); }
+.cat-商业 { background: var(--amber-soft); color: var(--amber); }
+.cat-论文 { background: var(--blue-soft); color: var(--blue); }
+.cat-工程 { background: var(--green-soft); color: var(--green); }
+.cat-观点 { background: var(--purple-soft); color: var(--purple); }
+.daily-card .title {
+  font-size: 15px; font-weight: 600; flex: 1;
+  line-height: 1.4;
+}
+.daily-card .summary {
+  font-size: 13px; color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 8px 0 12px;
+  padding-left: 12px;
+  border-left: 2px solid var(--accent-soft);
+}
+.daily-card .summary strong { color: var(--accent-glow); }
+.daily-card .meta {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 11px; color: var(--text-muted);
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.daily-card .actions {
+  display: flex; gap: 6px;
+  margin-left: auto;
+}
+.daily-card .action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 11px; color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.daily-card .action-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-glow);
+  border-color: var(--accent);
+}
+.daily-card .action-btn.bookmarked { color: var(--amber); border-color: var(--amber); }
+.daily-card .action-btn.hidden { color: var(--red); }
+
+/* === Progress Bar === */
+.progress-wrap {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+.progress-bar {
+  flex: 1; height: 8px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--accent));
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.progress-text { font-size: 13px; font-weight: 600; min-width: 80px; text-align: right; }
+
+/* === Tab nav === */
+.tab-nav {
+  display: flex; gap: 4px;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  width: fit-content;
+}
+.tab-nav-item {
+  padding: 8px 18px; border: none; border-radius: 8px;
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); background: transparent;
+  transition: all var(--transition);
+}
+.tab-nav-item:hover { color: var(--text-primary); }
+.tab-nav-item.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--purple), var(--accent));
+}
+
+/* === Category header (for sections) === */
+.cat-header {
+  display: flex; align-items: center; gap: 8px;
+  margin: 20px 0 10px;
+  font-size: 14px; font-weight: 600;
+  color: var(--text-secondary);
+}
+.cat-header .cat-bar { width: 3px; height: 14px; background: currentColor; border-radius: 2px; }
+
+/* === Stats card === */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 18px; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--purple), #ec4899);
+}
+.stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 28px; font-weight: 700; margin: 4px 0; }
+.stat-suffix { font-size: 14px; color: var(--text-secondary); font-weight: 400; margin-left: 4px; }
+
+/* === Weekly Report === */
+.weekly-top {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+}
+.weekly-rank {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.weekly-rank.gold { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+.weekly-rank.silver { background: linear-gradient(135deg, #94a3b8, #cbd5e1); }
+.weekly-rank.bronze { background: linear-gradient(135deg, #b45309, #f59e0b); }
+
+/* === Trend pill === */
+.trend-pill {
+  display: inline-block; padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--purple-soft);
+  color: var(--purple);
+  font-size: 12px; font-weight: 500;
+  margin: 4px 6px 4px 0;
+}
+
+/* === Source card === */
+.source-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.source-status {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.source-status.off { background: var(--gray-6); }
+.source-info { flex: 1; }
+.source-name { font-size: 14px; font-weight: 600; }
+.source-url { font-size: 11px; color: var(--text-muted); font-family: 'Fira Code', monospace; }
+.source-stats { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* === Settings form === */
+.settings-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.settings-label {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.setting-row {
+  display: flex; align-items: center;
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { flex: 1; color: var(--text-secondary); }
+.setting-control select, .setting-control input {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+.toggle {
+  position: relative; width: 40px; height: 22px;
+  background: var(--gray-7);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.toggle::after {
+  content: ''; position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  background: var(--gray-3);
+  border-radius: 50%;
+  transition: all var(--transition);
+}
+.toggle.on { background: linear-gradient(135deg, var(--purple), var(--accent)); }
+.toggle.on::after { left: 20px; background: #fff; }
+.tag {
+  display: inline-block; padding: 4px 10px;
+  background: var(--purple-soft);
+  color: var(--purple);
+  border-radius: 14px;
+  font-size: 12px; font-weight: 500;
+  margin: 0 4px 4px 0;
+}
+.tag .x { margin-left: 6px; cursor: pointer; opacity: 0.6; }
+.tag .x:hover { opacity: 1; }
+.tag-add {
+  display: inline-block; padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 14px;
+  font-size: 12px; cursor: pointer;
+  color: var(--text-muted);
+}
+
+/* === Buttons === */
+.btn {
+  padding: 8px 16px; border: none; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: linear-gradient(135deg, var(--purple), var(--accent)); color: #fff; box-shadow: 0 0 16px rgba(139, 92, 246, 0.25); }
+.btn-primary:hover { transform: translateY(-1px); }
+.btn-ghost { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.1); }
+.btn-success { background: linear-gradient(135deg, #22c55e, #10b981); color: #fff; }
+.btn-block { width: 100%; justify-content: center; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* === Layout === */
+.flex { display: flex; }
+.flex-1 { flex: 1; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.section-title {
+  font-size: 16px; font-weight: 600; margin: 24px 0 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title .icon { color: var(--purple); }
+
+/* === Toast === */
+.toast-container { position: fixed; top: 80px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast {
+  background: var(--bg-card); backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 12px 16px; font-size: 13px; min-width: 320px;
+  display: flex; align-items: center; gap: 10px;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.toast.success { border-color: rgba(34, 197, 94, 0.4); }
+.toast.info { border-color: rgba(139, 92, 246, 0.4); }
+
+.annotation {
+  background: var(--purple-soft);
+  border-left: 3px solid var(--purple);
+  padding: 10px 14px; border-radius: 4px;
+  font-size: 12px; color: var(--text-primary);
+  margin: 12px 0;
+}
+.annotation strong { color: var(--purple); }
+
+.arch-diagram {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px; line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre; overflow-x: auto;
+}
+.arch-diagram .hl { color: var(--accent-glow); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<nav class="nav-tabs" id="navTabs">
+  <button class="nav-tab active" data-page="global">🗺️ 全局架构</button>
+  <button class="nav-tab" data-page="push">📰 今日推送</button>
+  <button class="nav-tab" data-page="daily-detail">📄 日报详情</button>
+  <button class="nav-tab" data-page="weekly">📅 周报</button>
+  <button class="nav-tab" data-page="sources">📡 信源管理</button>
+  <button class="nav-tab" data-page="settings">⚙ 推送设置</button>
+  <div class="nav-meta">
+    <span>独立模块 · 体验优化</span>
+    <span style="color: var(--text-secondary);">2026-06-22 设计稿</span>
+  </div>
+</nav>
+
+<!-- ============================== Global Architecture ============================== -->
+<div class="page active" data-page-content="global">
+  <div class="page-header">
+    <div class="page-title">🗺️ 全局架构 <span class="page-tag new">新独立模块</span></div>
+    <div class="page-desc">AI 推送从面试题库设计剥离，独立成模块。<strong>核心：每日/每周总结 + 体验优化</strong>。不调用任何其他模块。</div>
+  </div>
+
+  <div class="glass">
+    <div class="glass-title"><span class="glass-title-icon">📊</span>系统总览</div>
+    <div class="arch-diagram">
+<span class="hl">┌─────────────────────────────────────────────────────────────────────┐</span>
+<span class="hl">│                  AI 推送（独立模块 · 体验优先）                       │</span>
+<span class="hl">│                                                                     │</span>
+<span class="hl">│  ┌────────────┐                                                    │</span>
+<span class="hl">│  │ ① 每日日报  │  早上 8:00 推送 · 10 条精选 · LLM 摘要           │</span>
+<span class="hl">│  └─────┬──────┘                                                    │</span>
+<span class="hl">│        │                                                            │</span>
+<span class="hl">│  ┌──────▼──────┐   ┌────────────┐                                │</span>
+<span class="hl">│  │ ② 每周周报  │   │ ③ 每月月报  │                                │</span>
+<span class="hl">│  │  周一 8:00  │   │  每月 1 号  │                                │</span>
+<span class="hl">│  └──────┬─────┘   └──────┬─────┘                                │</span>
+<span class="hl">│         │                │                                       │</span>
+<span class="hl">│         └───────┬────────┘                                       │</span>
+<span class="hl">│                 │                                                │</span>
+<span class="hl">│         ┌───────▼──────────────────────────────┐                │</span>
+<span class="hl">│         │ ④ 核心：AI 选题 + 摘要                  │                │</span>
+<span class="hl">│         │  • RSS 抓取（4 源）                     │                │</span>
+<span class="hl">│         │  • LLM 选题（基于用户偏好）             │                │</span>
+<span class="hl">│         │  • LLM 摘要（3-5 行）                   │                │</span>
+<span class="hl">│         │  • 排版优化（按主题分类）               │                │</span>
+<span class="hl">│         └───────┬──────────────────────────────┘                │</span>
+<span class="hl">│                 │                                                │</span>
+<span class="hl">│         ┌───────▼──────────────────────────────┐                │</span>
+<span class="hl">│         │ ⑤ 推送渠道                              │                │</span>
+<span class="hl">│         │  • 站内（/push 页面）                   │                │</span>
+<span class="hl">│         │  • 邮件（每日 8:00 触发）               │                │</span>
+<span class="hl">│         │  • macOS notification（可选）            │                │</span>
+<span class="hl">│         └────────────────────────────────────────┘                │</span>
+<span class="hl">│                                                                     │</span>
+<span class="hl">└─────────────────────────────────────────────────────────────────────┘</span>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <strong>📌 独立性原则：</strong>AI 推送<strong>不调用</strong>任何其他模块的 API、<strong>不读</strong>任何其他模块的表。
+    唯一全局：<code>profiles.digest_stats</code>（已读/收藏/阅读时长）由 digest 模块自己写。
+  </div>
+
+  <div class="section-title"><span class="icon">🎯</span>体验优化目标</div>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-label">读完率</div>
+      <div class="stat-value" style="color: var(--green);">>70<span class="stat-suffix">%</span></div>
+      <div class="text-muted" style="font-size: 11px;">不是打开率，是真读完</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">每日阅读</div>
+      <div class="stat-value">5-10<span class="stat-suffix">分钟</span></div>
+      <div class="text-muted" style="font-size: 11px;">目标阅读时长</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">收藏率</div>
+      <div class="stat-value" style="color: var(--amber);">>15<span class="stat-suffix">%</span></div>
+      <div class="text-muted" style="font-size: 11px;">看到好内容会收藏</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">周报打开</div>
+      <div class="stat-value" style="color: var(--purple);">>80<span class="stat-suffix">%</span></div>
+      <div class="text-muted" style="font-size: 11px;">每周必看</div>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="icon">🔗</span>路由结构</div>
+  <div class="glass">
+    <div class="arch-diagram">
+/push                    ← 总览（5 tab：日报/周报/月报/信源/设置）
+/push/daily/[date]      ← 某天日报详情
+/push/weekly/[week]      ← 某周周报详情
+/push/monthly/[month]    ← 某月月报详情
+/push/sources            ← 信源管理（启停 RSS 源）
+/push/settings            ← 推送设置（时间/渠道/标签）
+/push/bookmarks          ← 我的收藏
+    </div>
+  </div>
+</div>
+
+<!-- ============================== /push (总览) ============================== -->
+<div class="page" data-page-content="push">
+  <div class="page-header">
+    <div class="page-title">📰 今日推送 <code style="font-size: 16px; color: var(--accent-glow);">/push</code></div>
+    <div class="page-desc">5 tab 切换。默认显示"今日日报"。</div>
+  </div>
+
+  <div class="toast-container">
+    <div class="toast success">✅ 设置已保存 · 明天 7:30 见</div>
+  </div>
+
+  <!-- 5 tab nav -->
+  <div class="tab-nav">
+    <button class="tab-nav-item active">📰 日报</button>
+    <button class="tab-nav-item">📅 周报</button>
+    <button class="tab-nav-item">🗓 月报</button>
+    <button class="tab-nav-item">📡 信源</button>
+    <button class="tab-nav-item">⚙ 设置</button>
+  </div>
+
+  <!-- 进度条 -->
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 40%;"></div>
+    </div>
+    <div class="progress-text">4 / 10 已读</div>
+    <div class="text-muted" style="font-size: 12px;">5 分钟读完</div>
+  </div>
+
+  <!-- 🔥 头条 -->
+  <div class="cat-header" style="color: var(--red);">
+    <div class="cat-bar"></div>🔥 头条（3 条）
+  </div>
+
+  <div class="daily-card">
+    <div class="daily-card-head">
+      <span class="quality quality-5">⭐ 4.8</span>
+      <span class="category cat-头条">头条</span>
+      <div class="title">OpenAI 发布 GPT-5 多模态版</div>
+    </div>
+    <div class="summary">
+      相比 <strong>4o 上下文提升到 2M token</strong>，新增视觉理解能力。但 <strong>30$/月</strong>定价引发争议 · 国产模型可能加速跟进。
+    </div>
+    <div class="meta">
+      <span>来源: 量子位</span>
+      <span>3 分钟</span>
+      <div class="actions">
+        <button class="action-btn bookmarked">💾 已收藏</button>
+        <button class="action-btn">🔗 分享</button>
+        <button class="action-btn">🔇</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-card">
+    <div class="daily-card-head">
+      <span class="quality quality-4">⭐ 4.5</span>
+      <span class="category cat-头条">头条</span>
+      <div class="title">MCP 协议标准化推进</div>
+    </div>
+    <div class="summary">
+      <strong>Anthropic 牵头 + 6 家公司</strong>联合推动 MCP 成为行业标准 · 利好开发者生态。
+    </div>
+    <div class="meta">
+      <span>来源: HackerNews</span>
+      <span>2 分钟</span>
+      <div class="actions">
+        <button class="action-btn">💾 收藏</button>
+        <button class="action-btn">🔗</button>
+        <button class="action-btn">🔇</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-card read">
+    <div class="daily-card-head">
+      <span class="quality quality-4">⭐ 4.2</span>
+      <span class="category cat-头条">头条</span>
+      <div class="title">Claude 4.7 性能提升</div>
+    </div>
+    <div class="summary">
+      推理速度 +30%，长文本理解提升。OpenAI 追赶压力大。
+    </div>
+    <div class="meta">
+      <span>来源: 36氪</span>
+      <span>2 分钟</span>
+      <div class="actions">
+        <button class="action-btn">💾</button>
+        <button class="action-btn">🔗</button>
+        <button class="action-btn">🔇</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🏢 商业 -->
+  <div class="cat-header" style="color: var(--amber);">
+    <div class="cat-bar"></div>🏢 商业（2 条）
+  </div>
+
+  <div class="daily-card">
+    <div class="daily-card-head">
+      <span class="quality quality-3">⭐ 3.5</span>
+      <span class="category cat-商业">商业</span>
+      <div class="title">某 AI 公司融资 5 亿美元</div>
+    </div>
+    <div class="summary">
+      估值达 30 亿美元，主要用于 Agent 平台开发。投资方包括红杉。
+    </div>
+    <div class="meta">
+      <span>来源: 36氪</span>
+      <span>2 分钟</span>
+      <div class="actions">
+        <button class="action-btn">💾</button>
+        <button class="action-btn">🔗</button>
+        <button class="action-btn">🔇</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-card read">
+    <div class="daily-card-head">
+      <span class="quality quality-3">⭐ 3.0</span>
+      <span class="category cat-商业">商业</span>
+      <div class="title">某大厂内部 AI 部门调整</div>
+    </div>
+    <div class="summary">
+      重组 AI 团队，重点转向 B 端市场。
+    </div>
+    <div class="meta">
+      <span>来源: 36氪</span>
+      <span>1 分钟</span>
+    </div>
+  </div>
+
+  <!-- 📚 论文 -->
+  <div class="cat-header" style="color: var(--blue);">
+    <div class="cat-bar"></div>📚 论文（2 条）
+  </div>
+
+  <div class="daily-card">
+    <div class="daily-card-head">
+      <span class="quality quality-4">⭐ 4.3</span>
+      <span class="category cat-论文">论文</span>
+      <div class="title">arXiv: Contextual Memory for LLM Agents</div>
+    </div>
+    <div class="summary">
+      提出 <strong>分层记忆架构</strong>，短期/长期/语义三层。Agent 长期任务性能 +45%。
+    </div>
+    <div class="meta">
+      <span>来源: arXiv cs.AI</span>
+      <span>5 分钟</span>
+      <div class="actions">
+        <button class="action-btn">💾</button>
+        <button class="action-btn">🔗</button>
+        <button class="action-btn">🔇</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-card">
+    <div class="daily-card-head">
+      <span class="quality quality-3">⭐ 3.5</span>
+      <span class="category cat-论文">论文</span>
+      <div class="title">arXiv: Multi-Agent Debate Framework</div>
+    </div>
+    <div class="summary">
+      多 Agent 对辩在复杂推理任务上超越单 Agent · 12% 提升。
+    </div>
+    <div class="meta">
+      <span>来源: arXiv cs.AI</span>
+      <span>4 分钟</span>
+    </div>
+  </div>
+
+  <!-- 底部操作 -->
+  <div class="flex gap-2 mt-4">
+    <button class="btn btn-success btn-block" style="flex: 2;">🎉 全部已读 · 明天 8:00 继续</button>
+    <button class="btn btn-ghost" style="flex: 1;">📄 写回 Obsidian</button>
+  </div>
+
+  <!-- 周报 + 月报入口 -->
+  <div class="section-title"><span class="icon">📅</span>本周周报（W25 6/16-6/22）</div>
+  <div class="glass">
+    <div class="flex" style="justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 16px; font-weight: 600;">📊 8 条精选 · 8 分钟读完</div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">🏆 5 大事件 · 📈 3 个趋势 · 🔮 下周展望</div>
+      </div>
+      <button class="btn btn-primary">📖 打开周报 →</button>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="icon">🗓</span>本月月报（2026-06）</div>
+  <div class="glass">
+    <div class="flex" style="justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 16px; font-weight: 600;">📊 12 条精选 · 12 分钟</div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">🏆 月度 Top 3 · 📈 4 大趋势 · 📚 论文速读</div>
+      </div>
+      <button class="btn btn-primary">📖 打开月报 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== /push/daily/[date] ============================== -->
+<div class="page" data-page-content="daily-detail">
+  <div class="page-header">
+    <div class="page-title">📄 日报详情 <code style="font-size: 16px; color: var(--accent-glow);">/push/daily/2026-06-22</code></div>
+    <div class="page-desc">某天日报详情。已读部分变灰，可"全部已读"。</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 100%; background: var(--green);"></div>
+    </div>
+    <div class="progress-text" style="color: var(--green);">10 / 10 已读 ✓</div>
+    <div class="text-muted" style="font-size: 12px;">🎉 今日读完</div>
+  </div>
+
+  <div class="daily-card read">
+    <div class="daily-card-head">
+      <span class="quality quality-5">⭐ 4.8</span>
+      <span class="category cat-头条">头条</span>
+      <div class="title">OpenAI 发布 GPT-5 多模态版</div>
+    </div>
+    <div class="summary">相比 4o 上下文提升到 2M token，新增视觉理解能力。但 30$/月定价引发争议。</div>
+    <div class="meta">
+      <span>来源: 量子位</span>
+      <span>3 分钟</span>
+      <div class="actions">
+        <button class="action-btn bookmarked">💾</button>
+        <button class="action-btn">🔗</button>
+        <button class="action-btn">🔇</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-card read">
+    <div class="daily-card-head">
+      <span class="quality quality-4">⭐ 4.5</span>
+      <span class="category cat-头条">头条</span>
+      <div class="title">MCP 协议标准化推进</div>
+    </div>
+    <div class="summary">Anthropic 牵头 + 6 家公司联合推动 MCP 成为行业标准。</div>
+    <div class="meta">
+      <span>来源: HackerNews</span>
+      <span>2 分钟</span>
+    </div>
+  </div>
+
+  <div class="daily-card read">
+    <div class="daily-card-head">
+      <span class="quality quality-4">⭐ 4.2</span>
+      <span class="category cat-论文">论文</span>
+      <div class="title">arXiv: Contextual Memory for LLM Agents</div>
+    </div>
+    <div class="summary">提出分层记忆架构，Agent 长期任务性能 +45%。</div>
+    <div class="meta">
+      <span>来源: arXiv cs.AI</span>
+      <span>5 分钟</span>
+    </div>
+  </div>
+
+  <!-- ... more cards ... -->
+
+  <div class="flex gap-2 mt-4">
+    <button class="btn btn-ghost">📄 写回 Obsidian</button>
+    <button class="btn btn-ghost">↻ 重新生成摘要</button>
+    <button class="btn btn-ghost">⬇ 导出为 Markdown</button>
+  </div>
+</div>
+
+<!-- ============================== /push/weekly ============================== -->
+<div class="page" data-page-content="weekly">
+  <div class="page-header">
+    <div class="page-title">📅 周报 <code style="font-size: 16px; color: var(--accent-glow);">/push/weekly/2026-W25</code></div>
+    <div class="page-desc">本周周报。5 大事件 + 3 个趋势 + 下周展望。8 分钟读完。</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 62%;"></div>
+    </div>
+    <div class="progress-text">5 / 8 已读</div>
+    <div class="text-muted" style="font-size: 12px;">剩余 3 分钟</div>
+  </div>
+
+  <div class="section-title"><span class="icon">🏆</span>本周 5 大事件（按影响力排序）</div>
+
+  <div class="weekly-top">
+    <div class="weekly-rank gold">1</div>
+    <span class="quality quality-5">⭐ 4.9</span>
+    <div class="flex-1">
+      <div style="font-size: 14px; font-weight: 600;">OpenAI 发布 GPT-5 多模态版</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">改变行业格局 · 上下文扩到 2M token</div>
+    </div>
+    <span class="trend-pill">🔥 头条</span>
+  </div>
+
+  <div class="weekly-top">
+    <div class="weekly-rank silver">2</div>
+    <span class="quality quality-4">⭐ 4.7</span>
+    <div class="flex-1">
+      <div style="font-size: 14px; font-weight: 600;">MCP 协议标准化</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Anthropic 牵头 · 利好开发者</div>
+    </div>
+    <span class="trend-pill">🔥 头条</span>
+  </div>
+
+  <div class="weekly-top">
+    <div class="weekly-rank bronze">3</div>
+    <span class="quality quality-4">⭐ 4.5</span>
+    <div class="flex-1">
+      <div style="font-size: 14px; font-weight: 600;">Claude 4.7 性能提升</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">推理 +30% · 长文本提升</div>
+    </div>
+    <span class="trend-pill">🔥 头条</span>
+  </div>
+
+  <div class="weekly-top">
+    <div class="weekly-rank">4</div>
+    <span class="quality quality-4">⭐ 4.3</span>
+    <div class="flex-1">
+      <div style="font-size: 14px; font-weight: 600;">某开源 Agent 框架 1.0</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">生态突破</div>
+    </div>
+  </div>
+
+  <div class="weekly-top">
+    <div class="weekly-rank">5</div>
+    <span class="quality quality-4">⭐ 4.2</span>
+    <div class="flex-1">
+      <div style="font-size: 14px; font-weight: 600;">arXiv: Contextual Memory</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">学术突破</div>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="icon">📈</span>3 个趋势（LLM 分析）</div>
+  <div class="glass">
+    <div style="font-size: 13px; line-height: 1.8;">
+      <div>• <strong>多模态成为标配</strong>：本周 5/10 条都涉及多模态能力</div>
+      <div>• <strong>Agent 框架白热化</strong>：4 款新框架发布，竞争激烈</div>
+      <div>• <strong>国产模型追赶</strong>：DeepSeek V4 vs GPT-5，差距缩小到 5%</div>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="icon">🔮</span>下周展望</div>
+  <div class="glass">
+    <div style="font-size: 13px; line-height: 1.8;">
+      <div>• 6-25 某发布会（待定）</div>
+      <div>• 6-26 某论文 deadline</div>
+      <div>• 6-28 某大厂季度财报</div>
+    </div>
+  </div>
+
+  <div class="flex gap-2 mt-4">
+    <button class="btn btn-ghost">📊 对比上周</button>
+    <button class="btn btn-ghost">📥 收藏本周</button>
+    <button class="btn btn-primary">📄 写回 Obsidian</button>
+  </div>
+</div>
+
+<!-- ============================== /push/sources ============================== -->
+<div class="page" data-page-content="sources">
+  <div class="page-header">
+    <div class="page-title">📡 信源管理 <code style="font-size: 16px; color: var(--accent-glow);">/push/sources</code></div>
+    <div class="page-desc">4 个 RSS 源 · 3 启用 · 1 禁用。停用后明天不抓取。</div>
+  </div>
+
+  <div class="source-card">
+    <div class="source-status"></div>
+    <div class="source-info">
+      <div class="source-name">量子位</div>
+      <div class="source-url">https://www.qbitai.com/feed</div>
+      <div class="source-stats">最近抓取: 6-22 07:00  ·  本月 80 条</div>
+    </div>
+    <button class="btn btn-ghost btn-sm">⚙ 配置</button>
+    <button class="btn btn-ghost btn-sm">⏸ 停用</button>
+  </div>
+
+  <div class="source-card">
+    <div class="source-status"></div>
+    <div class="source-info">
+      <div class="source-name">36氪</div>
+      <div class="source-url">https://36kr.com/feed</div>
+      <div class="source-stats">最近抓取: 6-22 07:00  ·  本月 60 条</div>
+    </div>
+    <button class="btn btn-ghost btn-sm">⚙ 配置</button>
+    <button class="btn btn-ghost btn-sm">⏸ 停用</button>
+  </div>
+
+  <div class="source-card">
+    <div class="source-status"></div>
+    <div class="source-info">
+      <div class="source-name">HuggingFace Papers</div>
+      <div class="source-url">https://huggingface.co/api/daily_papers</div>
+      <div class="source-stats">最近抓取: 6-22 07:00  ·  本月 31 条</div>
+    </div>
+    <button class="btn btn-ghost btn-sm">⚙ 配置</button>
+    <button class="btn btn-ghost btn-sm">⏸ 停用</button>
+  </div>
+
+  <div class="source-card">
+    <div class="source-status off"></div>
+    <div class="source-info">
+      <div class="source-name">arXiv cs.AI</div>
+      <div class="source-url">https://rss.arxiv.org/rss/cs.AI</div>
+      <div class="source-stats">停用于 6-15</div>
+    </div>
+    <button class="btn btn-primary btn-sm">✅ 启用</button>
+  </div>
+
+  <button class="btn btn-primary btn-block mt-3">+ 添加自定义 RSS 源</button>
+</div>
+
+<!-- ============================== /push/settings ============================== -->
+<div class="page" data-page-content="settings">
+  <div class="page-header">
+    <div class="page-title">⚙ 推送设置 <code style="font-size: 16px; color: var(--accent-glow);">/push/settings</code></div>
+    <div class="page-desc">用户自选推送时间 / 渠道 / 标签 / 频率。</div>
+  </div>
+
+  <!-- 推送时间 -->
+  <div class="settings-group">
+    <div class="settings-label">⏰ 推送时间</div>
+    <div class="setting-row">
+      <div class="setting-label">每日日报</div>
+      <div class="setting-control"><input type="time" value="07:30"></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">每周周报</div>
+      <div class="setting-control"><select><option>周一 07:30</option></select></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">每月月报</div>
+      <div class="setting-control"><select><option>每月 1 号 07:30</option></select></div>
+    </div>
+  </div>
+
+  <!-- 推送频率 -->
+  <div class="settings-group">
+    <div class="settings-label">📅 推送频率</div>
+    <div class="setting-row">
+      <div class="setting-label">每日日报</div>
+      <div class="setting-control"><div class="toggle on"></div></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">每周周报</div>
+      <div class="setting-control"><div class="toggle on"></div></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">每月月报</div>
+      <div class="setting-control"><div class="toggle on"></div></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">周末暂停</div>
+      <div class="setting-control"><div class="toggle"></div></div>
+    </div>
+  </div>
+
+  <!-- 推送渠道 -->
+  <div class="settings-group">
+    <div class="settings-label">📧 推送渠道</div>
+    <div class="setting-row">
+      <div class="setting-label">站内（/push 页面）</div>
+      <div class="setting-control"><div class="toggle on"></div></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">邮件（user@example.com）</div>
+      <div class="setting-control"><div class="toggle on"></div></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">macOS notification</div>
+      <div class="setting-control"><div class="toggle"></div></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">微信 / 飞书（P1 阶段）</div>
+      <div class="setting-control"><div class="toggle" style="opacity: 0.4;"></div></div>
+    </div>
+  </div>
+
+  <!-- 关注标签 -->
+  <div class="settings-group">
+    <div class="settings-label">🏷 关注标签（影响 AI 选题权重）</div>
+    <div style="padding: 8px 0;">
+      <span class="tag">Agent <span class="x">×</span></span>
+      <span class="tag">RAG <span class="x">×</span></span>
+      <span class="tag">国产模型 <span class="x">×</span></span>
+      <span class="tag">Claude <span class="x">×</span></span>
+      <span class="tag-add">+ 添加</span>
+    </div>
+  </div>
+
+  <!-- 屏蔽标签 -->
+  <div class="settings-group">
+    <div class="settings-label">🚫 屏蔽标签</div>
+    <div style="padding: 8px 0;">
+      <span class="tag">元宇宙 <span class="x">×</span></span>
+      <span class="tag">区块链 <span class="x">×</span></span>
+      <span class="tag-add">+ 添加</span>
+    </div>
+  </div>
+
+  <!-- 每日精选条数 -->
+  <div class="settings-group">
+    <div class="settings-label">📏 每日精选条数</div>
+    <div style="display: flex; gap: 16px; padding: 8px 0;">
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="radio" name="count"> 5 条
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="radio" name="count" checked> 10 条
+      </label>
+      <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <input type="radio" name="count"> 20 条
+      </label>
+    </div>
+  </div>
+
+  <div class="flex gap-2 mt-4">
+    <button class="btn btn-primary btn-block" style="flex: 2;">💾 保存设置</button>
+    <button class="btn btn-ghost">↻ 恢复默认</button>
+  </div>
+</div>
+
+<!-- ============================== Scripts ============================== -->
+<script>
+const tabs = document.querySelectorAll('.nav-tab');
+const pages = document.querySelectorAll('.page');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.page;
+    tabs.forEach(t => t.classList.remove('active'));
+    pages.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector(`[data-page-content="${target}"]`).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+document.querySelectorAll('.tab-nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    item.parentElement.querySelectorAll('.tab-nav-item').forEach(b => b.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => t.classList.toggle('on'));
+});
+document.querySelectorAll('.action-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (btn.classList.contains('bookmarked')) {
+      btn.classList.remove('bookmarked');
+      btn.textContent = btn.textContent.replace('已收藏', '收藏');
+    } else {
+      btn.classList.add('bookmarked');
+    }
+  });
+});
+setTimeout(() => {
+  document.querySelectorAll('.toast-container').forEach(c => {
+    c.style.transition = 'opacity 0.5s';
+    c.style.opacity = '0';
+    setTimeout(() => c.innerHTML = '', 500);
+  });
+}, 3000);
+</script>
+
+</body>
+</html>

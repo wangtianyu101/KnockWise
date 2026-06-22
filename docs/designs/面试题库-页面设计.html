@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>面试题库 — 页面设计图（4 大独立模块 · 2026-06-18）</title>
+<style>
+:root {
+  --bg-deep: #050914;
+  --bg-surface: #0c1024;
+  --bg-card: rgba(15, 20, 45, 0.7);
+  --bg-card-hover: rgba(20, 26, 56, 0.85);
+  --border-subtle: rgba(99, 102, 241, 0.12);
+  --border-glow: rgba(99, 102, 241, 0.35);
+  --accent: #6366f1;
+  --accent-glow: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.15);
+  --accent-2: #7c3aed;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --green: #22c55e;
+  --green-soft: rgba(34, 197, 94, 0.15);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+  --red: #ef4444;
+  --red-soft: rgba(239, 68, 68, 0.15);
+  --blue: #3b82f6;
+  --blue-soft: rgba(59, 130, 246, 0.15);
+  --gray-3: #94a3b8;
+  --gray-5: #475569;
+  --gray-6: #334155;
+  --gray-7: #1e293b;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --blur: 20px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Fira Sans', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 80% 60% at 30% 0%, rgba(99, 102, 241, 0.06), transparent),
+              radial-gradient(ellipse 60% 50% at 80% 100%, rgba(129, 140, 248, 0.04), transparent);
+}
+.nav-tabs {
+  display: flex; gap: 6px;
+  padding: 14px 24px;
+  background: rgba(12, 16, 36, 0.85);
+  backdrop-filter: blur(var(--blur));
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky; top: 0; z-index: 100;
+  flex-wrap: wrap;
+}
+.nav-tab {
+  padding: 9px 18px; border: none; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); background: transparent;
+  transition: all var(--transition);
+}
+.nav-tab:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.04); }
+.nav-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+.nav-meta { margin-left: auto; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 12px; }
+.page { display: none; padding: 32px 24px 80px; max-width: 1320px; margin: 0 auto; position: relative; z-index: 1; }
+.page.active { display: block; }
+.page-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle); }
+.page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.page-desc { font-size: 13px; color: var(--text-secondary); }
+.page-tag {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; font-size: 11px; margin-left: 8px; vertical-align: middle;
+}
+.page-tag.new { background: var(--green-soft); color: var(--green); }
+.page-tag.mod { background: var(--amber-soft); color: var(--amber); }
+.glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all var(--transition);
+}
+.glass:hover { border-color: var(--border-glow); }
+.glass-sm { padding: 14px; border-radius: var(--radius); }
+.glass-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px 18px; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  opacity: 0.6;
+}
+.stat-card.stat-learn::before { background: linear-gradient(90deg, #22c55e, #10b981); }
+.stat-card.stat-knowledge::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
+.stat-card.stat-digest::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+.stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 28px; font-weight: 700; margin: 4px 0; }
+.stat-suffix { font-size: 14px; color: var(--text-secondary); font-weight: 400; margin-left: 4px; }
+.stat-trend { font-size: 12px; }
+.stat-trend.up { color: var(--green); }
+.stat-trend.down { color: var(--red); }
+.module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.module-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 22px; cursor: pointer;
+  transition: all var(--transition);
+  position: relative; overflow: hidden;
+}
+.module-card:hover {
+  border-color: var(--border-glow);
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+}
+.module-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+.module-card.m2::before { background: linear-gradient(90deg, #22c55e, #10b981); }
+.module-card.m3::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
+.module-card.m4::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+.module-icon { font-size: 32px; margin-bottom: 8px; }
+.module-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.module-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+.module-badge {
+  display: inline-block; padding: 3px 10px;
+  border-radius: 6px; font-size: 11px; font-weight: 500;
+  background: var(--accent-soft); color: var(--accent-glow);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 12px;
+}
+.module-badge.green { background: var(--green-soft); color: var(--green); border-color: rgba(34, 197, 94, 0.2); }
+.module-badge.amber { background: var(--amber-soft); color: var(--amber); border-color: rgba(245, 158, 11, 0.2); }
+.module-badge.purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border-color: rgba(139, 92, 246, 0.2); }
+.module-cta { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--accent-glow); font-weight: 500; }
+
+/* Tab nav (within learn module) */
+.tab-nav {
+  display: flex; gap: 4px;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  width: fit-content;
+}
+.tab-nav-item {
+  padding: 8px 18px; border: none; border-radius: 8px;
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); background: transparent;
+  transition: all var(--transition);
+}
+.tab-nav-item:hover { color: var(--text-primary); }
+.tab-nav-item.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+}
+
+.q-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 8px;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.q-card:hover { border-color: var(--border-glow); background: var(--bg-card-hover); }
+.q-num { font-size: 12px; color: var(--text-muted); font-family: 'Fira Code', monospace; min-width: 50px; }
+.q-title { font-size: 14px; font-weight: 500; flex: 1; }
+.q-meta { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.q-icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-muted); padding: 4px; }
+.q-icon-btn:hover { color: var(--accent-glow); }
+.q-icon-btn.active { color: var(--amber); }
+.badge {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 6px; font-size: 11px; font-weight: 500; white-space: nowrap;
+}
+.badge-new { background: var(--gray-7); color: var(--gray-3); }
+.badge-learning { background: var(--blue-soft); color: var(--blue); }
+.badge-mastered { background: var(--green-soft); color: var(--green); }
+.badge-skipped { background: var(--gray-7); color: var(--gray-5); text-decoration: line-through; }
+.badge-weak { background: var(--red-soft); color: var(--red); }
+.badge-review { background: var(--amber-soft); color: var(--amber); }
+.difficulty { color: var(--amber); font-size: 12px; }
+.filter-bar {
+  display: flex; gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  flex-wrap: wrap; align-items: center;
+}
+.filter-search {
+  flex: 1; min-width: 200px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px; color: var(--text-primary); font-size: 13px; outline: none;
+}
+.filter-search:focus { border-color: var(--accent); }
+.filter-select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px; color: var(--text-primary); font-size: 13px; cursor: pointer; outline: none;
+}
+.btn {
+  padding: 8px 16px; border: none; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 0 16px rgba(99, 102, 241, 0.25); }
+.btn-primary:hover { box-shadow: 0 0 24px rgba(99, 102, 241, 0.45); transform: translateY(-1px); }
+.btn-ghost { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.1); }
+.btn-success { background: linear-gradient(135deg, #22c55e, #10b981); color: #fff; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 6px 8px; }
+.btn-block { width: 100%; justify-content: center; }
+.toast-container { position: fixed; top: 80px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast {
+  background: var(--bg-card); backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 12px 16px; font-size: 13px; min-width: 280px;
+  display: flex; align-items: center; gap: 10px;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.toast.success { border-color: rgba(34, 197, 94, 0.4); }
+.toast.error { border-color: rgba(239, 68, 68, 0.4); }
+.progress { width: 100%; height: 6px; background: var(--bg-surface); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 3px; }
+.progress-bar-wrap { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+.split-30-70 { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+.split-60-40 { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
+@media (max-width: 1100px) {
+  .split-30-70, .split-60-40 { grid-template-columns: 1fr; }
+}
+.q-detail-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+.q-detail-left, .q-detail-right { display: flex; flex-direction: column; gap: 16px; }
+.q-text { font-size: 18px; font-weight: 600; line-height: 1.5; }
+.q-section { margin-top: 12px; }
+.q-section-title {
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+}
+.q-list { padding-left: 20px; color: var(--text-secondary); font-size: 14px; }
+.q-list li { margin-bottom: 4px; }
+.q-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.q-tag { padding: 2px 8px; background: var(--accent-soft); color: var(--accent-glow); border-radius: 4px; font-size: 11px; }
+.answer-editor {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 14px;
+  min-height: 200px;
+  font-size: 14px; line-height: 1.7;
+  color: var(--text-secondary);
+  font-family: 'Fira Code', monospace;
+}
+.answer-counter { font-size: 12px; color: var(--text-muted); margin-top: 6px; text-align: right; }
+.mastery-switcher { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+.mastery-btn {
+  padding: 10px 8px; border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary); font-size: 13px; cursor: pointer;
+  text-align: center; transition: all var(--transition);
+}
+.mastery-btn:hover { border-color: var(--border-glow); color: var(--text-primary); }
+.mastery-btn.active { background: var(--accent-soft); color: var(--accent-glow); border-color: var(--accent); }
+.mastery-btn .icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+/* QA chat */
+.qa-history { max-height: 600px; overflow-y: auto; }
+.qa-history-item {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid transparent;
+}
+.qa-history-item:hover { background: rgba(99, 102, 241, 0.08); }
+.qa-history-item.active { background: var(--accent-soft); border-color: var(--accent); }
+.qa-history-title { font-weight: 500; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qa-history-meta { color: var(--text-muted); font-size: 11px; display: flex; justify-content: space-between; }
+.qa-chat-area { display: flex; flex-direction: column; height: 600px; }
+.qa-messages { flex: 1; overflow-y: auto; padding: 16px; }
+.qa-msg { display: flex; gap: 10px; margin-bottom: 16px; }
+.qa-msg .avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.qa-msg.user .avatar { background: var(--accent-soft); color: var(--accent-glow); }
+.qa-msg.ai .avatar { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+.qa-msg-body {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 10px 14px; font-size: 13px; line-height: 1.6;
+  flex: 1;
+}
+.qa-msg.user .qa-msg-body { background: var(--accent-soft); }
+.qa-input-area { border-top: 1px solid var(--border-subtle); padding: 12px; }
+.qa-input { width: 100%; min-height: 60px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text-primary); font-size: 13px; outline: none; resize: vertical; }
+.qa-context { padding: 10px 12px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 11px; color: var(--text-muted); }
+.qa-context-title { font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+
+/* Review */
+.review-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; }
+.review-item input[type=checkbox] { width: 16px; height: 16px; }
+
+/* Misc */
+.divider { height: 1px; background: var(--border-subtle); margin: 16px 0; }
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+.flex { display: flex; }
+.flex-1 { flex: 1; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.section-title {
+  font-size: 16px; font-weight: 600; margin: 24px 0 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title .icon { color: var(--accent); }
+.arch-diagram {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px; line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre; overflow-x: auto;
+}
+.arch-diagram .hl { color: var(--accent-glow); font-weight: 600; }
+.annotation {
+  background: var(--amber-soft);
+  border-left: 3px solid var(--amber);
+  padding: 10px 14px; border-radius: 4px;
+  font-size: 12px; color: var(--text-primary);
+  margin: 12px 0;
+}
+.annotation strong { color: var(--amber); }
+</style>
+</head>
+<body>
+
+<nav class="nav-tabs" id="navTabs">
+  <button class="nav-tab active" data-page="global">🗺️ 全局架构</button>
+  <button class="nav-tab" data-page="dashboard">📊 Dashboard</button>
+  <button class="nav-tab" data-page="learn">📖 学（learn）</button>
+  <button class="nav-tab" data-page="learn-detail">✍️ 答题页</button>
+  <button class="nav-tab" data-page="review">🔁 复习</button>
+  <button class="nav-tab" data-page="qa">💬 问答</button>
+  <button class="nav-tab" data-page="digest">📰 AI 推送</button>
+  <div class="nav-meta">
+    <span>4 大独立模块</span>
+    <span style="color: var(--text-secondary);">2026-06-18 设计稿</span>
+  </div>
+</nav>
+
+<!-- ============================== Global Architecture ============================== -->
+<div class="page active" data-page-content="global">
+  <div class="page-header">
+    <div class="page-title">🗺️ 全局架构 <span class="page-tag new">重构</span></div>
+    <div class="page-desc">4 大独立模块，互相不混。点击上方 tab 查看每个页面的设计。</div>
+  </div>
+
+  <div class="glass">
+    <div class="glass-title"><span class="glass-title-icon">📊</span>4 大独立模块关系</div>
+    <div class="arch-diagram">
+<span class="hl">┌─────────────────────────────────────────────────────────────────────┐</span>
+<span class="hl">│                       DevBrain — 4 大独立模块                          │</span>
+<span class="hl">│                                                                     │</span>
+<span class="hl">│  ┌─────────────────┐   ┌──────────────────────┐                    │</span>
+<span class="hl">│  │ ① 面试           │   │ ② 学习复习（1 模块 3 tab）│                    │</span>
+<span class="hl">│  │                 │   │                       │                    │</span>
+<span class="hl">│  │ /interview/*   │   │ /learn                │                    │</span>
+<span class="hl">│  │ (不变)         │   │ /learn/[qid]          │                    │</span>
+<span class="hl">│  │                 │   │ /review               │                    │</span>
+<span class="hl">│  │ ❌ 不含:        │   │ /qa                   │                    │</span>
+<span class="hl">│  │ "建议重做的题"  │   │                       │                    │</span>
+<span class="hl">│  │ "相关笔记"      │   │ ❌ 不含:               │                    │</span>
+<span class="hl">│  └─────────────────┘   │ "面试相关"             │                    │</span>
+<span class="hl">│                        │ "知识库关联"           │                    │</span>
+<span class="hl">│                        │ "推送数据"             │                    │</span>
+<span class="hl">│                        └──────────────────────┘                    │</span>
+<span class="hl">│                                                                     │</span>
+<span class="hl">│  ┌─────────────────┐   ┌──────────────────────┐                    │</span>
+<span class="hl">│  │ ③ 知识库         │   │ ④ AI 推送              │                    │</span>
+<span class="hl">│  │                 │   │                       │                    │</span>
+<span class="hl">│  │ /knowledge      │   │ /digest                │                    │</span>
+<span class="hl">│  │ (不变)         │   │ /digest/sources        │                    │</span>
+<span class="hl">│  │                 │   │                       │                    │</span>
+<span class="hl">│  │ ❌ 不含:        │   │ ❌ 不含:               │                    │</span>
+<span class="hl">│  │ "建议写笔记"    │   │ "今日推荐题"           │                    │</span>
+<span class="hl">│  │ "关联题目"      │   │ "学习日报"             │                    │</span>
+<span class="hl">│  └─────────────────┘   │ "错题提醒"             │                    │</span>
+<span class="hl">│                        └──────────────────────┘                    │</span>
+<span class="hl">│                                                                     │</span>
+<span class="hl">└─────────────────────────────────────────────────────────────────────┘</span>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <strong>📌 独立性原则：</strong>
+    每个模块是闭环的。模块间<strong>不调用</strong>对方的 API，<strong>不显示</strong>对方的数据，<strong>不写</strong>对方的表。
+    唯一的"全局"是 Profile（每个模块独立写自己的 `*_stats`）和顶部导航。
+  </div>
+
+  <div class="section-title"><span class="icon">🎨</span>4 大用户流</div>
+  <div class="module-grid">
+    <div class="glass glass-sm">
+      <div class="module-title" style="font-size: 14px;">📖 流 A：学（答新题）</div>
+      <div class="text-secondary" style="font-size: 11px; margin-top: 6px;">
+        /learn → 3 推荐题 → /learn/[qid] × 3 → 状态自动更新
+      </div>
+    </div>
+    <div class="glass glass-sm">
+      <div class="module-title" style="font-size: 14px;">🔁 流 B：复习（SRS）</div>
+      <div class="text-secondary" style="font-size: 11px; margin-top: 6px;">
+        /review → 今日到期 → /learn/[qid]?mode=review → SRS 重算
+      </div>
+    </div>
+    <div class="glass glass-sm">
+      <div class="module-title" style="font-size: 14px;">💬 流 C：AI 自由问答</div>
+      <div class="text-secondary" style="font-size: 11px; margin-top: 6px;">
+        /qa → 输入问题 → LLM 答（上下文：学过的题 + 错题）<br><span style="color: var(--red);">❌ 不查知识库</span>
+      </div>
+    </div>
+    <div class="glass glass-sm">
+      <div class="module-title" style="font-size: 14px;">🎤 流 D：面试（独立）</div>
+      <div class="text-secondary" style="font-size: 11px; margin-top: 6px;">
+        /interview/setup → room → 答 → report<br><span style="color: var(--red);">❌ 报告里不显示"建议重做的题"</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== Dashboard ============================== -->
+<div class="page" data-page-content="dashboard">
+  <div class="page-header">
+    <div class="page-title">📊 Dashboard <code style="font-size: 16px; color: var(--accent-glow);">/dashboard</code></div>
+    <div class="page-desc">4 大模块入口卡片。4 卡片统计（每模块独立）。<span style="color: var(--red);">❌ 不做跨模块推荐</span>。</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card stat-learn">
+      <div class="stat-label">面试</div>
+      <div class="stat-value">5<span class="stat-suffix">次</span></div>
+      <div class="stat-trend up">↑ 最新 3.4</div>
+    </div>
+    <div class="stat-card stat-learn">
+      <div class="stat-label">学习复习</div>
+      <div class="stat-value">80<span class="stat-suffix">题</span></div>
+      <div class="stat-trend up">↑ 掌握 22</div>
+    </div>
+    <div class="stat-card stat-knowledge">
+      <div class="stat-label">知识库</div>
+      <div class="stat-value">64<span class="stat-suffix">篇</span></div>
+      <div class="stat-trend">52K 字</div>
+    </div>
+    <div class="stat-card stat-digest">
+      <div class="stat-label">AI 推送</div>
+      <div class="stat-value">6<span class="stat-suffix">篇</span></div>
+      <div class="stat-trend">本周日报</div>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="icon">🧭</span>4 大模块入口</div>
+  <div class="module-grid">
+    <div class="module-card">
+      <div class="module-icon">🎤</div>
+      <div class="module-title">① 面试</div>
+      <div class="module-desc">实战 AI 追问 + 11 维雷达报告</div>
+      <div class="module-badge">5 次 · 最新 3.4</div>
+      <div class="module-cta">进入 →</div>
+    </div>
+    <div class="module-card m2">
+      <div class="module-icon">📚</div>
+      <div class="module-title">② 学习复习</div>
+      <div class="module-desc">学 + 复习 + AI 问答（1 模块 3 tab）</div>
+      <div class="module-badge green">已掌握 22 / 200</div>
+      <div class="module-cta">进入 →</div>
+    </div>
+    <div class="module-card m3">
+      <div class="module-icon">📂</div>
+      <div class="module-title">③ 知识库</div>
+      <div class="module-desc">Obsidian 全文搜索 + 知识图谱</div>
+      <div class="module-badge amber">64 篇笔记</div>
+      <div class="module-cta">进入 →</div>
+    </div>
+    <div class="module-card m4">
+      <div class="module-icon">📰</div>
+      <div class="module-title">④ AI 推送</div>
+      <div class="module-desc">日报 / 周报 / 月报 / 信源管理</div>
+      <div class="module-badge purple">本周 6 条</div>
+      <div class="module-cta">进入 →</div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <strong>📌 注意：</strong>Dashboard 只做导航和模块统计展示，<strong>不跨模块推荐</strong>。每模块的"详细数据"在自己的页面里。
+  </div>
+</div>
+
+<!-- ============================== /learn (学 tab) ============================== -->
+<div class="page" data-page-content="learn">
+  <div class="page-header">
+    <div class="page-title">📖 学 <code style="font-size: 16px; color: var(--accent-glow);">/learn</code> <span class="page-tag new">重命名</span></div>
+    <div class="page-desc">学习复习模块 · 学 tab（默认）。答新题。顶部 3 tab 切换（学 / 复习 / 问答）。</div>
+  </div>
+
+  <!-- 3 tab nav -->
+  <div class="tab-nav">
+    <button class="tab-nav-item active">📖 学</button>
+    <button class="tab-nav-item">🔁 复习</button>
+    <button class="tab-nav-item">💬 问答</button>
+  </div>
+
+  <!-- 5 卡片统计 -->
+  <div class="stat-row">
+    <div class="stat-card stat-learn">
+      <div class="stat-label">已做</div>
+      <div class="stat-value">18</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">已掌握</div>
+      <div class="stat-value" style="color: var(--green);">5</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">学习中</div>
+      <div class="stat-value" style="color: var(--blue);">8</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">跳过</div>
+      <div class="stat-value" style="color: var(--text-muted);">2</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">连续</div>
+      <div class="stat-value" style="color: var(--green);">7<span class="stat-suffix">天</span></div>
+    </div>
+  </div>
+
+  <!-- 今日推荐 -->
+  <div class="section-title"><span class="icon">⭐</span>今日推荐 3 题（基于盲点 + 复习队列）</div>
+  <div class="module-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="module-card m2">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <div style="font-size: 12px; color: var(--text-muted);">1.</div>
+        <div class="module-title" style="font-size: 15px;">MCP 协议</div>
+      </div>
+      <div class="module-badge" style="background: var(--red-soft); color: var(--red); border-color: rgba(239, 68, 68, 0.3);">🔴 薄弱 3 次</div>
+      <div class="difficulty" style="margin-top: 4px;">⭐⭐⭐⭐</div>
+      <div class="module-cta">开始 →</div>
+    </div>
+    <div class="module-card m2">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <div style="font-size: 12px; color: var(--text-muted);">2.</div>
+        <div class="module-title" style="font-size: 15px;">Reranker</div>
+      </div>
+      <div class="module-badge" style="background: var(--amber-soft); color: var(--amber);">🟡 复习</div>
+      <div class="difficulty" style="margin-top: 4px;">⭐⭐⭐</div>
+      <div class="module-cta">开始 →</div>
+    </div>
+    <div class="module-card m2">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <div style="font-size: 12px; color: var(--text-muted);">3.</div>
+        <div class="module-title" style="font-size: 15px;">向量数据库</div>
+      </div>
+      <div class="module-badge">⚪ 未练</div>
+      <div class="difficulty" style="margin-top: 4px;">⭐⭐⭐</div>
+      <div class="module-cta">开始 →</div>
+    </div>
+  </div>
+
+  <!-- 题目列表 -->
+  <div class="section-title"><span class="icon">📋</span>题目列表</div>
+  <div class="filter-bar">
+    <input class="filter-search" placeholder="🔍 搜索题面、答案、topic...">
+    <select class="filter-select"><option>Topic: 全部</option></select>
+    <select class="filter-select"><option>难度: 全部</option></select>
+    <select class="filter-select"><option>状态: 全部</option></select>
+    <select class="filter-select"><option>排序: ID</option></select>
+  </div>
+  <div class="q-card">
+    <div class="q-num">001</div>
+    <div class="q-title">ReAct 模式的核心循环是什么？</div>
+    <div class="q-meta">
+      <span class="badge badge-new">Agent</span>
+      <span class="difficulty">⭐⭐⭐</span>
+      <span class="badge badge-mastered">✅ 已掌握</span>
+      <span class="text-muted" style="font-size: 11px;">6-15</span>
+    </div>
+    <button class="q-icon-btn active">⭐</button>
+    <span class="text-muted">→</span>
+  </div>
+  <div class="q-card">
+    <div class="q-num">002</div>
+    <div class="q-title">Reranker 在 RAG 流程中起什么作用？</div>
+    <div class="q-meta">
+      <span class="badge badge-new">RAG</span>
+      <span class="difficulty">⭐⭐</span>
+      <span class="badge badge-learning">📖 学习中</span>
+      <span class="text-muted" style="font-size: 11px;">6-14</span>
+    </div>
+    <button class="q-icon-btn">☆</button>
+    <span class="text-muted">→</span>
+  </div>
+  <div class="q-card">
+    <div class="q-num">003</div>
+    <div class="q-title">向量数据库选型时关注哪些维度？</div>
+    <div class="q-meta">
+      <span class="badge badge-new">RAG</span>
+      <span class="difficulty">⭐⭐⭐</span>
+      <span class="badge badge-new">⚪ 未学</span>
+    </div>
+    <button class="q-icon-btn">☆</button>
+    <span class="text-muted">→</span>
+  </div>
+</div>
+
+<!-- ============================== /learn/[qid] (答题页) ============================== -->
+<div class="page" data-page-content="learn-detail">
+  <div class="page-header">
+    <div class="page-title">✍️ 答题页 <code style="font-size: 16px; color: var(--accent-glow);">/learn/[qid]</code></div>
+    <div class="page-desc">学 tab 和复习 tab 共用此页。模式由 `?mode=learn|review` 决定。</div>
+  </div>
+
+  <div class="toast-container">
+    <div class="toast success">✅ 答对！得分 4/5，已自动更新掌握度</div>
+  </div>
+
+  <div class="q-detail-grid">
+    <div class="q-detail-left">
+      <div class="glass">
+        <div class="flex" style="justify-content: space-between; align-items: start; margin-bottom: 16px;">
+          <div style="font-size: 12px; color: var(--text-muted); font-family: 'Fira Code';">q_agent_001 / 200</div>
+          <div class="flex gap-2">
+            <button class="btn btn-ghost btn-sm">⭐ 收藏</button>
+            <button class="btn btn-ghost btn-sm">📋 加入题单</button>
+            <button class="btn btn-ghost btn-sm">🔄 复习</button>
+          </div>
+        </div>
+        <div class="q-text">ReAct 模式的核心循环是什么？请详细描述其工作流程和关键要素。</div>
+        <div class="q-tags">
+          <span class="q-tag">Agent 架构</span>
+          <span class="difficulty">⭐⭐⭐</span>
+          <span class="q-tag">来源: 种子题</span>
+        </div>
+        <div class="divider"></div>
+        <div class="q-section">
+          <div class="q-section-title">📌 答案要点（折叠）</div>
+          <ul class="q-list">
+            <li>Thought → Action → Observation 循环</li>
+            <li>思考基于当前信息推理下一步</li>
+            <li>选择一个工具并执行</li>
+            <li>重复直到得到最终答案</li>
+          </ul>
+        </div>
+        <div class="divider"></div>
+        <div class="q-section">
+          <div class="q-section-title">✍️ 我的答案</div>
+          <div class="answer-editor">ReAct 是 Reasoning + Acting 循环。Agent 先思考（Reasoning）当前情况，再选择工具（Acting），执行后观察结果（Observation），然后再回到 Reasoning。
+
+关键要素：
+- Thought: 基于当前信息推理下一步
+- Action: 选择工具并执行
+- Observation: 获取执行结果
+- 循环直到任务完成</div>
+          <div class="answer-counter">字数: 142 / 5000</div>
+          <div class="flex gap-2 mt-3">
+            <button class="btn btn-ghost btn-sm">💾 存草稿</button>
+            <button class="btn btn-primary" style="flex: 1; justify-content: center;">📝 提交答案</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="q-section">
+          <div class="q-section-title">🎚️ 4 档状态切换</div>
+          <div class="mastery-switcher">
+            <button class="mastery-btn"><span class="icon">⚪</span>未学</button>
+            <button class="mastery-btn active"><span class="icon">📖</span>学习中</button>
+            <button class="mastery-btn"><span class="icon">✅</span>已掌握</button>
+            <button class="mastery-btn"><span class="icon">⏭</span>跳过</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-detail-right">
+      <div class="glass">
+        <div class="glass-title"><span class="glass-title-icon">📊</span>我的状态</div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <span class="badge badge-learning">📖 学习中</span>
+          <span class="text-muted" style="font-size: 12px;">答对 2/3</span>
+        </div>
+        <div class="text-secondary" style="font-size: 12px; line-height: 1.8;">
+          <div>最后: 6-15 14:30</div>
+          <div>下次复习: 6-19（SRS）</div>
+        </div>
+      </div>
+
+      <div class="glass">
+        <div class="glass-title"><span class="glass-title-icon">📖</span>参考答案</div>
+        <button class="btn btn-ghost btn-sm btn-block">▼ 展开</button>
+      </div>
+
+      <div class="glass">
+        <div class="glass-title"><span class="glass-title-icon">🤖</span>AI 讲解</div>
+        <button class="btn btn-primary btn-sm btn-block">不会做？让 AI 讲</button>
+      </div>
+
+      <div class="glass">
+        <div class="glass-title"><span class="glass-title-icon">🌳</span>追问树（3 个）</div>
+        <div style="font-size: 12px; line-height: 1.8; color: var(--text-secondary); padding-left: 12px; border-left: 2px solid var(--accent-soft);">
+          <div>├─ ReAct vs Plan-Exec?</div>
+          <div>├─ 工具选择策略?</div>
+          <div>└─ 工具描述过长?</div>
+        </div>
+      </div>
+
+      <div class="glass">
+        <div class="glass-title"><span class="glass-title-icon">📜</span>提交记录</div>
+        <div style="font-size: 12px; line-height: 1.8;">
+          <div class="flex" style="justify-content: space-between;"><span>6-15</span><span style="color: var(--green); font-weight: 600;">5分 ✅</span></div>
+          <div class="flex" style="justify-content: space-between;"><span>6-10</span><span style="color: var(--blue);">4分</span></div>
+          <div class="flex" style="justify-content: space-between;"><span>6-05</span><span style="color: var(--amber);">3分</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== /review (复习) ============================== -->
+<div class="page" data-page-content="review">
+  <div class="page-header">
+    <div class="page-title">🔁 复习 <code style="font-size: 16px; color: var(--accent-glow);">/review</code></div>
+    <div class="page-desc">学习复习模块 · 复习 tab。SRS 队列 + 今日回顾 + 错题本 + 复习统计。</div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-nav-item">📖 学</button>
+    <button class="tab-nav-item active">🔁 复习</button>
+    <button class="tab-nav-item">💬 问答</button>
+  </div>
+
+  <!-- 今日到期 -->
+  <div class="section-title"><span class="icon">🔥</span>今日到期（按 SRS 排程）</div>
+  <div class="glass mb-4">
+    <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style="font-size: 16px; font-weight: 600;">5 道题 · 预计 20 分钟</div>
+      <div class="progress-bar-wrap" style="flex: 1; max-width: 200px; margin-left: 12px;">
+        <div class="progress" style="flex: 1;"><div class="progress-fill" style="width: 0%;"></div></div>
+        <span style="font-size: 12px;">0/5</span>
+      </div>
+    </div>
+    <div class="review-item">
+      <input type="checkbox">
+      <div style="font-family: 'Fira Code'; color: var(--text-muted); font-size: 11px; min-width: 90px;">q_rag_004</div>
+      <div style="flex: 1; font-size: 13px;">Reranker 作用</div>
+      <span class="difficulty">⭐⭐⭐</span>
+      <span class="text-muted" style="font-size: 11px;">7 天后</span>
+    </div>
+    <div class="review-item">
+      <input type="checkbox">
+      <div style="font-family: 'Fira Code'; color: var(--text-muted); font-size: 11px; min-width: 90px;">q_java_002</div>
+      <div style="flex: 1; font-size: 13px;">JVM 内存模型</div>
+      <span class="difficulty">⭐⭐⭐</span>
+      <span class="text-muted" style="font-size: 11px;">3 天后</span>
+    </div>
+    <div class="review-item">
+      <input type="checkbox">
+      <div style="font-family: 'Fira Code'; color: var(--text-muted); font-size: 11px; min-width: 90px;">q_agent_007</div>
+      <div style="flex: 1; font-size: 13px;">追问策略</div>
+      <span class="difficulty">⭐⭐⭐⭐</span>
+      <span class="text-muted" style="font-size: 11px;">1 天后</span>
+    </div>
+    <div class="review-item">
+      <input type="checkbox">
+      <div style="font-family: 'Fira Code'; color: var(--text-muted); font-size: 11px; min-width: 90px;">q_mcp_001</div>
+      <div style="flex: 1; font-size: 13px;">MCP 协议架构</div>
+      <span class="difficulty">⭐⭐⭐⭐</span>
+      <span class="text-muted" style="font-size: 11px;">1 天后</span>
+    </div>
+    <div class="review-item">
+      <input type="checkbox" checked>
+      <div style="font-family: 'Fira Code'; color: var(--text-muted); font-size: 11px; min-width: 90px;">q_lang_005</div>
+      <div style="flex: 1; font-size: 13px; text-decoration: line-through; color: var(--text-muted);">Checkpoint 机制</div>
+      <span class="difficulty">⭐⭐⭐</span>
+      <span class="badge badge-weak" style="font-size: 10px;">已到期</span>
+    </div>
+    <button class="btn btn-success btn-block mt-3">🔥 开始今日复习 →</button>
+  </div>
+
+  <!-- 今日回顾 -->
+  <div class="section-title"><span class="icon">📅</span>今日回顾（今天答过的题，按时间倒序）</div>
+  <div class="glass mb-4">
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">18:45</div>
+      <div class="q-title">ReAct 模式</div>
+      <div class="q-meta">
+        <span class="badge badge-new">q_react_001</span>
+        <span class="badge badge-learning" style="background: var(--blue-soft); color: var(--blue);">4分 📖学习</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">再做一遍</button>
+    </div>
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">15:20</div>
+      <div class="q-title">Reranker 作用</div>
+      <div class="q-meta">
+        <span class="badge badge-new">q_rag_004</span>
+        <span class="badge badge-weak">2分 → 错题本</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">再做一遍</button>
+    </div>
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">10:05</div>
+      <div class="q-title">MCP 协议架构</div>
+      <div class="q-meta">
+        <span class="badge badge-new">q_mcp_001</span>
+        <span class="badge badge-weak">3分 → 错题本</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">再做一遍</button>
+    </div>
+    <div class="text-secondary" style="font-size: 12px; padding: 8px 0 0;">今日共 3 题：2 学 + 1 错题入库</div>
+  </div>
+
+  <!-- 错题本 -->
+  <div class="section-title"><span class="icon">❌</span>错题本（score &lt; 3，最多 50 道）</div>
+  <div class="glass mb-4">
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">错 3</div>
+      <div class="q-title">MCP 协议架构</div>
+      <div class="q-meta">
+        <span class="badge badge-new">q_mcp_001</span>
+        <span class="text-muted" style="font-size: 11px;">6-17</span>
+      </div>
+      <button class="btn btn-primary btn-sm">再做 →</button>
+    </div>
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">错 2</div>
+      <div class="q-title">Reranker 作用</div>
+      <div class="q-meta">
+        <span class="badge badge-new">q_rag_004</span>
+        <span class="text-muted" style="font-size: 11px;">6-15</span>
+      </div>
+      <button class="btn btn-primary btn-sm">再做 →</button>
+    </div>
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">错 2</div>
+      <div class="q-title">JVM 内存模型</div>
+      <div class="q-meta">
+        <span class="badge badge-new">q_java_002</span>
+        <span class="text-muted" style="font-size: 11px;">6-12</span>
+      </div>
+      <button class="btn btn-primary btn-sm">再做 →</button>
+    </div>
+    <button class="btn btn-ghost btn-block mt-3">🔥 全部刷一遍 →</button>
+  </div>
+
+  <!-- 复习统计 -->
+  <div class="section-title"><span class="icon">📊</span>复习统计（最近 7 天）</div>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-label">到期</div>
+      <div class="stat-value">10</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">完成</div>
+      <div class="stat-value">8</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">正确</div>
+      <div class="stat-value" style="color: var(--green);">6</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">完成率</div>
+      <div class="stat-value" style="color: var(--green);">80<span class="stat-suffix">%</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== /qa (问答) ============================== -->
+<div class="page" data-page-content="qa">
+  <div class="page-header">
+    <div class="page-title">💬 问答 <code style="font-size: 16px; color: var(--accent-glow);">/qa</code></div>
+    <div class="page-desc">学习复习模块 · 问答 tab。AI 自由问答。<span style="color: var(--red);">❌ 不查知识库</span>。上下文只来自"学过的题 + 错题"。</div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-nav-item">📖 学</button>
+    <button class="tab-nav-item">🔁 复习</button>
+    <button class="tab-nav-item active">💬 问答</button>
+  </div>
+
+  <div class="split-30-70">
+    <!-- 左：历史会话 -->
+    <div>
+      <button class="btn btn-primary btn-sm mb-3" style="width: 100%; justify-content: center;">+ 新会话</button>
+      <div class="qa-history">
+        <div class="qa-history-item active">
+          <div class="qa-history-title">MCP 协议 Client/Server 通信</div>
+          <div class="qa-history-meta">
+            <span>12 条</span>
+            <span>14:30</span>
+          </div>
+        </div>
+        <div class="qa-history-item">
+          <div class="qa-history-title">ReAct vs Plan-and-Execute 区别</div>
+          <div class="qa-history-meta">
+            <span>8 条</span>
+            <span>10:15</span>
+          </div>
+        </div>
+        <div class="qa-history-item">
+          <div class="qa-history-title">RAG 中 chunk size 怎么选</div>
+          <div class="qa-history-meta">
+            <span>15 条</span>
+            <span>昨天</span>
+          </div>
+        </div>
+        <div class="qa-history-item">
+          <div class="qa-history-title">JVM 内存模型与 GC 关系</div>
+          <div class="qa-history-meta">
+            <span>6 条</span>
+            <span>前天</span>
+          </div>
+        </div>
+        <div class="qa-history-item">
+          <div class="qa-history-title">MCP SSE 模式怎么实现</div>
+          <div class="qa-history-meta">
+            <span>4 条</span>
+            <span>3 天前</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：对话区 -->
+    <div class="qa-chat-area glass" style="padding: 0;">
+      <div class="qa-messages">
+        <div class="qa-msg user">
+          <div class="avatar">👤</div>
+          <div class="qa-msg-body">MCP 协议的 Client/Server 怎么通信？</div>
+        </div>
+        <div class="qa-msg ai">
+          <div class="avatar">🤖</div>
+          <div class="qa-msg-body">
+            MCP 用 <strong>JSON-RPC over stdio / HTTP / SSE</strong> 三种传输方式。核心是三类对象：<br>
+            · <strong>Resources</strong>：只读数据源（文件、数据库行）<br>
+            · <strong>Tools</strong>：可执行函数（调 API、查 DB）<br>
+            · <strong>Prompts</strong>：可复用 prompt 模板<br><br>
+            <span style="color: var(--accent-glow);">💡 参考你最近答错的 q_mcp_001 — 你当时没答出 Resources/Tools 区别，建议重看那题。</span>
+          </div>
+        </div>
+        <div class="qa-msg user">
+          <div class="avatar">👤</div>
+          <div class="qa-msg-body">那 SSE 模式下服务端主动推送怎么实现？</div>
+        </div>
+        <div class="qa-msg ai">
+          <div class="avatar">🤖</div>
+          <div class="qa-msg-body">
+            SSE（Server-Sent Events）是 <strong>keep-alive HTTP 连接</strong>，服务端通过事件流（event-stream）格式持续推送消息。<br>
+            客户端用 <code>EventSource</code> 接收，<strong>单向</strong>（服务端 → 客户端）。<br>
+            比 WebSocket 简单，但只能推不能双向。<br><br>
+            <span style="color: var(--accent-glow);">💡 MCP 用 SSE 是因为大部分场景只是服务端发通知给客户端（如工具列表变更）。</span>
+          </div>
+        </div>
+      </div>
+      <div class="qa-input-area">
+        <div class="qa-context mb-2">
+          <div class="qa-context-title">AI 上下文（自动注入）</div>
+          你最近答过的 20 道题 · 你的错题本（5 道）· <span style="color: var(--red);">❌ 不查知识库（独立模块）</span>
+        </div>
+        <textarea class="qa-input" placeholder="问点什么... 例如：MCP 协议怎么处理鉴权？"></textarea>
+        <button class="btn btn-primary mt-2" style="float: right;">发送 →</button>
+        <div style="clear: both;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== /digest (AI 推送 - 独立) ============================== -->
+<div class="page" data-page-content="digest">
+  <div class="page-header">
+    <div class="page-title">📰 AI 推送 <code style="font-size: 16px; color: var(--accent-glow);">/digest</code> <span class="page-tag new">独立化</span></div>
+    <div class="page-desc">独立模块。日报 / 周报 / 月报 / 信源管理。<span style="color: var(--red);">❌ 不显示"今日推荐题" / "学习日报" / "错题提醒"</span>。</div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-nav-item active">📰 日报</button>
+    <button class="tab-nav-item">📅 周报</button>
+    <button class="tab-nav-item">🗓 月报</button>
+    <button class="tab-nav-item">📡 信源</button>
+  </div>
+
+  <div class="section-title"><span class="icon">📰</span>AI 日报（外部 AI 资讯）</div>
+  <div class="glass mb-4">
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">📰</div>
+      <div class="q-title">2026-06-18 AI 日报 · 50 条</div>
+      <div class="q-meta">
+        <span class="text-muted" style="font-size: 11px;">量子位 / 36氪 / HF Papers / arXiv</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">阅读 →</button>
+    </div>
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">📰</div>
+      <div class="q-title">2026-06-17 AI 日报 · 50 条</div>
+      <div class="q-meta">
+        <span class="text-muted" style="font-size: 11px;">量子位 / 36氪 / HF Papers / arXiv</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">阅读 →</button>
+    </div>
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">📰</div>
+      <div class="q-title">2026-06-16 AI 日报 · 50 条</div>
+      <div class="q-meta">
+        <span class="text-muted" style="font-size: 11px;">量子位 / 36氪 / HF Papers / arXiv</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">阅读 →</button>
+    </div>
+    <div class="flex gap-2 mt-3">
+      <button class="btn btn-ghost btn-sm">📡 管理信源</button>
+      <button class="btn btn-ghost btn-sm">📄 写回 Obsidian</button>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="icon">📅</span>AI 周报</div>
+  <div class="glass mb-4">
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">📅</div>
+      <div class="q-title">W25 本周 5 大事件 + 3 个趋势 + 下周展望</div>
+      <div class="q-meta">
+        <span class="text-muted" style="font-size: 11px;">每周一生成</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">阅读 →</button>
+    </div>
+  </div>
+
+  <div class="section-title"><span class="icon">🗓</span>AI 月报</div>
+  <div class="glass">
+    <div class="q-card" style="cursor: default;">
+      <div class="q-num">🗓</div>
+      <div class="q-title">2026-06 本月总结</div>
+      <div class="q-meta">
+        <span class="text-muted" style="font-size: 11px;">每月 1 号生成</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">阅读 →</button>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <strong>📌 关键：</strong>AI 推送模块<strong>完全独立</strong>。不显示"今日推荐题" / "学习日报" / "错题提醒"。要看到学习数据，去"学习复习"模块。
+  </div>
+</div>
+
+<!-- ============================== Scripts ============================== -->
+<script>
+const tabs = document.querySelectorAll('.nav-tab');
+const pages = document.querySelectorAll('.page');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.page;
+    tabs.forEach(t => t.classList.remove('active'));
+    pages.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector(`[data-page-content="${target}"]`).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+document.querySelectorAll('.tab-nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    item.parentElement.querySelectorAll('.tab-nav-item').forEach(b => b.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+document.querySelectorAll('.mastery-switcher').forEach(group => {
+  const btns = group.querySelectorAll('.mastery-btn');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+});
+document.querySelectorAll('.q-icon-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    btn.textContent = btn.classList.contains('active') ? '⭐' : '☆';
+  });
+});
+document.querySelectorAll('.qa-history-item').forEach(item => {
+  item.addEventListener('click', () => {
+    item.parentElement.querySelectorAll('.qa-history-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+setTimeout(() => {
+  document.querySelectorAll('.toast-container').forEach(c => {
+    c.style.transition = 'opacity 0.5s';
+    c.style.opacity = '0';
+    setTimeout(() => c.innerHTML = '', 500);
+  });
+}, 3000);
+</script>
+
+</body>
+</html>
