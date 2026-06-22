@@ -22,6 +22,7 @@ import type {
   QuestionListItem,
   QuestionDetail,
   QuestionListResponse,
+  QuestionListFilter,
   SubmitAnswerInput,
   SubmitAnswerResponse,
   UpdateProgressInput,
