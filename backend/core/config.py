@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_upload_size_mb: int = 10
 
+    # Redis (Phase 1a · 缓存 + 会话 store). 优雅降级: 连不上不影响主流程
+    redis_url: str = "redis://localhost:6379/0"
+    redis_cache_ttl_default: int = 300  # 5 min default
+    redis_enabled: bool = True
+
     class Config:
         env_file = (".env", ".env.local")
 

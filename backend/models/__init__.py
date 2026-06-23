@@ -9,7 +9,21 @@ JSON columns use SQLAlchemy's JSON type, which maps to MySQL 8.4 JSON.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Integer, Float, Text, DateTime, JSON, ForeignKey, Boolean
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -53,6 +67,11 @@ class Profile(Base):
     target_companies = Column(JSON, default=list)
     resume_summary = Column(Text, nullable=True)
     skill_map = Column(JSON, default=dict)
+    # Phase 1a · 学习复习模块扩字段 (面试题库-技术设计.md 2.8)
+    weak_topics = Column(JSON, default=list)
+    mastered_topics = Column(JSON, default=list)
+    learning_trajectory = Column(JSON, default=dict)
+    last_active_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow)
     updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
@@ -80,6 +99,8 @@ class Interview(Base):
     # dev.db rows stay valid; new rows get the proper defaults.
     is_favorite = Column(Boolean, default=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+    # 注: 面试题库-技术设计.md 2.9 列出 is_practice/practice_topic/practice_count,
+    # stage 5 决策 D3 (b) 不动 interviews 表 → 不加这些字段
 
     # Relationships
     user = relationship("User", back_populates="interviews", foreign_keys=[user_id])
@@ -138,3 +159,283 @@ class Report(Base):
     # Relationships
     interview = relationship("Interview", back_populates="reports")
     user = relationship("User", back_populates="reports", foreign_keys=[user_id])
+
+
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║  Phase 1a · 学习复习模块（5 新表）                                  ║
+# ║  配套设计: docs/10-架构/面试题库-技术设计.md 2.3-2.7                ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+
+class QuestionProgress(Base):
+    """题库题目的用户掌握度 (SRS / SM-2)。每对 (user_id, question_id) 一行。
+
+    注: user_id 没有 FK (MySQL 8 分区表不允许 FK)。应用层保证 referential integrity
+    (所有写入都从已认证 user_id 出发, 删除 user 用 soft delete 或 CASCADE 在 user 表层做)。
+    """
+
+    __tablename__ = "question_progress"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), nullable=False, index=True)
+    question_id = Column(String(64), nullable=False, index=True)
+    status = Column(String(16), nullable=False, default="new")  # new/learning/mastered/skipped
+    practice_count = Column(Integer, nullable=False, default=0)
+    correct_count = Column(Integer, nullable=False, default=0)
+    bookmarked = Column(Boolean, nullable=False, default=False)
+    source = Column(String(32), nullable=True)  # seed/user_note/news/mock_interview
+    last_review_at = Column(DateTime(timezone=True), nullable=True)
+    next_review_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    review_count = Column(Integer, nullable=False, default=0)
+    ease_factor = Column(Float, nullable=False, default=2.5)
+    interval_days = Column(Integer, nullable=False, default=0)
+    first_practiced_at = Column(DateTime(timezone=True), nullable=True)
+    last_practiced_at = Column(DateTime(timezone=True), nullable=True)
+    user_answer = Column(Text, nullable=True)
+    notes_path = Column(String(256), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "question_id", name="uniq_user_question"),
+        Index("idx_qp_user_status", "user_id", "status"),
+        Index("idx_qp_user_next_review", "user_id", "next_review_at", "status"),
+        Index("idx_qp_user_source", "user_id", "source"),
+        Index("idx_qp_user_bookmarked", "user_id", "bookmarked", "status"),
+    )
+
+
+class LearningSession(Base):
+    """题库练习 session。每次 /learn 进入算一次。"""
+
+    __tablename__ = "learning_sessions"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    started_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    ended_at = Column(DateTime(timezone=True), nullable=True)
+    duration_sec = Column(Integer, nullable=False, default=0)
+    type = Column(String(16), nullable=False, default="practice")  # practice/review/qa
+    items = Column(JSON, default=list)  # [{question_id, status, duration_sec, score}]
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    __table_args__ = (
+        Index("idx_ls_user_started", "user_id", "started_at"),
+        Index("idx_ls_user_type", "user_id", "type", "started_at"),
+    )
+
+
+class ReviewSchedule(Base):
+    """SRS 复习调度。复用 question_progress 的 SRS，但允许指向其他类型 (note/resource)。"""
+
+    __tablename__ = "review_schedules"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    item_type = Column(String(16), nullable=False)  # question/note/resource
+    item_id = Column(String(64), nullable=False)
+    last_reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    next_review_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    interval_days = Column(Integer, nullable=False, default=1)
+    ease_factor = Column(Float, nullable=False, default=2.5)
+    repetition_count = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "item_type", "item_id", name="uniq_user_item"),
+        Index("idx_rs_user_next_review", "user_id", "next_review_at"),
+    )
+
+
+class StudyPlan(Base):
+    """学习计划。每条计划含 N 周的 weekly_target + 进度。"""
+
+    __tablename__ = "study_plans"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(128), nullable=False)
+    description = Column(Text, nullable=True)
+    goal = Column(String(256), nullable=True)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    status = Column(String(16), nullable=False, default="active")  # active/completed/archived
+    weekly_target = Column(JSON, default=list)  # [{week_idx, target_count, target_topics}]
+    progress = Column(JSON, default=dict)  # {done_count, mastered_count, weak_topics_remaining}
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    __table_args__ = (
+        Index("idx_sp_user_status", "user_id", "status"),
+        Index("idx_sp_user_end_date", "user_id", "end_date"),
+    )
+
+
+class MonthlyReport(Base):
+    """学习月报。每对 (user_id, year, month) 一行，content_md 是 LLM 生成的报告。"""
+
+    __tablename__ = "monthly_reports"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    content_md = Column(Text, nullable=False)
+    summary_stats = Column(JSON, nullable=False)
+    obsidian_synced_at = Column(DateTime(timezone=True), nullable=True)
+    obsidian_path = Column(String(256), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "year", "month", name="uniq_user_year_month"),
+        CheckConstraint("month >= 1 AND month <= 12", name="ck_mr_month_range"),
+        Index("idx_mr_user_year_month", "user_id", "year", "month"),
+    )
+
+
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║  Phase 1a · 候选 A-E (5 张) + 归档表 (1 张)                         ║
+# ║  配套: docs/10-架构/面试题库-技术设计.md 阶段 4.1 + 用户反馈         ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+
+class QuestionTag(Base):
+    """灵活标签。is_system=True = 系统预设（如 "高频"/"字节考过"），user_id=NULL；
+    user_id 非空 = 用户自定义标签。"""
+
+    __tablename__ = "question_tags"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    name = Column(String(64), nullable=False)
+    color = Column(String(16), nullable=True)  # e.g. '#ff5577' / 'indigo'
+    is_system = Column(Boolean, nullable=False, default=False)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    __table_args__ = (
+        # 系统标签 name 全局唯一；用户标签 (user_id, name) 唯一
+        UniqueConstraint("name", name="uniq_qt_system_name", sqlite_on_conflict="IGNORE"),
+    )
+
+
+class QuestionTagMap(Base):
+    """Tag ↔ Question 多对多映射。"""
+
+    __tablename__ = "question_tag_maps"
+
+    question_id = Column(String(64), ForeignKey("questions.id", ondelete="CASCADE"), primary_key=True)
+    tag_id = Column(String(36), ForeignKey("question_tags.id", ondelete="CASCADE"), primary_key=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    __table_args__ = (
+        Index("idx_qtm_tag_question", "tag_id", "question_id"),
+    )
+
+
+class UserQuestionNote(Base):
+    """用户对某题的笔记（题库内联 markdown，不依赖 Obsidian）。"""
+
+    __tablename__ = "user_question_notes"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_id = Column(String(64), ForeignKey("questions.id", ondelete="CASCADE"), nullable=False)
+    content_md = Column(Text, nullable=False, default="")
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "question_id", name="uniq_uqn_user_question"),
+    )
+
+
+class BookmarkCollection(Base):
+    """收藏夹分组。QuestionProgress.collection_id FK 过来。"""
+
+    __tablename__ = "bookmark_collections"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(64), nullable=False)
+    color = Column(String(16), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uniq_bc_user_name"),
+    )
+
+
+class QuestionAnswerLog(Base):
+    """答题明细（每题每次的分数/盲点/停留时间）。用于分数曲线分析。"""
+
+    __tablename__ = "question_answer_logs"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_id = Column(String(64), ForeignKey("questions.id", ondelete="CASCADE"), nullable=False, index=True)
+    score = Column(Integer, nullable=True)  # 1-5
+    blind_spots = Column(JSON, default=list, nullable=False)
+    duration_sec = Column(Integer, nullable=False, default=0)
+    source = Column(String(32), nullable=True)  # practice / review / mock_interview
+    answered_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False, index=True)
+
+    __table_args__ = (
+        Index("idx_qal_user_question_time", "user_id", "question_id", "answered_at"),
+    )
+
+
+class UserQuestion(Base):
+    """用户自建题。题源 user_note 走这里。"""
+
+    __tablename__ = "user_questions"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_text = Column(Text, nullable=False)
+    answer = Column(Text, nullable=True)  # 用户写的参考回答
+    topic = Column(String(64), nullable=True)
+    sub_topic = Column(String(64), nullable=True)
+    difficulty = Column(Integer, default=3)
+    tags = Column(JSON, default=list, nullable=False)  # 用户标签 (字符串数组)
+    source = Column(String(32), nullable=False, default="user_note")  # user_note/news/...
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    __table_args__ = (
+        Index("idx_uq_user_topic", "user_id", "topic"),
+    )
+
+
+class QuestionProgressArchive(Base):
+    """question_progress 冷数据归档表。
+
+    与 QuestionProgress 同 schema (无外键约束, 避免被原表 FK 反向引用)。
+    archive_service.py 月度 cron 把 mastered > 1Y 的行迁到这里。
+    """
+
+    __tablename__ = "question_progress_archive"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(36), nullable=False, index=True)
+    question_id = Column(String(64), nullable=False, index=True)
+    status = Column(String(16), nullable=False)
+    practice_count = Column(Integer, nullable=False, default=0)
+    correct_count = Column(Integer, nullable=False, default=0)
+    bookmarked = Column(Boolean, nullable=False, default=False)
+    source = Column(String(32), nullable=True)
+    last_review_at = Column(DateTime(timezone=True), nullable=True)
+    next_review_at = Column(DateTime(timezone=True), nullable=True)
+    review_count = Column(Integer, nullable=False, default=0)
+    ease_factor = Column(Float, nullable=False, default=2.5)
+    interval_days = Column(Integer, nullable=False, default=0)
+    first_practiced_at = Column(DateTime(timezone=True), nullable=True)
+    last_practiced_at = Column(DateTime(timezone=True), nullable=True)
+    user_answer = Column(Text, nullable=True)
+    notes_path = Column(String(256), nullable=True)
+    archived_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)  # 归档时间
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index("idx_qpa_user_status", "user_id", "status"),
+    )

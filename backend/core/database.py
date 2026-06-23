@@ -32,6 +32,40 @@ _MIGRATIONS: list[tuple[str, str, str]] = [
     ("interviews", "deleted_at", "ALTER TABLE interviews ADD COLUMN deleted_at DATETIME NULL"),
     ("reports", "summary", "ALTER TABLE reports ADD COLUMN summary TEXT NULL"),
     ("reports", "overall_score", "ALTER TABLE reports ADD COLUMN overall_score FLOAT NULL"),
+    # Phase 1a · 学习复习模块 Profile 扩字段 (面试题库-技术设计.md 2.8)
+    ("profiles", "weak_topics", "ALTER TABLE profiles ADD COLUMN weak_topics JSON NOT NULL DEFAULT (JSON_ARRAY())"),
+    ("profiles", "mastered_topics", "ALTER TABLE profiles ADD COLUMN mastered_topics JSON NOT NULL DEFAULT (JSON_ARRAY())"),
+    ("profiles", "learning_trajectory", "ALTER TABLE profiles ADD COLUMN learning_trajectory JSON NOT NULL DEFAULT (JSON_OBJECT())"),
+    ("profiles", "last_active_at", "ALTER TABLE profiles ADD COLUMN last_active_at DATETIME NULL"),
+]
+
+
+# Phase 1a · 大数据量优化 (HASH 分区 + 覆盖索引)
+# 注意: 分区在 create_all 之后跑, 对新建表生效
+_PHASE1A_PARTITION_DDL: list[str] = [
+    # question_progress 按 user_id 散 16 个 partition
+    # 16 是经验值: 单 partition 期望 ~100k 行; 超过 1M 行考虑 32
+    # 已有 FK 必须先 drop, 然后 ALTER PARTITION, 重建表
+    """
+    ALTER TABLE question_progress DROP FOREIGN KEY question_progress_ibfk_1
+    """,
+    """
+    ALTER TABLE question_progress
+    PARTITION BY HASH(user_id) PARTITIONS 16
+    """,
+]
+
+_PHASE1A_INDEX_DDL: list[tuple[str, str]] = [
+    # (table, ddl) — 覆盖索引: review_queue 的 hot query 走这个
+    # SELECT id, question_id, ease_factor, interval_days
+    # WHERE user_id = ? AND next_review_at < NOW() AND status IN ('new', 'learning')
+    # ORDER BY next_review_at LIMIT 50
+    (
+        "question_progress",
+        "CREATE INDEX idx_qp_review_covering ON question_progress("
+        "user_id, next_review_at, status"
+        ") INCLUDE (id, question_id, ease_factor, interval_days)",
+    ),
 ]
 
 
@@ -58,7 +92,94 @@ async def _run_migrations():
             log.warning(f"migration {_table}.{_col} failed: {e}")
 
 
+async def _is_partitioned(table: str) -> bool:
+    """Check if MySQL table is already partitioned (PARTITION BY ...)."""
+    try:
+        async with engine.begin() as conn:
+            result = await conn.execute(text(
+                "SELECT CREATE_OPTIONS FROM information_schema.TABLES "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t"
+            ), {"t": table})
+            row = result.first()
+            if row is None:
+                return False
+            options = (row[0] or "").lower()
+            return "partitioned" in options
+    except Exception:
+        return False
+
+
+async def _index_exists(table: str, index_name: str) -> bool:
+    """Check if MySQL index already exists."""
+    try:
+        async with engine.begin() as conn:
+            result = await conn.execute(text(
+                "SELECT 1 FROM information_schema.STATISTICS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t "
+                "AND INDEX_NAME = :i LIMIT 1"
+            ), {"t": table, "i": index_name})
+            return result.first() is not None
+    except Exception:
+        return False
+
+
+async def _run_phase1a_optimizations():
+    """Phase 1a · 大数据量优化: HASH 分区 + 覆盖索引。
+
+    分区逻辑:
+      - 只对 MySQL 跑 (SQLite 无分区)
+      - 已分区的表跳过 (幂等)
+      - DROP FK 是 idempotent 的 (FK 不存在时报错被 swallow)
+
+    覆盖索引逻辑:
+      - INFORMATION_SCHEMA.STATISTICS 查
+      - 已存在则跳过
+    """
+    import logging
+    log = logging.getLogger("codemock.migration")
+
+    # 1) 分区
+    if await _is_partitioned("question_progress"):
+        log.debug("question_progress already partitioned, skip")
+    else:
+        for ddl in _PHASE1A_PARTITION_DDL:
+            try:
+                async with engine.begin() as conn:
+                    await conn.execute(text(ddl))
+                log.info(f"phase1a partition applied: {ddl.strip()[:60]}...")
+            except Exception as e:
+                msg = str(e).lower()
+                # DROP FK 报 "check that column/key exists" → 跳过
+                if "1091" in msg or "check that column/key exists" in msg:
+                    log.debug(f"FK already dropped: {e}")
+                    continue
+                log.warning(f"phase1a partition failed: {e}")
+                break  # 一旦失败不再继续
+
+    # 2) 覆盖索引
+    for table, ddl in _PHASE1A_INDEX_DDL:
+        # 提取 index name (CREATE INDEX xxx ON ...)
+        try:
+            idx_name = ddl.split("CREATE INDEX")[1].split("ON")[0].strip().strip("`")
+        except Exception:
+            idx_name = ""
+        if idx_name and await _index_exists(table, idx_name):
+            log.debug(f"{idx_name} already exists, skip")
+            continue
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text(ddl))
+            log.info(f"phase1a index applied: {idx_name}")
+        except Exception as e:
+            msg = str(e).lower()
+            if "1061" in msg or "duplicate key name" in msg:
+                log.debug(f"index {idx_name} already exists")
+                continue
+            log.warning(f"phase1a index {idx_name} failed: {e}")
+
+
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await _run_migrations()
+    await _run_phase1a_optimizations()

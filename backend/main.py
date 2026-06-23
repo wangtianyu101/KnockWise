@@ -45,6 +45,23 @@ async def on_startup():
     except Exception as e:
         logger.warning(f"Database unavailable, running without persistence: {e}")
 
+    # Phase 1a · 月度归档 cron (冷数据 mastered > 1Y → archive 表)
+    try:
+        from services.archive_service import start_archive_task
+        start_archive_task()
+        logger.info("Archive cron task started")
+    except Exception as e:
+        logger.warning(f"Archive cron task skipped: {e}")
+
+    # Phase 1a · Redis cache (懒初始化, 第一次调用时 connect)
+    # 这里只 trigger 一次 ensure_client, 让日志早出现
+    try:
+        from core.cache import cache
+        await cache._ensure_client()
+        logger.info(f"Redis cache: {'connected' if cache.healthy else 'disabled (fallback to DB)'}")
+    except Exception as e:
+        logger.warning(f"Redis init skipped: {e}")
+
     # Pre-warm STT model so first request doesn't time out
     try:
         import asyncio
@@ -52,6 +69,16 @@ async def on_startup():
         await loop.run_in_executor(None, _warm_stt)
     except Exception as e:
         logger.warning(f"STT pre-warm skipped: {e}")
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    """Phase 1a · 关 Redis 连接池 + 取消 archive task."""
+    try:
+        from core.cache import cache
+        await cache.close()
+    except Exception:
+        pass
 
 
 def _warm_stt():
