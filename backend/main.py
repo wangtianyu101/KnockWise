@@ -48,16 +48,16 @@ async def on_startup():
     # Phase 1a · 月度归档 cron (冷数据 mastered > 1Y → archive 表)
     try:
         from services.archive_service import start_archive_task
-        start_archive_task()
+        # 必须持有 reference, 否则 asyncio.create_task 的 task 可能被 GC
+        main._archive_task = start_archive_task()
         logger.info("Archive cron task started")
     except Exception as e:
         logger.warning(f"Archive cron task skipped: {e}")
 
     # Phase 1a · Redis cache (懒初始化, 第一次调用时 connect)
-    # 这里只 trigger 一次 ensure_client, 让日志早出现
     try:
         from core.cache import cache
-        await cache._ensure_client()
+        await cache.init()
         logger.info(f"Redis cache: {'connected' if cache.healthy else 'disabled (fallback to DB)'}")
     except Exception as e:
         logger.warning(f"Redis init skipped: {e}")
@@ -74,6 +74,15 @@ async def on_startup():
 @app.on_event("shutdown")
 async def on_shutdown():
     """Phase 1a · 关 Redis 连接池 + 取消 archive task."""
+    # 取消 archive task
+    task = globals().get("_archive_task")
+    if task is not None and not task.done():
+        task.cancel()
+        try:
+            await task
+        except (asyncio.CancelledError, Exception):
+            pass
+    # 关 Redis 连接
     try:
         from core.cache import cache
         await cache.close()

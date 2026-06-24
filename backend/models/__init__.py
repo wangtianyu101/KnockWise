@@ -13,6 +13,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
+    Computed,
     Date,
     DateTime,
     Float,
@@ -301,7 +302,14 @@ class MonthlyReport(Base):
 
 class QuestionTag(Base):
     """灵活标签。is_system=True = 系统预设（如 "高频"/"字节考过"），user_id=NULL；
-    user_id 非空 = 用户自定义标签。"""
+    user_id 非空 = 用户自定义标签。
+
+    唯一性约束 (MySQL 不支持 partial unique):
+    - 系统标签 (user_id IS NULL): name 全局唯一
+    - 用户标签 (user_id IS NOT NULL): (user_id, name) 唯一
+    用 generated column trick: NULL user_id 映射为特殊字符串 '__system__'，
+    然后 UNIQUE (user_id_key, name) 一条搞定。
+    """
 
     __tablename__ = "question_tags"
 
@@ -310,11 +318,17 @@ class QuestionTag(Base):
     color = Column(String(16), nullable=True)  # e.g. '#ff5577' / 'indigo'
     is_system = Column(Boolean, nullable=False, default=False)
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    # Generated column: NULL → '__system__', other → user_id 本身
+    # 这样所有行都参与 UNIQUE, NULL 不再走 SQL "NULL != NULL" 漏洞
+    user_id_key = Column(
+        String(64),
+        Computed("COALESCE(user_id, '__system__')", persisted=True),
+        nullable=False,
+    )
     created_at = Column(DateTime(timezone=True), default=_utcnow)
 
     __table_args__ = (
-        # 系统标签 name 全局唯一；用户标签 (user_id, name) 唯一
-        UniqueConstraint("name", name="uniq_qt_system_name", sqlite_on_conflict="IGNORE"),
+        UniqueConstraint("user_id_key", "name", name="uniq_qt_userid_key_name"),
     )
 
 

@@ -46,8 +46,19 @@ class RedisCache:
         self._lock = asyncio.Lock()
         self._healthy: bool = False  # 上次连接是否成功
 
+    async def init(self) -> bool:
+        """Public init: 应用启动时调用一次, 早发现连接问题, 健康日志早出现。
+
+        失败时返回 False, 主流程继续 (cache 仍然 lazy 兜底)。
+        """
+        client = await self._ensure_client()
+        return client is not None
+
     async def _ensure_client(self) -> Any:
-        """Lazy init Redis client. Idempotent + concurrency-safe."""
+        """Lazy init Redis client. Idempotent + concurrency-safe.
+
+        Private: 业务层不要直接调, 用 cache.get/set/delete 或 cache.init()
+        """
         if not settings.redis_enabled:
             return None
         if self._client is not None:
