@@ -1,0 +1,68 @@
+#!/bin/sh
+# pre-commit hook for Intervue
+# 安装: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# 跳过: PRE_COMMIT_SKIP=1 git commit ...
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ -n "$PRE_COMMIT_SKIP" ]; then
+  echo "⏭️  PRE_COMMIT_SKIP=$PRE_COMMIT_SKIP, 跳过所有检查"
+  exit 0
+fi
+
+echo "🔍 pre-commit 检查..."
+
+staged_files=$(git diff --cached --name-only)
+backend_changed=$(echo "$staged_files" | grep -E "^backend/" | grep -v "__pycache__" || true)
+frontend_changed=$(echo "$staged_files" | grep -E "^frontend/" | grep -v "node_modules" || true)
+
+# ─── 1. 后端 pytest ────────────────────────────────────────
+if [ -n "$backend_changed" ]; then
+  if [ ! -d "backend/.venv" ]; then
+    echo "⚠️  backend/.venv 不存在,跳过 pytest(首次 clone 后跑 ./scripts/setup.sh)"
+  else
+    echo "📦 backend 改动 → 跑 pytest..."
+    if ! (cd backend && ./.venv/bin/python -m pytest tests/ --tb=short -q 2>&1 | tail -30); then
+      echo ""
+      echo "❌ pytest 失败,禁止 commit"
+      echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
+      exit 1
+    fi
+    echo "✅ pytest 通过"
+  fi
+fi
+
+# ─── 2. 前端 tsc ───────────────────────────────────────────
+if [ -n "$frontend_changed" ]; then
+  if [ ! -d "frontend/node_modules" ]; then
+    echo "⚠️  frontend/node_modules 不存在,跳过 tsc(首次 clone 后跑 npm install)"
+  else
+    echo "🎨 frontend 改动 → 跑 tsc..."
+    if ! (cd frontend && npx tsc --noEmit 2>&1 | tail -30); then
+      echo ""
+      echo "❌ tsc 失败,禁止 commit"
+      echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
+      exit 1
+    fi
+    echo "✅ tsc 通过"
+  fi
+fi
+
+# ─── 3. 大 commit 警告(对治问题 #2 代码先行) ──────────────
+diff_lines=$(git diff --cached --shortstat | awk '{print $1}' | tr -d ',' || echo "0")
+if [ -n "$diff_lines" ] && [ "$diff_lines" -gt 500 ] 2>/dev/null; then
+  echo ""
+  echo "⚠️  警告: 本次 commit 变更 $diff_lines 行 (> 500)"
+  echo "   是否违反'代码先行'原则?考虑拆成多个 commit"
+  printf "   确认继续? [y/N] "
+  read -r reply
+  case "$reply" in
+    [Yy]|[Yy][Ee][Ss]) echo "   → 继续" ;;
+    *) echo "   → 中止,拆 commit 再来"; exit 1 ;;
+  esac
+fi
+
+echo ""
+echo "✅ pre-commit 全部通过"

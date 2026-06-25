@@ -5,6 +5,24 @@
 
 ---
 
+## 0 步：调研前置（不可跳）
+
+| 步 | 名称 | 谁触发 | 触发命令 |
+|---|---|---|---|
+| **0** | **调研** | 我说"调研" | 读 `docs/40-追踪/目前缺陷.md` + `git log -20` + 相关议題 |
+
+**核心原则**：新功能 / 重构 / 议題关闭 / 大型 bug 修复，**开工前必先调研**。直接跳到第 1 步 = 流程违规。
+
+**调研输出（一页纸）**：
+- 现状摘要（涉及哪些模块、文件）
+- 相关议題引用（`目前缺陷.md` 编号）
+- 风险点（已有未提交改动 / 在跑的 branch / 关联测试）
+- 建议路径（走哪条分支流程，见 1.7）
+
+> **防御对象**：AI 接到"做设计"指令后不看现状 → 重复造轮 / 忽略沉积议題
+
+---
+
 ## 一、6 步强制流程（不可跳级）
 
 | 步 | 名称 | 谁触发 | 触发命令 |
@@ -72,6 +90,48 @@
 | UI 草图 / 流程图 / 组件清单 | 阶段 4 单独出 |
 
 **判断标准**：如果一段内容是"程序员看的"（SQL、API、代码签名）→ 移出设计文档。
+
+### 1.7 非新功能分支（必走路径）
+
+| 类型 | 路径 | 关键约束 |
+|---|---|---|
+| **新功能** | 0 → 1 → 2 → 3 → 4 → 5 → 6 | 完整流程 |
+| **Bug 修复** | 登记 `目前缺陷.md` → fix commit → 回归测试 | 必须有测试（见第六节） |
+| **重构** | 登记议題 → 引用议題编号 commit → 测试通过 | 不改业务行为 |
+| **议題关闭** | 直接执行调研结论 | commit 标题含议題编号（如 `fix(A)`） |
+| **P0 紧急修复** | 例外：即时修 + 24h 内补登记 | 必须补回归测试 + `目前缺陷.md` |
+
+> **关闭例外面口子**：第二节"绝对不能动"原"修复 bug"例外太宽，本节明确化分类。
+
+### 1.8 阶段 6 完成定义（DOD · 实施完毕必过）
+
+- [ ] 所有 phase 的设计文档 / 技术文档 / 页面文档都已 commit
+- [ ] `目前缺陷.md` 相关议題状态已更新（📋 → 🚧 → ✅）
+- [ ] pre-commit hook 通过（tsc + pytest 全绿）
+- [ ] **核心 service 测试覆盖率 ≥ 80%**（见下方清单）
+- [ ] 没有"未通过就实施"（git log 应能溯源到阶段 5"通过" commit）
+- [ ] 用户口头确认（或明确说"通过"）
+
+**不满足 DOD = 阶段 6 未完成**，不得进入下一个需求。
+
+#### 核心 service 清单（必须 ≥ 80% 覆盖率）
+
+| service | 路径 | 重要性 |
+|---|---|---|
+| `interview_service` | `backend/services/interview_service.py` | 🔥 核心（面试生命周期） |
+| `learning_progress_service` | `backend/services/learning_progress_service.py` | 🔥 核心（SM-2 算法） |
+| `question_bank_service` | `backend/services/question_bank_service.py` | 🔥 核心（题库） |
+| `qa_service` | `backend/services/qa_service.py` | 🔥 核心（问答） |
+| `recommendations_service` | `backend/services/recommendations_service.py` | 🔥 核心（推荐） |
+| `study_plan_service` | `backend/services/study_plan_service.py` | 🔥 核心（学习计划） |
+
+**非核心 service**（不强制 80%）：`obsidian_service` / `news_service` / `resume_parser` / `archive_service` / `seed_service` / `asr_tts` / `agora`
+
+**测量命令**：
+```bash
+cd backend && ./.venv/bin/python -m pytest tests/ \
+  --cov=services --cov-report=term-missing
+```
 
 ### 阶段 2：设计文档验证
 - 自查清单（见 `docs/面试题库设计.md` 内的"验证清单"小节）
@@ -189,7 +249,7 @@ docs/
 
 ---
 
-## 六、当前状态
+## 七、当前状态
 
 - [x] 阶段 1：设计文档初版（`docs/10-架构/面试题库设计.md`）
 - [x] 阶段 1.0：docs 目录 4 层分类整理（2026-06-18）

@@ -23,3 +23,8 @@ python-dotenv==1.0.1
 
 # Phase 1a · Redis client (async via redis.asyncio, fallback on connection error)
 redis>=5.0.0
+
+# 测试覆盖（CLAUDE.md 第六节 + 1.8 DOD）
+pytest>=9.0.0
+pytest-cov>=6.0.0
+pytest-asyncio>=0.24.0
