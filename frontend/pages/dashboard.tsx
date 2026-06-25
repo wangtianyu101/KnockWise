@@ -8,6 +8,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [dashData, setDashData] = useState<any>({});
+  const [learnStats, setLearnStats] = useState<any>(null);
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
@@ -15,6 +16,9 @@ export default function Dashboard() {
     getProfile().then(setProfile).catch(() => {});
     fetch(`${API}/api/dashboard`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.json()).then(setDashData).catch(() => {});
+    // Phase 2-4: 拉取学习复习统计
+    fetch(`${API}/api/learn/stats`, { headers: { Authorization: `Bearer ${getToken()}` } })
+      .then(r => r.json()).then(setLearnStats).catch(() => {});
   }, []);
 
   const iv = dashData?.interview || {};
@@ -42,6 +46,8 @@ export default function Dashboard() {
             {[
               { label: "仪表盘", href: "/dashboard", active: true },
               { label: "面试", href: "/interview/profile" },
+              { label: "学", href: "/learn" },
+              { label: "复习", href: "/review" },
               { label: "知识库", href: "/knowledge" },
               { label: "信息流", href: "/news" },
             ].map(t => (
@@ -67,6 +73,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           {[
             { icon: M_Interview, title: "面试练习", desc: "AI 追问引擎 · 实时语音对话\n50+ 题库 · 能力雷达图", badge: `${iv.total || 0}次 · 得分 ${iv.latest_score || "-"}`, badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", href: "/interview/profile" },
+            { icon: M_Learn, title: "学习复习", desc: "题库练习 · SM-2 复习队列\nLLM 1v1 问答 · 学习计划", badge: learnStats ? `${learnStats.total_practice} 次练习 · ${learnStats.by_status?.mastered || 0} 已掌握` : "加载中…", badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20", href: "/learn" },
             { icon: M_Knowledge, title: "知识管理", desc: "Obsidian 集成 · 全文检索\n知识图谱 · 智能关联", badge: `${kn.total_notes || 0} 篇笔记`, badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", href: "/knowledge" },
             { icon: M_News, title: "信息推送", desc: "AI 日报 · 周报深度分析\n代码统计 · 信源管理", badge: `${fmtNum(st.total_tokens)} tokens`, badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20", href: "/news" },
           ].map(card => (
@@ -119,5 +126,6 @@ export default function Dashboard() {
 }
 
 const M_Interview = <><rect x="6" y="8" width="32" height="28" rx="4" /><path d="M14 18h16M14 24h12M14 30h14" strokeLinecap="round" /><circle cx="36" cy="26" r="5" fill="currentColor" opacity="0.3" /></>;
+const M_Learn = <><path d="M12 4a8 8 0 00-8 8v20a8 8 0 008 8h20a8 8 0 008-8V12a8 8 0 00-8-8H12z" /><path d="M16 20l4 4 8-8M14 32h16" strokeLinecap="round" strokeLinejoin="round" /></>;
 const M_Knowledge = <><path d="M8 6h18l10 10v22a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z" /><path d="M26 6v10h10M14 20h16M14 26h10M14 32h14" strokeLinecap="round" /></>;
 const M_News = <><path d="M8 8h28a4 4 0 014 4v18a4 4 0 01-4 4H8a4 4 0 01-4-4V12a4 4 0 014-4z" /><path d="M4 16h36M14 22l4 4 6-6 8 8" strokeLinecap="round" strokeLinejoin="round" /></>;
