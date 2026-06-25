@@ -24,19 +24,27 @@ from schemas.learn import (
     CreateTagInput,
     CreateUserQuestionInput,
     EndSessionInput,
+    EndSessionResponse,
     LearnStatsResponse,
+    MasteryStatus,
     ProgressListResponse,
     QAChatInput,
     QAChatResponse,
+    QASession as QASessionSchema,
     QASessionDetail,
     QASessionListResponse,
+    QuestionDetail,
+    QuestionListResponse,
     RecommendResponse,
+    RecentSessionsResponse,
     ReviewQueueResponse,
     StartSessionInput,
+    StartSessionResponse,
     StudyPlan,
     StudyPlanProgressResponse,
     SubmitAnswerInput,
     SubmitAnswerResponse,
+    TagOut,
     UpdateProgressInput,
     UpdateProgressResponse,
     UpdateStudyPlanInput,
@@ -65,7 +73,7 @@ def _uid(user: User = Depends(get_current_user)) -> str:
 # ════════════════════════════════════════════════════════════
 
 
-@router.get("/questions", response_model=None)
+@router.get("/questions", response_model=QuestionListResponse)
 async def list_questions(
     topic: Optional[str] = None,
     difficulty: Optional[int] = Query(default=None, ge=1, le=5),
@@ -85,7 +93,7 @@ async def list_questions(
     )
 
 
-@router.get("/questions/{qid}")
+@router.get("/questions/{qid}", response_model=QuestionDetail)
 async def get_question_detail(
     qid: str,
     db: AsyncSession = Depends(get_db),
@@ -120,9 +128,7 @@ async def submit_answer(
     # review_queue 剩余数 (粗估, 不要求精确)
     queue = await learning_progress_service.get_review_queue(db, user.id, limit=9999)
     return SubmitAnswerResponse(
-        progress=learning_progress_service._progress_to_dict_public(p)
-        if hasattr(learning_progress_service, "_progress_to_dict_public")
-        else _prog_to_dict(p),
+        progress=_prog_to_dict(p),
         review_queue_remaining=len(queue),
     )
 
@@ -167,7 +173,7 @@ async def update_progress(
 
 @router.get("/progress", response_model=ProgressListResponse)
 async def list_my_progress(
-    status: Optional[str] = None,
+    status: Optional[MasteryStatus] = None,
     bookmarked: Optional[bool] = None,
     page: int = Query(default=1, ge=1),
     size: int = Query(default=20, ge=1, le=100),
@@ -209,21 +215,21 @@ async def get_review_queue(
 # ════════════════════════════════════════════════════════════
 
 
-@router.post("/sessions")
+@router.post("/sessions", response_model=StartSessionResponse)
 async def start_session(
     data: StartSessionInput,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     s = await learning_progress_service.start_session(db, user.id, session_type=data.type)
-    return {
-        "session_id": s.id,
-        "type": s.type,
-        "started_at": s.started_at.isoformat() if s.started_at else None,
-    }
+    return StartSessionResponse(
+        session_id=s.id,
+        type=s.type,
+        started_at=s.started_at.isoformat() if s.started_at else None,
+    )
 
 
-@router.patch("/sessions/{session_id}/end")
+@router.patch("/sessions/{session_id}/end", response_model=EndSessionResponse)
 async def end_session(
     session_id: str,
     data: EndSessionInput,
@@ -234,14 +240,14 @@ async def end_session(
     s = await learning_progress_service.end_session(db, user.id, session_id, items)
     if s is None:
         raise HTTPException(status_code=404, detail="Session 不存在或无权限")
-    return {
-        "session_id": s.id,
-        "duration_sec": s.duration_sec,
-        "item_count": len(s.items or []),
-    }
+    return EndSessionResponse(
+        session_id=s.id,
+        duration_sec=s.duration_sec,
+        item_count=len(s.items or []),
+    )
 
 
-@router.get("/sessions/recent")
+@router.get("/sessions/recent", response_model=RecentSessionsResponse)
 async def get_recent_sessions(
     days: int = Query(default=7, ge=1, le=90),
     db: AsyncSession = Depends(get_db),
@@ -284,9 +290,8 @@ async def update_plan(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    # Pydantic v2 model_dump 已经把嵌套 Pydantic 转成 dict 了, 直接传
     payload = {k: v for k, v in data.model_dump().items() if v is not None}
-    if "weekly_target" in payload:
-        payload["weekly_target"] = [w.model_dump() if hasattr(w, "model_dump") else w for w in data.weekly_target]
     p = await study_plan_service.update_plan(db, user.id, plan_id, payload)
     if p is None:
         raise HTTPException(status_code=404, detail="计划不存在或无权限")
@@ -399,11 +404,11 @@ async def list_tags(
     include_system: bool = True,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
-):
+) -> list[TagOut]:
     return await question_bank_service.list_tags(db, user.id, include_system=include_system)
 
 
-@router.post("/tags")
+@router.post("/tags", response_model=TagOut)
 async def create_tag(
     data: CreateTagInput,
     db: AsyncSession = Depends(get_db),
@@ -412,7 +417,10 @@ async def create_tag(
     t = await question_bank_service.create_tag(
         db, user.id, name=data.name, color=data.color, is_system=data.is_system,
     )
-    return {"id": t.id, "name": t.name, "color": t.color, "is_system": t.is_system, "user_id": t.user_id}
+    return TagOut(
+        id=t.id, name=t.name, color=t.color,
+        is_system=t.is_system, user_id=t.user_id,
+    )
 
 
 @router.post("/questions/{qid}/tags/{tag_id}")
