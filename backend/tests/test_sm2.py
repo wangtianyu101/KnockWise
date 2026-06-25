@@ -16,36 +16,36 @@ class TestSM2Quality:
 
     def test_quality_0_failed_total_reset(self):
         srs = calculate_next_srs(0)
-        assert srs["repetition_count"] == 0
+        assert srs["review_count"] == 0
         assert srs["interval_days"] == 1
         assert srs["next_status"] == "learning"
         assert srs["ease_factor"] < 2.5  # ease 降
 
     def test_quality_1_partial_forgot(self):
         srs = calculate_next_srs(1)
-        assert srs["repetition_count"] == 0
+        assert srs["review_count"] == 0
         assert srs["interval_days"] == 1
         assert srs["next_status"] == "learning"
 
     def test_quality_2_wrong_resets_repetition(self):
-        srs = calculate_next_srs(2, repetition_count=5, interval_days=30)
-        assert srs["repetition_count"] == 0
+        srs = calculate_next_srs(2, review_count=5, interval_days=30)
+        assert srs["review_count"] == 0
         assert srs["interval_days"] == 1
 
     def test_quality_3_passing_starts_repetition(self):
         srs = calculate_next_srs(3)
-        assert srs["repetition_count"] == 1
+        assert srs["review_count"] == 1
         assert srs["interval_days"] == 1
         assert srs["next_status"] == "learning"
 
     def test_quality_4_good_increments(self):
         srs = calculate_next_srs(4)
-        assert srs["repetition_count"] == 1
+        assert srs["review_count"] == 1
         assert srs["interval_days"] == 1
 
     def test_quality_5_perfect_increments_ease(self):
         srs = calculate_next_srs(5)
-        assert srs["repetition_count"] == 1
+        assert srs["review_count"] == 1
         assert srs["interval_days"] == 1
         assert srs["ease_factor"] > 2.5  # ease 升
 
@@ -58,7 +58,7 @@ class TestSM2IntervalGrowth:
         prev_interval = 0
         for _ in range(5):
             srs = calculate_next_srs(
-                5, interval_days=prev_interval, repetition_count=3,
+                5, interval_days=prev_interval, review_count=3,
             )
             prev_interval = srs["interval_days"]
         # 起始 rep=3 (已 master 阈值附近), 多次 5 分后 interval 应该 ≥ 6
@@ -66,8 +66,8 @@ class TestSM2IntervalGrowth:
 
     def test_mastered_after_5_repetitions(self):
         """rep >= 5 → status=mastered"""
-        srs = calculate_next_srs(5, repetition_count=4)
-        assert srs["repetition_count"] == 5
+        srs = calculate_next_srs(5, review_count=4)
+        assert srs["review_count"] == 5
         assert srs["next_status"] == "mastered"
 
 
@@ -94,7 +94,7 @@ class TestSM2QualityOutOfRange:
 
     def test_quality_negative_clamped_to_0(self):
         srs = calculate_next_srs(-1)
-        assert srs["repetition_count"] == 0  # 视同失败
+        assert srs["review_count"] == 0  # 视同失败
 
     def test_quality_above_5_clamped_to_5(self):
         srs = calculate_next_srs(10)
@@ -124,11 +124,11 @@ class TestSM2Integration:
 
     def test_alternating_correct_wrong(self):
         """q=5, q=0, q=5 → rep 应: 1, 0, 1"""
-        srs1 = calculate_next_srs(5, repetition_count=0)
-        assert srs1["repetition_count"] == 1
+        srs1 = calculate_next_srs(5, review_count=0)
+        assert srs1["review_count"] == 1
 
-        srs2 = calculate_next_srs(0, repetition_count=srs1["repetition_count"])
-        assert srs2["repetition_count"] == 0  # 重置
+        srs2 = calculate_next_srs(0, review_count=srs1["review_count"])
+        assert srs2["review_count"] == 0  # 重置
 
-        srs3 = calculate_next_srs(5, repetition_count=srs2["repetition_count"])
-        assert srs3["repetition_count"] == 1  # 重新计数
+        srs3 = calculate_next_srs(5, review_count=srs2["review_count"])
+        assert srs3["review_count"] == 1  # 重新计数
