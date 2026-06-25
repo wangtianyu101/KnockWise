@@ -588,6 +588,25 @@ async def submit_answer(
 
     await db.commit()
 
+    # D5 · Phase 1e: 面试答对题 → 自动同步 question_progress (题库掌握度)
+    # 触发条件: record.question_id 非空 (即这道题来自题库, 非临时生成)
+    # correct: score >= 3 (及格视为答对)
+    # 失败不影响主流程 (已用 try/except 包了)
+    if record.question_id:
+        try:
+            from services.learning_progress_service import upsert_from_interview
+            await upsert_from_interview(
+                db, user_id=str(user.id),
+                question_id=str(record.question_id),
+                correct=(record.score or 0) >= 3,
+                interview_id=interview_id,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger("codemock.interview").warning(
+                f"D5 sync failed for record {record_id}: {e}"
+            )
+
     return {
         "status": "ok",
         "record_id": str(record_id),

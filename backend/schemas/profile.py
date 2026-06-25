@@ -43,4 +43,6 @@ class ProfileUpdate(BaseModel):
     current_level: Optional[str] = None
     target_companies: Optional[list[str]] = None
     resume_text: Optional[str] = None
+    # D2 · Phase 1d: 改用 LLM 真摘要 (≤ 250 字). resume_text 是 PDF 抽取的原文, summary 是 LLM 出的画像
+    summary: Optional[str] = None
     skill_map: Optional[dict] = None

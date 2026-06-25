@@ -257,7 +257,8 @@ async def extract_profile_from_text(resume_text: str) -> dict:
   "years_of_exp": 5,
   "current_level": "senior",
   "skill_map": {{"Python": 4, "LangChain": 3, ...}},
-  "suggested_target_companies": ["字节跳动", "美团"]
+  "suggested_target_companies": ["字节跳动", "美团"],
+  "summary": "候选人画像 (200字以内, 第三人称, 中文): 5年后端工程师, 主导过千万级消息推送系统, 熟悉LangChain生态。技术深度集中在Python/分布式, 工程能力扎实, 适合中大型互联网公司高级岗。"
 }}
 """
 
@@ -314,12 +315,24 @@ async def extract_profile_from_text(resume_text: str) -> dict:
         companies = []
     companies = [str(c).strip() for c in companies if str(c).strip()][:3]
 
+    # D2 · Phase 1d: LLM 真摘要 (200字以内候选人画像)
+    summary = (parsed.get("summary") or "").strip()
+    if len(summary) > 250:  # 留 buffer
+        summary = summary[:250]
+    if not summary:
+        # 兜底: 从 extracted fields 自动拼一段, 避免 LLM 没返回 summary 时字段空
+        summary = (
+            f"{years}年{level}工程师, 技术栈: {', '.join(tech_stack[:5]) or '未识别'}。"
+            f"建议目标公司: {', '.join(companies) or '未识别'}。"
+        )[:250]
+
     return {
         "tech_stack": tech_stack,
         "years_of_exp": years,
         "current_level": level,
         "skill_map": cleaned_skill_map,
         "suggested_target_companies": companies,
+        "summary": summary,
     }
 
 

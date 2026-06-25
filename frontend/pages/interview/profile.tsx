@@ -18,6 +18,8 @@ interface UploadResult {
     current_level: "junior" | "mid" | "senior";
     skill_map: Record<string, number>;
     suggested_target_companies: string[];
+    // D2 · Phase 1d: LLM 真摘要 (≤250字候选人画像)
+    summary?: string;
   } | null;
   resume_text: string;
   page_count: number;
@@ -116,6 +118,11 @@ export default function InterviewProfile() {
       if (upload.kind === "parsed" && upload.result.resume_text) {
         payload.resume_text = upload.result.resume_text;
       }
+      // D2 · Phase 1d: 把 LLM 真摘要发给后端 → 写入 resume_summary
+      // (旧版是把 PDF 原文存进去, 改用 LLM 出的 200字候选人画像)
+      if (upload.kind === "parsed" && upload.result.extracted?.summary) {
+        payload.summary = upload.result.extracted.summary;
+      }
       if (withParsed) {
         payload.tech_stack = withParsed.tech_stack;
         payload.years_of_exp = withParsed.years_of_exp;
@@ -124,6 +131,9 @@ export default function InterviewProfile() {
         payload.target_companies = [
           ...new Set([...form.target_companies, ...withParsed.suggested_target_companies]),
         ];
+        if (withParsed.summary) {
+          payload.summary = withParsed.summary;
+        }
       }
       const updated = await updateProfile(payload);
       setProfile(updated);

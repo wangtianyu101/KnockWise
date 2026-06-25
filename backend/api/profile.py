@@ -55,10 +55,12 @@ async def update_profile(
     if data.target_companies is not None:
         profile.target_companies = data.target_companies
     if data.resume_text is not None:
-        # Treat resume_text as the raw extracted text — store as-is in
-        # resume_summary. We don't LLM-summarize on save; that happens
-        # at upload time and the result is reviewed by the user.
-        profile.resume_summary = data.resume_text
+        # D2 · Phase 1d: resume_text 仍存原文 (供 PDF 预览回看), 但 resume_summary 改用 LLM 真摘要
+        # (来自前端 uploadResume 返回的 extracted.summary, 写在 data.summary)
+        pass  # 不再写入 resume_summary
+    if data.summary is not None:
+        # LLM 真摘要 (≤250字候选人画像)
+        profile.resume_summary = data.summary
     if data.skill_map is not None:
         profile.skill_map = data.skill_map
 

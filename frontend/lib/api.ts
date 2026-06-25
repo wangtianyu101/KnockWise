@@ -160,6 +160,8 @@ export async function uploadResume(file: File): Promise<{
     current_level: "junior" | "mid" | "senior";
     skill_map: Record<string, number>;
     suggested_target_companies: string[];
+    // D2 · Phase 1d: LLM 真摘要 (≤250字)
+    summary?: string;
   } | null;
   resume_text: string;
   page_count: number;
