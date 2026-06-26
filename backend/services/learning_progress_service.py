@@ -54,7 +54,7 @@ def calculate_next_srs(
     *,
     ease_factor: float = DEFAULT_EASE,
     interval_days: int = 0,
-    repetition_count: int = 0,
+    review_count: int = 0,
 ) -> dict:
     """SM-2 简化: 根据答题质量算下次复习参数。
 
@@ -62,10 +62,10 @@ def calculate_next_srs(
         quality: 0-5 (0=完全不会, 3=及格, 5=完美)
         ease_factor: 当前 ease (默认 2.5)
         interval_days: 当前间隔
-        repetition_count: 当前复习次数
+        review_count: 当前复习次数 (DB 字段名 review_count)
 
     Returns:
-        {"ease_factor", "interval_days", "repetition_count", "next_status"}
+        {"ease_factor", "interval_days", "review_count", "next_status"}
     """
     quality = max(0, min(5, quality))
 
@@ -74,12 +74,12 @@ def calculate_next_srs(
     new_ease = max(MIN_EASE, new_ease)
 
     if quality < 3:
-        # 答错 → 重置 repetition, interval = 1
+        # 答错 → 重置 review_count, interval = 1
         new_repetition = 0
         new_interval = 1
         next_status = "learning"
     else:
-        new_repetition = repetition_count + 1
+        new_repetition = review_count + 1
         if new_repetition == 1:
             new_interval = 1
         elif new_repetition == 2:
@@ -97,7 +97,7 @@ def calculate_next_srs(
     return {
         "ease_factor": round(new_ease, 2),
         "interval_days": new_interval,
-        "repetition_count": new_repetition,
+        "review_count": new_repetition,
         "next_status": next_status,
     }
 
@@ -149,6 +149,7 @@ async def list_my_progress(
 
     items = [
         {
+            "id": p.question_id,  # alias question_id → id (schema 兼容)
             "question_id": p.question_id,
             "status": p.status,
             "practice_count": p.practice_count,
@@ -182,6 +183,14 @@ async def upsert_progress(
         p = QuestionProgress(
             user_id=user_id, question_id=question_id,
             first_practiced_at=datetime.now(timezone.utc),
+            # 显式设所有 NOT NULL 字段默认值, 防 server_default 缺失时为 None
+            status="new",
+            practice_count=0,
+            correct_count=0,
+            bookmarked=False,
+            ease_factor=DEFAULT_EASE,
+            interval_days=0,
+            review_count=0,
         )
         db.add(p)
 
@@ -190,7 +199,7 @@ async def upsert_progress(
         score,
         ease_factor=p.ease_factor,
         interval_days=p.interval_days,
-        repetition_count=p.repetition_count,
+        review_count=p.review_count,
     )
     next_review = calc_next_review_at(srs["interval_days"])
 
@@ -201,7 +210,7 @@ async def upsert_progress(
         p.correct_count += 1
     p.ease_factor = srs["ease_factor"]
     p.interval_days = srs["interval_days"]
-    p.review_count = srs["repetition_count"]
+    p.review_count = srs["review_count"]
     p.next_review_at = next_review
     p.last_practiced_at = datetime.now(timezone.utc)
     if not p.last_review_at:

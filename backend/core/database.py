@@ -42,29 +42,22 @@ _MIGRATIONS: list[tuple[str, str, str]] = [
 
 # Phase 1a · 大数据量优化 (HASH 分区 + 覆盖索引)
 # 注意: 分区在 create_all 之后跑, 对新建表生效
+# TODO(P3): MySQL 9 暂不支持 VARCHAR HASH 分区, 留 TODO 等待用户量 > 5k 时再考虑
+#   或改用 KEY partitioning / 手动 sharding
 _PHASE1A_PARTITION_DDL: list[str] = [
-    # question_progress 按 user_id 散 16 个 partition
-    # 16 是经验值: 单 partition 期望 ~100k 行; 超过 1M 行考虑 32
-    # 已有 FK 必须先 drop, 然后 ALTER PARTITION, 重建表
-    """
-    ALTER TABLE question_progress DROP FOREIGN KEY question_progress_ibfk_1
-    """,
-    """
-    ALTER TABLE question_progress
-    PARTITION BY HASH(user_id) PARTITIONS 16
-    """,
+    # 占位: MySQL 9 + VARCHAR user_id 不允许 HASH partition
+    # 启用条件: 用户量 > 5k 行 OR MySQL 升级支持后再开
 ]
 
 _PHASE1A_INDEX_DDL: list[tuple[str, str]] = [
-    # (table, ddl) — 覆盖索引: review_queue 的 hot query 走这个
-    # SELECT id, question_id, ease_factor, interval_days
-    # WHERE user_id = ? AND next_review_at < NOW() AND status IN ('new', 'learning')
-    # ORDER BY next_review_at LIMIT 50
+    # (table, ddl) — review_queue 的 hot query 走这个
+    # 注: MySQL 不支持 INCLUDE 关键字 (那是 PostgreSQL 语法)
+    # 这里用普通复合索引, query 性能足够
     (
         "question_progress",
-        "CREATE INDEX idx_qp_review_covering ON question_progress("
-        "user_id, next_review_at, status"
-        ") INCLUDE (id, question_id, ease_factor, interval_days)",
+        "CREATE INDEX idx_qp_review_queue ON question_progress("
+        "user_id, next_review_at, status, id, question_id"
+        ")",
     ),
 ]
 

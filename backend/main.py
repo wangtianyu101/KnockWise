@@ -51,7 +51,7 @@ async def on_startup():
     try:
         from services.archive_service import start_archive_task
         # 必须持有 reference, 否则 asyncio.create_task 的 task 可能被 GC
-        main._archive_task = start_archive_task()
+        globals()["_archive_task"] = start_archive_task()
         logger.info("Archive cron task started")
     except Exception as e:
         logger.warning(f"Archive cron task skipped: {e}")

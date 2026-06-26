@@ -309,6 +309,9 @@ class QuestionTag(Base):
     - 用户标签 (user_id IS NOT NULL): (user_id, name) 唯一
     用 generated column trick: NULL user_id 映射为特殊字符串 '__system__'，
     然后 UNIQUE (user_id_key, name) 一条搞定。
+
+    注: user_id 无 FK (MySQL 9 + GENERATED column + FK 三者不兼容)。
+    Cascade delete 由应用层处理 (见 docs/40-追踪/目前缺陷.md 债务 8)。
     """
 
     __tablename__ = "question_tags"
@@ -317,7 +320,7 @@ class QuestionTag(Base):
     name = Column(String(64), nullable=False)
     color = Column(String(16), nullable=True)  # e.g. '#ff5577' / 'indigo'
     is_system = Column(Boolean, nullable=False, default=False)
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_id = Column(String(36), nullable=True, index=True)
     # Generated column: NULL → '__system__', other → user_id 本身
     # 这样所有行都参与 UNIQUE, NULL 不再走 SQL "NULL != NULL" 漏洞
     user_id_key = Column(
