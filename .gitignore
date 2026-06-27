@@ -41,3 +41,7 @@ backend/dev.db
 
 # Claude Code sub-agent config (NOT skills themselves)
 .agents/worktrees/
+
+# Coverage / Redis dump
+.coverage
+dump.rdb
