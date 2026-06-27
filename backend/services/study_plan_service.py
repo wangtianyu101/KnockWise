@@ -15,7 +15,7 @@ from typing import Optional
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import QuestionProgress, StudyPlan
+from models import Question, QuestionProgress, StudyPlan
 
 log = logging.getLogger("codemock.study_plan")
 
