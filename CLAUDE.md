@@ -17,18 +17,18 @@
 
 | 触发词包含 | 类型 | 模板 | 时间预算 |
 |---|---|---|---|
-| `新功能` / `设计` / `feature` / `加` | 新功能 | [`research-new-feature.md`](docs/00-入门/templates/research-new-feature.md) | 30-60 min |
-| `bug` / `修复` / `失败` / `报错` / `fix` | Bug 修复 | [`research-bug.md`](docs/00-入门/templates/research-bug.md) | 10-30 min |
-| `重构` / `refactor` / `拆分` / `优化` | 重构 | [`research-refactor.md`](docs/00-入门/templates/research-refactor.md) | 20-40 min |
-| `关闭` / `议題` / `issue` | 议題关闭 | [`research-issue.md`](docs/00-入门/templates/research-issue.md) | 10-20 min |
-| `P0` / `紧急` / `线上` / `故障` | P0 紧急 | [`research-p0.md`](docs/00-入门/templates/research-p0.md) | 5-10 min |
+| `新功能` / `设计` / `feature` / `加` | 新功能 | [`research-new-feature.md`](docs/templates/research-new-feature.md) | 30-60 min |
+| `bug` / `修复` / `失败` / `报错` / `fix` | Bug 修复 | [`research-bug.md`](docs/templates/research-bug.md) | 10-30 min |
+| `重构` / `refactor` / `拆分` / `优化` | 重构 | [`research-refactor.md`](docs/templates/research-refactor.md) | 20-40 min |
+| `关闭` / `议題` / `issue` | 议題关闭 | [`research-issue.md`](docs/templates/research-issue.md) | 10-20 min |
+| `P0` / `紧急` / `线上` / `故障` | P0 紧急 | [`research-p0.md`](docs/templates/research-p0.md) | 5-10 min |
 
 > ⚠️ **任务理解段必填**：AI 必须用自己的话复述"用户要做什么"。**复述不对 → 立刻停下等用户确认**，不要继续调研。
 
 ### 0.2 通用调研清单（所有类型必做）
 
 - [ ] 任务理解：用自己的话复述（用户确认对）
-- [ ] 读 `docs/40-追踪/目前缺陷.md`
+- [ ] 读 `docs/issues.md`
 - [ ] 跑 `git log -10`（最近相关改动）
 - [ ] 跑 `git status`（看 unstaged / 多 agent 冲突）
 - [ ] 找到 ≥ 3 个相关文件
@@ -38,7 +38,7 @@
 
 ### 0.3 产物落地
 
-- **长期调研**（推荐）：写到 `docs/40-追踪/调研-YYYYMMDD-<topic>.md`
+- **长期调研**（推荐）：写到 `docs/tasks/YYYY-MM-DD-<类型>-<topic>/research.md`
 - **临时调研**：直接在 chat 输出，下次开工重做
 - **不落地 = 不算完成**
 
@@ -123,10 +123,10 @@
 | 类型 | 路径 | 关键约束 |
 |---|---|---|
 | **新功能** | 0 → 1 → 2 → 3 → 4 → 5 → 6 | 完整流程 |
-| **Bug 修复** | 登记 `目前缺陷.md` → fix commit → 回归测试 | 必须有测试（见第六节） |
+| **Bug 修复** | 登记 `docs/issues.md` → fix commit → 回归测试 | 必须有测试（见第六节） |
 | **重构** | 登记议題 → 引用议題编号 commit → 测试通过 | 不改业务行为 |
 | **议題关闭** | 直接执行调研结论 | commit 标题含议題编号（如 `fix(A)`） |
-| **P0 紧急修复** | 例外：即时修 + 24h 内补登记 | 必须补回归测试 + `目前缺陷.md` |
+| **P0 紧急修复** | 例外：即时修 + 24h 内补登记 | 必须补回归测试 + `docs/issues.md` |
 
 > **关闭例外面口子**：第二节"绝对不能动"原"修复 bug"例外太宽，本节明确化分类。
 
@@ -192,39 +192,49 @@ cd backend && ./.venv/bin/python -m pytest tests/ \
 ## 四、命名规范（已确认）
 
 - 模块名：**面试题库**
-- 设计文档：`docs/10-架构/面试题库设计.md`
-- 文档目录索引：`docs/00-入门/README.md`
+- 设计文档：`docs/tasks/2026-06-22-new-feature-question-bank/spec.md`
+- 文档目录索引：`docs/README.md`
 - 相关文档（已存在，可引用）：
-  - `docs/10-架构/项目说明.md` / `docs/10-架构/技术文档.md` / `docs/20-参考/接口文档.md`
-  - `docs/30-历史/实施计划.md` / `docs/30-历史/实时语音*.md`（已落地）
-  - `docs/40-追踪/目前缺陷.md`（动态）
+  - `docs/tasks/2026-06-22-new-feature-question-bank/` （面试题库全套）
+  - `docs/tasks/2026-06-22-new-feature-ai-push/` （AI 推送全套）
+  - `docs/tasks/2026-06-22-realtime-voice/` （实时语音）
+  - `docs/api/README.md` （全局接口文档）
+  - `docs/issues.md` （议題追踪）
+  - `docs/archive/2026-06-27-docs-old-structure/` （4 层分类的旧结构）
   - `docs/archive/三层记忆与学习闭环.md`（v1 旧设计，已废弃）
 
-### 4.1 docs/ 目录结构（4 层分类）
+### 4.1 docs/ 目录结构（按任务组织 + 全局汇总）
 
 ```
 docs/
-├── 00-入门/             # 入口文档
-│   ├── README.md        # 文档目录索引
-│   ├── 应用说明.md
-│   └── 功能介绍.md
-├── 10-架构/             # 设计与架构
-│   ├── 项目说明.md
-│   ├── 技术文档.md
-│   ├── 架构演进.md
-│   ├── 设计文档.md
-│   └── 面试题库设计.md  # 新
-├── 20-参考/             # 查询字典
-│   └── 接口文档.md
-├── 30-历史/             # 已落地档案
-│   ├── 实施计划.md
-│   ├── 实时语音实施.md
-│   └── 实时语音升级方案.md
-├── 40-追踪/             # 动态追踪
-│   └── 目前缺陷.md
-├── designs/             # HTML 设计稿
-└── archive/             # 废弃文档
+├── README.md                       # 文档地图
+├── issues.md                       # 议題追踪（动态）
+├── tasks/                          # ⭐ 按任务组织
+│   ├── 2026-06-22-new-feature-question-bank/
+│   │   ├── spec.md                 # 1 规格
+│   │   ├── technical-spec.md       # 1 技术设计
+│   │   ├── design-spec.md          # 1 页面规划
+│   │   └── plan.md                 # 实施计划
+│   ├── 2026-06-22-new-feature-ai-push/
+│   │   ├── product-doc.md
+│   │   ├── spec.md
+│   │   └── design-spec.md
+│   └── 2026-06-22-realtime-voice/
+│       ├── plan.md
+│       └── upgrade-plan.md
+├── api/                            # 全局 API 索引
+│   └── README.md
+├── designs/                        # HTML 设计稿
+├── templates/                      # 调研模板（基础设施）
+│   ├── research-new-feature.md
+│   ├── research-bug.md
+│   ├── research-refactor.md
+│   └── research-p0.md
+└── archive/                        # 归档旧文档
+    └── 2026-06-27-docs-old-structure/   # 4 层分类的旧结构
 ```
+
+**命名约定**：任务目录 = `YYYY-MM-DD-<类型>-<topic>/`，文件 = 固定英文名。
 
 ---
 
@@ -276,9 +286,91 @@ docs/
 
 ---
 
-## 七、当前状态
+## 七、本地启动（强制）
 
-- [x] 阶段 1：设计文档初版（`docs/10-架构/面试题库设计.md`）
+> 2026-06-27 实测确认：Docker 模式**走不通**，必须用本机模式。
+> AI 开工前**必须**先 `./scripts/start.sh` 把基础设施起起来。
+
+### 8.1 为什么不用 Docker
+
+| 阻塞 | 详情 |
+|---|---|
+| `registry-1.docker.io`（Docker Hub） | 在国内网络下 timeout / 无法访问 |
+| `ghcr.io` 匿名访问 | 仅 `livekit/*` 等极少数公开仓库可匿名 pull；`collabora/whisperlive` 需 auth |
+| `daocloud.io` mirror | 仅代理 `library/`（Docker 官方镜像），第三方仓库不代理 |
+| `livekit/livekit-server` | 无 macOS 原生二进制（仅 linux/windows），必须 Docker |
+| WhisperLive | **不需要**！代码里 `WhisperLiveClient` 类定义了但**无任何调用**；主路径走 `SimpleSTT`（本地 openai-whisper） |
+
+**结论**：Docker 路径会卡在第一步（pull 镜像），本机模式用 brew 装的 livekit-server + 本地 MySQL/Redis 替代。
+
+### 8.2 本机模式 5 个服务
+
+| 服务 | 端口 | 提供方 | 启动命令 |
+|---|---|---|---|
+| MySQL 8.x | 3306 | brew services | `brew services start mysql` |
+| Redis 7.x | 6379 | brew services | `brew services start redis` |
+| **LiveKit 1.13.1** | 7880/7881/7882 | brew 二进制 | `livekit-server --config ./livekit.yaml --node-ip 127.0.0.1` |
+| FastAPI 后端 | 8000 | .venv/bin/uvicorn | `cd backend && ./.venv/bin/uvicorn main:app --port 8000 --env-file .env.local` |
+| Next.js 前端 | 3000 | npm | `cd frontend && npm run dev` |
+
+### 8.3 一键启停（推荐）
+
+```bash
+./scripts/start.sh           # 幂等起全部（已在跑就跳过）
+./scripts/stop.sh            # 优雅停 livekit + backend + frontend（不动 MySQL/Redis）
+./scripts/stop.sh all        # + 关 MySQL/Redis
+./scripts/start.sh backend   # 单起某个服务
+```
+
+**特性**：
+- 幂等：端口被占就记录已有 PID，不重复起
+- 优雅关闭：SIGTERM → 等 5s → 还在就 SIGKILL
+- PID 文件：`/tmp/intervue-pids.txt`
+- 日志：`/tmp/intervue-{livekit,backend,frontend}.log`
+
+### 8.4 已知坑（避雷）
+
+| 坑 | 解决 |
+|---|---|
+| `livekit.yaml` 里 `node_ip: 192.168.1.20` 硬编码 | 启动时加 `--node-ip 127.0.0.1`（脚本已处理） |
+| LiveKit 二进制命令名是 `livekit-server` 不是 `livekit` | `brew install livekit` 后用 `livekit-server` |
+| 后端 init_db/cache 失败**不阻塞**启动 | 是设计如此（不让 DB 挂掉拖死服务），看日志 `Database unavailable` 警告 |
+| 端到端业务（dashboard/dev-login）走 JWT | 拿 token: `curl 'http://localhost:8000/api/auth/dev-login?user_id=1'` |
+
+### 8.5 端到端验证脚本
+
+起完后跑一遍（任选其一）：
+
+```bash
+# A. 浏览器打开
+open http://localhost:3000
+
+# B. Swagger
+open http://localhost:8000/docs
+
+# C. 命令行验证
+curl -s http://localhost:8000/api/health
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/
+
+# D. 真实业务（dev-login + dashboard）
+TOKEN=$(curl -s 'http://localhost:8000/api/auth/dev-login?user_id=1' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
+```
+
+### 8.6 故障排查速查
+
+| 症状 | 排查 |
+|---|---|
+| `Failed to fetch`（前端） | 后端没起？`curl http://localhost:8000/api/health` |
+| `Unknown column 'xxx'` | DB 旧表缺列 → `core/database.py:_MIGRATIONS` 应自动 ALTER，看启动日志 |
+| LiveKit 连不上 | `node_ip` 没改？用 `lsof -i :7880` 看进程是否在 |
+| 知识库空 | `~/Obsidian/coding/` 不存在？改 `services/obsidian_service.py:VAULT_ROOT` |
+
+---
+
+## 八、当前状态
+
+- [x] 阶段 1：设计文档初版（`docs/tasks/2026-06-22-new-feature-question-bank/spec.md`）
 - [x] 阶段 1.0：docs 目录 4 层分类整理（2026-06-18）
 - [x] 阶段 2：设计文档验证（2026-06-18，⚠️ 通过条件性，3 项 P3 已并入阶段 3）
 - [x] 阶段 3：设计文档详细化（2026-06-18，1535 行 / 14 章节 / 24 API / 5 新表 / 1 改表 / 迁移 SQL / 错误码 / 议题 D 引用）
@@ -292,6 +384,6 @@ docs/
   - 新建 `AI推送-技术设计.md`（技术）：7 张新表 + RSS 抓取 + LLM 选题/摘要 + 邮件
   - 新建 `AI推送-页面规划.md`（页面）：/push 等 7 个路由
   - 新建 `docs/designs/AI推送-页面设计.html`：6 tab 切换
-  - 更新 `docs/00-入门/README.md` 索引
+  - 更新 `docs/README.md` 索引
 - [ ] 阶段 5：统一通过（待你说"通过"）
 - [ ] 阶段 6：开始实施（待你说"开始实施"）
