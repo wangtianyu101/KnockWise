@@ -112,6 +112,64 @@ tags: [DOD, 7步流程, 完成定义]
 > ⚠️ TODO: 接入 `scripts/check-design-spec.py`（pre-commit hook）
 ```
 
+### 三.3 db-design.md（技术层 · 6 条 · 仅 schema 变更）
+
+> **产出物**：`docs/tasks/<date>-<type>-<topic>/db-design.md`
+> **作者**：**AI 主导**（DBA review）
+> **校验**：人 review
+> **模板**：[`docs/templates/db-design-template.md`](templates/db-design-template.md)
+
+```markdown
+## 🎯 硬性 DOD（db-design.md 完成必须全过）
+
+- [ ] 表结构变更清单完整（新增 / 修改 / 删除）
+- [ ] 每个表字段齐全（类型 + 约束 + 默认 + 业务不变量）
+- [ ] 索引设计覆盖高频查询
+- [ ] ER 图清晰（mermaid 或 ASCII）
+- [ ] 迁移 SQL 完整（forward + backward 都可执行）
+- [ ] 数据影响评估（行数 + 迁移 + 备份）
+
+> ⚠️ 任何 1 条未满足 → db-design.md 不算完成
+```
+
+### 三.4 api-spec.md（技术层 · 5 条 · 仅 API 改动）
+
+> **产出物**：`docs/tasks/<date>-<type>-<topic>/api-spec.md`
+> **作者**：**AI 主导**（后端 lead review）
+> **校验**：人 review
+> **模板**：[`docs/templates/api-spec-template.md`](templates/api-spec-template.md)
+
+```markdown
+## 🎯 硬性 DOD（api-spec.md 完成必须全过）
+
+- [ ] 接口清单完整（method + path + 作用 + 认证）
+- [ ] 每个接口 3 段齐全（Request / Response / 错误码）
+- [ ] 错误码 ≥ 4 类（400 / 401 / 409 / 500）
+- [ ] 通用规范明确（认证 / 限流 / 版本 / 错误格式）
+- [ ] 测试要点覆盖核心场景
+
+> ⚠️ 任何 1 条未满足 → api-spec.md 不算完成
+```
+
+### 三.5 component-spec.md（技术层 · 5 条 · 仅新组件）
+
+> **产出物**：`docs/tasks/<date>-<type>-<topic>/component-spec.md`
+> **作者**：**AI 主导**（前端 review）
+> **校验**：人 review
+> **模板**：[`docs/templates/component-spec-template.md`](templates/component-spec-template.md)
+
+```markdown
+## 🎯 硬性 DOD（component-spec.md 完成必须全过）
+
+- [ ] 组件清单完整（每个组件 type + 复用范围 + 依赖）
+- [ ] 每个组件 5 段齐全（Props / State / Events / 依赖 / 视觉规格）
+- [ ] 交互状态 ≥ 5 种（默认 / hover / loading / success / error）
+- [ ] 边界 case 覆盖异常路径
+- [ ] 测试要点明确
+
+> ⚠️ 任何 1 条未满足 → component-spec.md 不算完成
+```
+
 ---
 
 ## 四、2 步 计划 DOD（5 条）
@@ -265,15 +323,25 @@ tags: [DOD, 7步流程, 完成定义]
 
 集成到 `scripts/pre-commit` 第 4 段，根据改动文件类型跑对应校验。
 
-### 10.3.1 文档模板列表
+### 10.3.1 文档模板列表（15 个）
 
 | 模板 | 说明 | 步 |
 |---|---|---|
-| `docs/templates/research-*.md` | 0 步调研模板（4 个，按任务类型） | 0 |
-| `docs/templates/product-doc-template.md` | 1 步产品脑（人主导） | 1 |
-| `docs/templates/spec-template.md` | 1 步技术脑（AI 主导） | 1 |
-| `docs/templates/design-spec-template.md` | 1 步设计脑（设计师主导） | 1 |
+| `docs/templates/research-new-feature.md` | new-feature 调研 | 0 |
+| `docs/templates/research-bug.md` | bug 调研 | 0 |
+| `docs/templates/research-refactor.md` | refactor 调研 | 0 |
+| `docs/templates/research-p0.md` | P0 紧急调研 | 0 |
+| `docs/templates/product-doc-template.md` | 1 步产品脑（人主导） | **1** |
+| `docs/templates/design-spec-template.md` | 1 步设计脑（设计师主导） | **1** |
+| `docs/templates/spec-template.md` | 1 步技术脑（AI 主导，纯业务契约） | **1** |
+| `docs/templates/db-design-template.md` | 2 步数据库设计（技术详细化） | **2** |
+| `docs/templates/api-spec-template.md` | 2 步 API 设计（技术详细化） | **2** |
+| `docs/templates/component-spec-template.md` | 2 步组件设计（技术详细化） | **2** |
+| `docs/templates/plan-template.md` | 2 步方案文档 | **2** |
+| `docs/templates/tasks-template.md` | 3 步任务拆分（实施文档·细化） | 3 |
 | `docs/templates/test-cases-template.md` | 4 步整合测试用例 | 4 |
+| `docs/templates/verify-template.md` | 5 步验证文档（5 层 gate） | 5 |
+| `docs/templates/retro-template.md` | 7 步复盘文档 | 7 |
 | `scripts/check-step.py` | 7 步 DOD 校验工具（pre-commit 自动跑） | — |
 
 ### 10.4 DOD 演进规则

@@ -37,15 +37,22 @@ docs/
 ├── api/                       # ⭐ 全局 API 索引
 │   └── README.md
 ├── designs/                   # 设计稿 HTML
-├── templates/                 # ⭐ 文档模板（基础设施）
-│   ├── research-new-feature.md
-│   ├── research-bug.md
-│   ├── research-refactor.md
-│   ├── research-p0.md
-│   ├── product-doc-template.md  # ⭐ 1 步产品脑
-│   ├── design-spec-template.md  # ⭐ 1 步设计脑
-│   ├── spec-template.md         # ⭐ 1 步技术脑
-│   └── test-cases-template.md   # ⭐ 4 步整合测试用例
+├── templates/                 # ⭐ 文档模板（基础设施 · 15 个）
+│   ├── research-new-feature.md      # 0 步 new-feature
+│   ├── research-bug.md               # 0 步 bug
+│   ├── research-refactor.md          # 0 步 refactor
+│   ├── research-p0.md                # 0 步 P0
+│   ├── product-doc-template.md       # 1 步产品脑（业务层）
+│   ├── design-spec-template.md       # 1 步设计脑（业务层）
+│   ├── spec-template.md              # 1 步技术脑（业务层，纯契约）
+│   ├── db-design-template.md         # 2 步数据库设计（技术详细化）
+│   ├── api-spec-template.md          # 2 步 API 设计（技术详细化）
+│   ├── component-spec-template.md    # 2 步组件设计（技术详细化）
+│   ├── plan-template.md              # 2 步方案文档
+│   ├── tasks-template.md             # 3 步任务拆分
+│   ├── test-cases-template.md        # 4 步整合测试
+│   ├── verify-template.md            # 5 步验证文档
+│   └── retro-template.md             # 7 步复盘文档
 │
 └── archive/                   # 归档
     ├── 2026-06-27-docs-old-structure/   # 4 层分类的旧结构

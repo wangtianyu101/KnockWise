@@ -370,6 +370,8 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
 
 ## 八、当前状态
 
+### 8.1 阶段追踪（设计流程）
+
 - [x] 阶段 1：设计文档初版（`docs/tasks/2026-06-22-new-feature-question-bank/spec.md`）
 - [x] 阶段 1.0：docs 目录 4 层分类整理（2026-06-18）
 - [x] 阶段 2：设计文档验证（2026-06-18，⚠️ 通过条件性，3 项 P3 已并入阶段 3）
@@ -378,12 +380,34 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
 - [x] 阶段 4：页面规划（2026-06-18，843 行 / 10 章节 / 4 新页 + 3 改页 / 23 新组件）
 - [x] 阶段 4.1：**4 大独立模块重构**（2026-06-18）
 - [x] 阶段 4.2：**AI 推送独立成单独模块**（2026-06-22）
-  - 用户反馈：AI 推送是外面独立页面、不放 面试题库 里、要每日/每周总结、体验优化
-  - 从 `面试题库设计.md` 移除 AI 推送 相关内容（独立成 3 大模块）
-  - 新建 `AI推送设计.md`（产品）：独立模块、每日/每周/月报、智能选题、体验优化
-  - 新建 `AI推送-技术设计.md`（技术）：7 张新表 + RSS 抓取 + LLM 选题/摘要 + 邮件
-  - 新建 `AI推送-页面规划.md`（页面）：/push 等 7 个路由
-  - 新建 `docs/designs/AI推送-页面设计.html`：6 tab 切换
-  - 更新 `docs/README.md` 索引
-- [ ] 阶段 5：统一通过（待你说"通过"）
-- [ ] 阶段 6：开始实施（待你说"开始实施"）
+
+### 8.2 实施状态（2026-06-27 更新）
+
+- [x] **V1 骨架完成** — 19 张表 + 60+ API + 19 前端页面 + 5 service（question_bank / learning_progress / qa / study_plan / recommendations）
+  - 详见 [`docs/tasks/2026-06-27-v1-closure/closure.md`](docs/tasks/2026-06-27-v1-closure/closure.md)
+  - plan.md 69 项已完成 51%（✅ 35 项 + 🟡 15 项）+ ⚪ 26% 已合理化（设计已变）+ ➖ 1%
+- [x] **测试覆盖** — 367 个测试 / 82% 覆盖 / 核心 6 service 99%（远超 DOD ≥ 80%）
+- [x] **本地启动** — 6/7 服务在线（MySQL / Redis / LiveKit / Backend / Frontend + WhisperLive 证实不需要）
+- [x] **一键脚本** — `scripts/start.sh` / `stop.sh` 幂等 + 优雅关闭
+- [ ] **V2 智能沉淀层** — 3 个 service 缺失（spec 写过但 V1 没做）：
+  - [ ] `SummaryService`（AI 自动摘要）— 🟡 中优先
+  - [ ] `ProfileSettlementService`（画像自动沉淀）— 🔴 高优先
+  - [ ] `ObsidianSedimentService`（Obsidian 自动写回）— 🔴 高优先
+
+### 8.3 git 状态
+
+- 8 个 commit 已落地（本地，**未 push** 到 origin/main）
+  - docs: 4 层分类重构为按任务
+  - infra: 一键启停脚本 + CLAUDE.md § 七
+  - fix(services): study_plan_service.py 缺 Question import
+  - test(infra): conftest.py + pytest-asyncio + pre-commit 升级
+  - test(services): 6 核心 service 测试覆盖 12% → 99%
+  - test(services): obsidian/news/seed/archive 测试覆盖 70% → 100%
+  - docs: 补测试调研报告 + 复盘
+  - docs+infra: 补遗漏文件（README / DOD / 4 个新模板 / check-step.py）
+
+### 8.4 待用户决策
+
+- **是否启动 V2**（补 3 个智能 service）？
+- **是否 git push**（8 个 commit 在本地）？
+- **是否补 15 个 🟡 部分项**（筛选参数 / 共享组件 / 移动端等）？

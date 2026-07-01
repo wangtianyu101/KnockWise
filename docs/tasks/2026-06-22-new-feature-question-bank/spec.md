@@ -1,6 +1,8 @@
 # 面试题库 设计（产品文档）
 
-> 阶段 4.1 重构 · 状态：📋 产品设计（3 大独立模块 + 1 独立 AI 推送模块）
+> 状态：✅ V1 已落地（CRUD 骨架）/ 📋 V2 待设计（智能沉淀层）
+> V1 收尾报告：[`docs/tasks/2026-06-27-v1-closure/closure.md`](../../tasks/2026-06-27-v1-closure/closure.md)
+> V1 缺 3 个 service（SummaryService / ProfileSettlementService / ObsidianSedimentService）
 > 命名：**学习复习**（1 模块 3 tab）+ **面试**（独立）+ **知识库**（独立）
 > AI 推送已独立为单独模块（详见 AI推送设计.md）
 > 范围：4 大模块各自闭环，不跨模块混合

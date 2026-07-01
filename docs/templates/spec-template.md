@@ -186,9 +186,25 @@ class PushNotification(BaseModel):
 
 ---
 
-## 📚 相关文档
+## 📚 相关文档（spec.md 是"业务契约浓缩版"，详细技术层见 2 步产物）
 
 - `product-doc-template.md` — 上游：产品脑（人主导）
-- `test-cases-template.md` — 下游：4 步整合产出
+- `db-design-template.md` — **2 步技术层**：表结构 + 迁移 SQL
+- `api-spec-template.md` — **2 步技术层**：接口清单 + Request/Response
+- `component-spec-template.md` — **2 步技术层**：组件 Props/State 实现
+- `plan-template.md` — 2 步：多方案对比 + 推荐
+- `test-cases-template.md` — 4 步整合产出
 - `docs/DOD.md` §三 — 1 步规格 DOD 完整定义
-- `~/obsidian/coding/AI代码工具使用心得/7步工作流最终版/全局流程.md` — 7 步流程总览
+
+---
+
+## 5.5 跨文档引用（必填 · 指向 2 步技术详细化）
+
+```markdown
+- 涉及 schema 变更？ → 2 步产出 db-design.md（§1-5 业务表结构 + §6-8 技术实现）
+- 涉及新/改 API？   → 2 步产出 api-spec.md（§1-5 业务接口 + §6-8 技术实现）
+- 涉及新组件？      → 2 步产出 component-spec.md（§1-5 业务 Props + §6-8 技术实现）
+- 都不涉及？       → 2 步只产出 plan.md
+```
+
+**核心原则**：spec.md 是"业务契约"层，技术实现层（schema / API / 组件库选型）归 2 步详细化文档。
