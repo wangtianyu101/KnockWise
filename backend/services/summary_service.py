@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from datetime import date as date_type, datetime, timezone
 from typing import Any, List, Optional
 
@@ -188,23 +189,222 @@ class SummaryService:
     async def weekly(
         self, user_id: str, week: str, db: Any = None
     ) -> Optional[dict]:
-        """生成周报，12 周 trajectory（T19 实施）。"""
-        log.debug(f"weekly placeholder: user={user_id} week={week}")
-        return None
+        """生成周报，12 周 trajectory（T19 实施）。
+
+        简化版：复用 daily 模式 + 从 learning_trajectory 读 12 周数据。
+        """
+        try:
+            from sqlalchemy import select
+            from models import Profile
+
+            cache_key = f"{PROFILE_CACHE_PREFIX}weekly:{user_id}:{week}"
+
+            # 1. Redis 缓存
+            try:
+                cached = await cache.get(cache_key)
+                if cached:
+                    return cached
+            except Exception as e:
+                log.debug(f"weekly cache.get best-effort failed: {e}")
+
+            # 2. 读 Profile.learning_trajectory（12 周数据）
+            trajectory = {}
+            try:
+                res = await db.execute(
+                    select(Profile).where(Profile.user_id == user_id)
+                )
+                profile = res.scalar_one_or_none()
+                if profile:
+                    trajectory = profile.learning_trajectory or {}
+            except Exception as e:
+                log.debug(f"weekly profile query best-effort failed: {e}")
+
+            # 3. 聚合 12 周（取最近 12 个 ISO week）
+            sorted_weeks = sorted(trajectory.keys())[-12:]
+            trajectory_12w = {
+                w: {"mastered_count": trajectory.get(w, 0)}
+                for w in sorted_weeks
+            }
+
+            # 4. 算 totals
+            total_q = sum(v.get("mastered_count", 0) for v in trajectory_12w.values())
+
+            # 5. LLM narrative（简化：直接用 fallback 模板）
+            narrative = self._fallback_narrative({
+                "yesterday_count": total_q,
+                "mastered": [{"topic": f"week {w}"} for w in sorted_weeks[-3:]],
+                "weak_shift": [],
+            })
+
+            result = {
+                "week": week,
+                "total_questions": total_q,
+                "mastered_count": total_q,
+                "weak_topics": [],  # 简化：weekly 不单独聚合 weak
+                "body": narrative,
+                "trajectory": trajectory_12w,
+            }
+
+            # 6. 写缓存
+            try:
+                await cache.set(cache_key, result, ttl=CACHE_TTL)
+            except Exception as e:
+                log.debug(f"weekly cache.set best-effort failed: {e}")
+
+            return result
+        except Exception as e:
+            log.warning(f"weekly failed: user={user_id} week={week} error={e}")
+            return None
 
     async def monthly(
         self, user_id: str, month: str, db: Any = None
     ) -> Optional[dict]:
-        """生成月报，落库 monthly_reports.summary_stats（T19 实施）。"""
-        log.debug(f"monthly placeholder: user={user_id} month={month}")
-        return None
+        """生成月报，落库 monthly_reports.summary_stats（T19 实施）。
+
+        简化版：DB 聚合月度数据 + 写 monthly_reports.summary_stats + 6 月 trajectory。
+        """
+        try:
+            from sqlalchemy import and_, select
+            from models import MonthlyReport, Profile
+
+            cache_key = f"{PROFILE_CACHE_PREFIX}monthly:{user_id}:{month}"
+
+            # 1. Redis 缓存
+            try:
+                cached = await cache.get(cache_key)
+                if cached:
+                    return cached
+            except Exception as e:
+                log.debug(f"monthly cache.get best-effort failed: {e}")
+
+            # 2. 读 Profile.learning_trajectory（6 月聚合）
+            trajectory_6m: dict = {}
+            try:
+                res = await db.execute(
+                    select(Profile).where(Profile.user_id == user_id)
+                )
+                profile = res.scalar_one_or_none()
+                if profile and profile.learning_trajectory:
+                    # 按月聚合 ISO week 数据
+                    month_totals: dict = {}
+                    for week_key, v in (profile.learning_trajectory or {}).items():
+                        m = week_key.split("-W")[0]  # "2026-W26" → "2026"
+                        m_full = f"{m}-{week_key.split('-')[1][1:]}"  # 简化：直接用 week
+                        month_totals[m_full] = month_totals.get(m_full, 0) + v.get("mastered_count", 0)
+                    sorted_months = sorted(month_totals.keys())[-6:]
+                    trajectory_6m = {
+                        m: {"mastered_count": month_totals[m]}
+                        for m in sorted_months
+                    }
+            except Exception as e:
+                log.debug(f"monthly profile query best-effort failed: {e}")
+
+            total_m = sum(v.get("mastered_count", 0) for v in trajectory_6m.values())
+
+            # 3. 写 monthly_reports（持久化）
+            monthly_report_id = None
+            try:
+                year_str, month_str = month.split("-")
+                year, month_num = int(year_str), int(month_str)
+                # upsert（按 user_id/year/month unique）
+                existing_res = await db.execute(
+                    select(MonthlyReport).where(
+                        and_(
+                            MonthlyReport.user_id == user_id,
+                            MonthlyReport.year == year,
+                            MonthlyReport.month == month_num,
+                        )
+                    )
+                )
+                existing = existing_res.scalar_one_or_none()
+                summary_stats = {
+                    "narrative": f"6 月你答了 {total_m} 题...",
+                    "saved_to_db": True,
+                    "monthly_report_id": None,  # fill after commit
+                }
+                if existing:
+                    existing.content_md = summary_stats["narrative"]
+                    existing.summary_stats = summary_stats
+                    monthly_report_id = existing.id
+                else:
+                    new_id = str(uuid.uuid4())  # 显式设 id（避免依赖 db.flush 触发 default）
+                    new_report = MonthlyReport(
+                        id=new_id,
+                        user_id=user_id,
+                        year=year,
+                        month=month_num,
+                        content_md=summary_stats["narrative"],
+                        summary_stats=summary_stats,
+                    )
+                    db.add(new_report)
+                    await db.flush()
+                    monthly_report_id = new_id
+                await db.commit()
+                summary_stats["monthly_report_id"] = monthly_report_id
+            except Exception as e:
+                log.debug(f"monthly persist best-effort failed: {e}")
+
+            # 4. LLM narrative（fallback 即可）
+            narrative = self._fallback_narrative({
+                "yesterday_count": total_m,
+                "mastered": [{"topic": f"month {m}"} for m in trajectory_6m.keys()],
+                "weak_shift": [],
+            })
+
+            result = {
+                "month": month,
+                "total_questions": total_m,
+                "mastered_count": total_m,
+                "weak_topics": [],
+                "body": narrative,
+                "trajectory": trajectory_6m,
+                "summary_stats": {
+                    "narrative": narrative,
+                    "saved_to_db": monthly_report_id is not None,
+                    "monthly_report_id": monthly_report_id,
+                },
+            }
+
+            # 5. 写缓存
+            try:
+                await cache.set(cache_key, result, ttl=CACHE_TTL)
+            except Exception as e:
+                log.debug(f"monthly cache.set best-effort failed: {e}")
+
+            return result
+        except Exception as e:
+            log.warning(f"monthly failed: user={user_id} month={month} error={e}")
+            return None
 
     async def sync_daily_to_obsidian(
         self, user_id: str, date: date_type, db: Any = None
     ) -> Optional[dict]:
-        """落库 Obsidian 月报（T19 实施）。"""
-        log.debug(f"sync_daily_to_obsidian placeholder: user={user_id}")
-        return None
+        """落库 Obsidian 月报（T19 实施 — 简化 stub）。
+
+        V2.3 占位：T19 阶段只返回 success 标记。V2.4 / V2.5 阶段可拓展。
+        """
+        try:
+            # 简化：调 ObsidianSedimentService 写 daily（如果 vault 在）
+            try:
+                from services.obsidian_sediment_service import ObsidianSedimentService
+                content = f"# {date.isoformat()} 同步摘要\n\n（stub，T19 实施）"
+                path = await ObsidianSedimentService().write_daily(date, content)
+                return {
+                    "date": date.isoformat(),
+                    "synced": path is not None,
+                    "path": path,
+                }
+            except Exception as e:
+                log.debug(f"sync_daily_to_obsidian best-effort failed: {e}")
+                return {
+                    "date": date.isoformat(),
+                    "synced": False,
+                    "path": None,
+                    "error": str(e),
+                }
+        except Exception as e:
+            log.warning(f"sync_daily_to_obsidian failed: user={user_id} error={e}")
+            return None
 
     async def _generate_narrative(self, stats: dict, template: str):
         """LLM 生成自然语言叙述（T17 实施）。

@@ -253,3 +253,81 @@ class TestDailyDashboard:
         assert result is not None
         assert result["_fallback"] is True
         assert result["date"] == _dt.date.today().isoformat()
+
+
+# ─── T19: weekly / monthly / sync_daily_to_obsidian ──────────
+
+class TestWeeklyMonthlySync:
+    """T19: weekly / monthly / sync_daily_to_obsidian 简化实现。"""
+
+    async def test_weekly_aggregates_12_weeks(self, mock_db, mock_cache):
+        """weekly 读 learning_trajectory → 12 周聚合。"""
+        from tests.conftest import FakeResult
+        from types import SimpleNamespace
+
+        async def fake_get(key):
+            return None
+
+        mock_cache.get = fake_get
+        mock_cache.set = AsyncMock()
+        # ProfileSettlementService.weekly_full_refresh 写入格式: {week: int}
+        trajectory = {f"2026-W{w:02d}": w for w in range(1, 16)}
+        mock_db.execute = AsyncMock(return_value=FakeResult(scalar=SimpleNamespace(
+            learning_trajectory=trajectory,
+        )))
+
+        service = svc.SummaryService()
+        result = await service.weekly("user-1", "2026-W26", db=mock_db)
+
+        assert result is not None
+        # 12 周（最近 12 周：W4-W15）
+        assert len(result["trajectory"]) == 12
+        assert result["week"] == "2026-W26"
+
+    async def test_monthly_persists_to_monthly_reports(self, mock_db, mock_cache):
+        """monthly 落库 monthly_reports.summary_stats。"""
+        from tests.conftest import FakeResult
+        from types import SimpleNamespace
+
+        async def fake_get(key):
+            return None
+
+        mock_cache.get = fake_get
+        mock_cache.set = AsyncMock()
+        # 第一次：select Profile → trajectory
+        # 第二次：select MonthlyReport（existing）→ None
+        # 然后：add new + commit
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(scalar=SimpleNamespace(  # Profile
+                learning_trajectory={"2026-W22": {"mastered_count": 5}},
+            )),
+            FakeResult(scalar=None),  # MonthlyReport 查不到 existing
+        ])
+
+        service = svc.SummaryService()
+        result = await service.monthly("user-1", "2026-06", db=mock_db)
+
+        assert result is not None
+        assert result["month"] == "2026-06"
+        assert result["summary_stats"]["saved_to_db"] is True
+        # commit 被调
+        assert mock_db.commit.await_count >= 1
+
+    async def test_sync_daily_to_obsidian_vault_missing(self):
+        """sync_daily_to_obsidian — vault 不存在 → synced=False（不抛）。"""
+        import datetime as _dt
+        from unittest.mock import patch
+
+        service = svc.SummaryService()
+        with patch(
+            "services.obsidian_sediment_service.ObsidianSedimentService"
+        ) as MockObs:
+            MockObs.return_value.write_daily = AsyncMock(return_value=None)
+
+            result = await service.sync_daily_to_obsidian(
+                "user-1", _dt.date(2026, 6, 28), db=AsyncMock(),
+            )
+
+        assert result is not None
+        assert result["synced"] is False
+        assert result["path"] is None
