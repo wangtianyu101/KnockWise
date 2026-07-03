@@ -91,12 +91,90 @@ class SummaryService:
         log.debug(f"dashboard placeholder: user={user_id}")
         return None
 
-    def _generate_narrative(self, stats: dict, template: str) -> str:
+    async def _generate_narrative(self, stats: dict, template: str) -> str:
         """LLM 生成自然语言叙述（T17 实施）。
+
+        Args:
+            stats: 统计数据 {yesterday_count, mastered, weak_shift, ...}
+            template: prompt 模板（含 {yesterday_count} / {mastered} 等占位符）
 
         Returns:
             str: LLM 生成或规则降级的叙述（**绝不抛异常**）
+
+        实现要点（决策 7A）：
+        - LLM 失败 → 降级到规则生成版本（"昨天你答了 N 道题..."）
+        - strip markdown 防注入（决策 §3.3 + 9 风险）
+        - 截断到 1000 字（防巨大 prompt）
         """
-        # T16 骨架占位；T17 实施：LLM 调 + JSON prompt + strip markdown + 降级
-        log.debug(f"_generate_narrative placeholder: template={template[:30]}")
-        return f"（骨架占位）叙述 based on {len(stats)} stats"
+        try:
+            # 1. 格式化模板（strip markdown + 截断 1000 字）
+            try:
+                formatted = template.format(**stats)
+            except (KeyError, IndexError):
+                formatted = template  # 占位符不匹配则用原模板
+            formatted = self._strip_markdown(formatted)[:1000]
+
+            # 2. 调 LLM（参考 V1 qa_service._get_llm 模式）
+            from langchain_core.messages import HumanMessage, SystemMessage
+            from langchain_openai import ChatOpenAI
+
+            llm = self._get_llm()
+            messages = [
+                SystemMessage(content="你是 1 位简洁的 AI 学习教练，输出 ≤ 200 字的中文总结。"),
+                HumanMessage(content=formatted),
+            ]
+            response = await llm.ainvoke(messages)
+            text = response.content if hasattr(response, "content") else str(response)
+            return self._strip_markdown(text)
+        except Exception as e:
+            # 决策 7A：LLM 失败降级到规则生成，**不抛**
+            log.warning(f"_generate_narrative LLM failed: {e}, falling back")
+            return self._fallback_narrative(stats)
+
+    def _get_llm(self):
+        """懒加载 ChatOpenAI（V1 qa_service 模式）。"""
+        from langchain_openai import ChatOpenAI
+        from core.config import settings
+
+        return ChatOpenAI(
+            model=getattr(settings, "openai_model", "deepseek-chat"),
+            api_key=getattr(settings, "openai_api_key", None),
+            base_url=getattr(settings, "openai_base_url", None),
+            temperature=0.3,
+            max_tokens=300,
+        )
+
+    @staticmethod
+    def _strip_markdown(text: str) -> str:
+        """移除 markdown 格式（防注入 + 简洁输出）。"""
+        import re
+        if not isinstance(text, str):
+            return ""
+        # 移除 ```...``` 代码块
+        text = re.sub(r"```[\s\S]*?```", "", text)
+        # 移除 [text](url) 链接
+        text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+        # 移除 ** / * / _ 强调符号
+        text = re.sub(r"\*{1,3}([^*]+)\*{1,3}", r"\1", text)
+        text = re.sub(r"_{1,3}([^_]+)_{1,3}", r"\1", text)
+        # 移除 # / ## / ### 标题
+        text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
+        return text.strip()
+
+    @staticmethod
+    def _fallback_narrative(stats: dict) -> str:
+        """规则生成叙述（LLM 失败兜底，决策 7A + spec GWT-7）。"""
+        yesterday_count = stats.get("yesterday_count", 0)
+        mastered = stats.get("mastered", [])
+        weak_shift = stats.get("weak_shift", [])
+
+        parts = [f"昨天你答了 {yesterday_count} 道题"]
+        if mastered:
+            topics = " / ".join(m.get("topic", "?") for m in mastered[:3])
+            parts.append(f"掌握了 {len(mastered)} 个新 topic：{topics}")
+        if weak_shift:
+            shift = weak_shift[0]
+            f = shift.get("from_topic", "?")
+            t = shift.get("to_topic", "?")
+            parts.append(f"弱项从「{f}」调整为「{t}」")
+        return "，".join(parts) + "。"
