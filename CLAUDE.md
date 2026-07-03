@@ -2,6 +2,11 @@
 
 > 本文件是项目级的 hook 准则，约束本仓库所有开发活动的执行顺序。
 > 任何 AI 助手 / Claude Code 在本项目工作时必须遵守。
+>
+> ⚠️ **2026-07-02 v2 同步**：流程从 7 步精简为 6 步（砍掉 6 发布，5 验证精简为 L3 整合 + L5 staging）。
+> 详见 `~/Obsidian/coding/AI代码工具使用心得/7步工作流最终版/全局流程.md`。
+>
+> ⚠️ **本文件 § 三「各阶段交付物清单」使用 v1 阶段编号（设计文档/验证/详细化/页面规划/通过/实施），是历史 phase 标记，保留不动**。新框架的阶段交付物映射见各模板。
 
 ---
 
@@ -34,7 +39,7 @@
 - [ ] 找到 ≥ 3 个相关文件
 - [ ] 列出依赖影响（改 A 会影响 B/C）
 - [ ] 风险点带等级（🔴/🟡/🟢）+ 缓解方案
-- [ ] 给完整 7 步路径建议
+- [ ] 给完整 6 步路径建议
 
 ### 0.3 产物落地
 
@@ -52,16 +57,22 @@
 
 ## 一、6 步强制流程（不可跳级）
 
-| 步 | 名称 | 谁触发 | 触发命令 |
-|---|---|---|---|
-| **1** | **设计文档** | 我让"做设计" | 把想法落到 `docs/`，讲清楚"做什么、为什么" |
-| **2** | **设计文档验证** | 我说"验证" | 自查：完整性 / 可行性 / 一致性 / 冲突点 |
-| **3** | **设计文档详细化** | 我说"细化" | 加实现细节、边界情况、错误处理、配置、迁移 |
-| **4** | **页面规划** | 我说"出页面" | UI 草图、流程图、交互细节、组件清单 |
-| **5** | **统一通过** | 我说"通过" | 上面 1-4 都完成并经我明确批准 |
-| **6** | **开始实施** | 我说"开始实施" | 才能改代码、装依赖、跑服务 |
+| 步 | 名称 | 谁触发 | 触发命令 | 产出文档 |
+|---|---|---|---|---|
+| **0** | **调研** | 我说"调研" | 按任务类型选 4 模板之一 | `research.md`（按 0 步 4 模板） |
+| **1** | **规格（三脑交汇）** | 我让"做设计" | product-doc + design-spec + spec 三脑分工 | `product-doc.md`（人）+ `design-spec.md`（人/设计）+ `spec.md`（AI） |
+| **2** | **计划 + 技术详细化** | 我说"出方案" | 业务/技术分离；≥ 2 方案对比 | `plan.md` + `db-design.md` + `api-spec.md` + `component-spec.md` |
+| **3** | **拆分** | 我说"拆任务" | ≤ 1h AI 工作量原子任务，可独立 commit | `tasks.md` |
+| **4** | **实现（TDD）** | 我说"开始实施" | 红→绿→refactor→commit；整合产出 test-cases.md | `test_xxx.py` + `test-cases.md` |
+| **5** | **验证** | 我说"verify" | L3 整合测试 + L5 staging 跑通；L1/L2/L4 在 4 步分布式完成 | `verify.md` |
+| **6** | **复盘** | 我说"复盘" | 经验沉淀；AI 无跨会话记忆，retro 是唯一通路 | `retro.md` + 更新 `CLAUDE.md` / `DOD.md` / 模板 |
 
 **核心原则**：每一步必须等我的明确指令才能进下一步。没收到指令前只做当前阶段该做的事。
+
+**v1 → v2 变化**（2026-07-02）：
+- ❌ 砍掉 **6 发布**（灰度/监控/回滚）—— PR/commit 即交付，纯 AI coding 场景用不上
+- 🟡 **5 验证**：5 层 gate → 2 段（L3 整合 + L5 staging），L1/L2 由 pre-commit hook 兜底，L4 review 是活动不是步骤
+- ✅ **0/1/2/3/4/6** 步保留
 
 ---
 
@@ -130,16 +141,18 @@
 
 > **关闭例外面口子**：第二节"绝对不能动"原"修复 bug"例外太宽，本节明确化分类。
 
-### 1.8 阶段 6 完成定义（DOD · 实施完毕必过）
+### 1.8 阶段 4 完成定义（DOD · 实施完毕必过）
+
+> ⚠️ v2 重命名：原"阶段 6 完成定义"在新框架中改为"阶段 4 完成定义"（实施在新框架是步骤 4）。
 
 - [ ] 所有 phase 的设计文档 / 技术文档 / 页面文档都已 commit
 - [ ] `目前缺陷.md` 相关议題状态已更新（📋 → 🚧 → ✅）
 - [ ] pre-commit hook 通过（tsc + pytest 全绿）
 - [ ] **核心 service 测试覆盖率 ≥ 80%**（见下方清单）
-- [ ] 没有"未通过就实施"（git log 应能溯源到阶段 5"通过" commit）
-- [ ] 用户口头确认（或明确说"通过"）
+- [ ] 5 验证通过（verify.md L3 整合 + L5 staging 跑通）
+- [ ] 用户口头确认（或明确说"verify 完成"）
 
-**不满足 DOD = 阶段 6 未完成**，不得进入下一个需求。
+**不满足 DOD = 阶段 4 未完成**，不得进入下一个需求。
 
 #### 核心 service 清单（必须 ≥ 80% 覆盖率）
 
@@ -389,10 +402,15 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
 - [x] **测试覆盖** — 367 个测试 / 82% 覆盖 / 核心 6 service 99%（远超 DOD ≥ 80%）
 - [x] **本地启动** — 6/7 服务在线（MySQL / Redis / LiveKit / Backend / Frontend + WhisperLive 证实不需要）
 - [x] **一键脚本** — `scripts/start.sh` / `stop.sh` 幂等 + 优雅关闭
-- [ ] **V2 智能沉淀层** — 3 个 service 缺失（spec 写过但 V1 没做）：
-  - [ ] `SummaryService`（AI 自动摘要）— 🟡 中优先
-  - [ ] `ProfileSettlementService`（画像自动沉淀）— 🔴 高优先
-  - [ ] `ObsidianSedimentService`（Obsidian 自动写回）— 🔴 高优先
+- [x] **V2 智能沉淀层** — 3 个 service + 6 端点 + 3 前端组件全部完成（2026-07-03）
+  - [x] `ProfileSettlementService`（画像沉淀）— 82% 覆盖，4 方法 + 2 触发点（learning_progress + interview）
+  - [x] `ObsidianSedimentService`（Obsidian 写回）— 100% 覆盖，5 write 方法 + 容错
+  - [x] `SummaryService`（AI 自动摘要）— 81% 覆盖，5 方法 + Redis TTL 1h 缓存 + LLM 降级
+  - [x] 6 个 API 端点（`/api/v2/dashboard/summary` / `profile/weekly/monthly/refresh` / `knowledge/recent-sediments` / `obsidian/sync`）
+  - [x] 3 个前端组件（DailySummaryCard / RecentSedimentsCard / ProfilePage + 画像 nav）
+  - [x] 471 tests pass（V1: 367 + V2 新增: 104）
+  - [x] 7 决策全 A（决策文档 + 反馈沉淀到 memory/feedback-sediment-plan-defaulting.md）
+  - 详见 [`docs/tasks/2026-06-28-new-feature-v2-smart-sediment/`](docs/tasks/2026-06-28-new-feature-v2-smart-sediment/)（verify.md / retro.md）
 
 ### 8.3 git 状态
 
