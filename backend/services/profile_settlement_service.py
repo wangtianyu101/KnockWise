@@ -340,30 +340,152 @@ class ProfileSettlementService:
         """深度重算 12 周 learning_trajectory。
 
         业务规则（T4 实施）：
-        - 读 question_progress 12 周
-        - 按 ISO week 聚合 mastered_count
+        - 读 question_progress 12 周（last_practiced_at 距今 ≤ 84 天）
+        - 按 ISO week (YYYY-Www) 聚合 mastered 题目数
         - 写入 Profile.learning_trajectory = {week: mastered_count}
 
-        容错（决策 7A）：失败 log → return None（不抛）
+        容错（决策 7A）：失败 log → return None（**不抛**）
+        乐观锁：commit 失败重试 1 次
         """
-        # T1 骨架占位；T4 实施
-        log.debug(f"weekly_full_refresh placeholder: user={user_id}")
-        return None
+        # 局部 import
+        from datetime import timedelta
+        from sqlalchemy import and_, func, select
+        from models import Profile, QuestionProgress
+        from schemas.settlement import SettlementResult, TopicSettlement
+
+        try:
+            # 1. 读 12 周内 question_progress（仅 mastered 状态）
+            since = datetime.now(timezone.utc) - timedelta(weeks=12)
+            prog_res = await db.execute(
+                select(QuestionProgress).where(
+                    and_(
+                        QuestionProgress.user_id == str(user_id),
+                        QuestionProgress.status == "mastered",
+                        QuestionProgress.last_practiced_at >= since,
+                    )
+                )
+            )
+            progresses = prog_res.scalars().all() or []
+
+            # 2. 按 ISO week 聚合
+            trajectory: dict = {}
+            for p in progresses:
+                if not p.last_practiced_at:
+                    continue
+                ts = p.last_practiced_at
+                iso_year, iso_week, _ = ts.isocalendar()
+                week_key = f"{iso_year}-W{iso_week:02d}"
+                trajectory[week_key] = trajectory.get(week_key, 0) + 1
+
+            # 3. 读 Profile with FOR UPDATE
+            prof_res = await db.execute(
+                select(Profile)
+                .where(Profile.user_id == str(user_id))
+                .with_for_update()
+            )
+            profile = prof_res.scalar_one_or_none()
+            if not profile:
+                log.warning(
+                    f"weekly_full_refresh: profile not found user={user_id}"
+                )
+                return None
+
+            # 4. 写回 trajectory + updated_at（乐观锁）
+            now = datetime.now(timezone.utc)
+            profile.learning_trajectory = trajectory
+            profile.updated_at = now
+
+            committed = False
+            for attempt in range(2):
+                try:
+                    await db.commit()
+                    committed = True
+                    break
+                except Exception as e:
+                    log.debug(
+                        f"weekly_full_refresh commit attempt {attempt + 1} failed: {e}"
+                    )
+                    try:
+                        await db.rollback()
+                    except Exception:
+                        pass
+            if not committed:
+                log.warning(
+                    f"weekly_full_refresh: commit failed after retry user={user_id}"
+                )
+                return None
+
+            # 5. 返回 SettlementResult
+            return SettlementResult(
+                user_id=user_id,
+                settled_at=now,
+                weak_topics=[
+                    TopicSettlement(**t) for t in (profile.weak_topics or [])
+                ],
+                mastered_topics=[
+                    TopicSettlement(**t) for t in (profile.mastered_topics or [])
+                ],
+                triggered_by="weekly_refresh",
+                cache_invalidated=False,  # 由 manual_refresh 负责 DEL
+            )
+        except Exception as e:
+            log.warning(
+                f"weekly_full_refresh failed: user={user_id} error={e}"
+            )
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            return None
 
     async def manual_refresh(
         self, user_id: UUID, db: AsyncSession
     ) -> Optional["SettlementResult"]:
-        """手动触发（"刷新画像"按钮）。
+        """手动触发（"刷新画像"按钮用，T5 实施）。
 
-        业务规则（T5 实施）：
-        - 调 weekly_full_refresh 重算
+        业务规则：
+        - 调 weekly_full_refresh 重算 12 周 learning_trajectory
         - DEL Redis 3 个 key：
           * summary:dashboard:{user_id}
           * summary:profile:{user_id}
           * profile:{user_id}
 
-        容错（决策 7A）：失败 log → return None（不抛）
+        容错（决策 7A）：失败 log → return None（**不抛**）
         """
-        # T1 骨架占位；T5 实施
-        log.debug(f"manual_refresh placeholder: user={user_id}")
-        return None
+        from schemas.settlement import SettlementResult
+
+        try:
+            # 1. 调 weekly_full_refresh
+            result = await self.weekly_full_refresh(user_id, db)
+            if result is None:
+                log.warning(
+                    f"manual_refresh: weekly_full_refresh returned None user={user_id}"
+                )
+                return None
+
+            # 2. DEL Redis 3 个 key（best-effort，决策 7A 不阻塞）
+            try:
+                await cache.delete(f"summary:dashboard:{user_id}")
+                await cache.delete(f"summary:profile:{user_id}")
+                await cache.delete(f"profile:{user_id}")
+            except Exception as e:
+                log.debug(f"manual_refresh: cache delete best-effort failed: {e}")
+
+            # 3. 返回 SettlementResult（triggered_by 改 manual_refresh + cache 标记）
+            return SettlementResult(
+                user_id=result.user_id,
+                settled_at=result.settled_at,
+                weak_topics=result.weak_topics,
+                mastered_topics=result.mastered_topics,
+                triggered_by="manual_refresh",
+                cache_invalidated=True,
+            )
+        except Exception as e:
+            log.warning(
+                f"manual_refresh failed: user={user_id} error={e}"
+            )
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            return None

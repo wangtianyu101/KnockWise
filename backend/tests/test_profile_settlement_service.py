@@ -375,3 +375,146 @@ class TestSettleAfterInterview:
         assert result is None
         assert mock_db.rollback.await_count >= 1
 
+
+# ─── T4: weekly_full_refresh 业务实现 ─────────────────────
+
+class TestWeeklyFullRefresh:
+    """T4: 周度深度重算 learning_trajectory 12 周 — 3 个测试。"""
+
+    async def test_happy_path_aggregates_mastered_by_iso_week(self, mock_db):
+        """Happy: 12 周内 mastered 的 progress → 按 ISO week 聚合。"""
+        from datetime import datetime, timezone
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+
+        user_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        # 1st execute: QuestionProgress（mastered in 12 weeks）
+        progresses = [
+            SimpleNamespace(last_practiced_at=datetime(2026, 6, 23, tzinfo=timezone.utc)),  # W26
+            SimpleNamespace(last_practiced_at=datetime(2026, 6, 25, tzinfo=timezone.utc)),  # W26
+            SimpleNamespace(last_practiced_at=datetime(2026, 6, 16, tzinfo=timezone.utc)),  # W25
+        ]
+        prog_result = FakeResult(items=progresses)
+        # 2nd execute: Profile
+        profile = SimpleNamespace(
+            user_id=str(user_id),
+            weak_topics=[],
+            mastered_topics=[],
+            learning_trajectory={},
+            updated_at=now,
+        )
+        profile_result = FakeResult(scalar=profile)
+
+        mock_db.execute = AsyncMock(side_effect=[prog_result, profile_result])
+
+        result = await svc.ProfileSettlementService().weekly_full_refresh(
+            user_id, db=mock_db,
+        )
+
+        assert result is not None
+        assert result.triggered_by == "weekly_refresh"
+        # trajectory 应该有 2 个 week key
+        assert "2026-W26" in profile.learning_trajectory
+        assert "2026-W25" in profile.learning_trajectory
+        # W26 有 2 个
+        assert profile.learning_trajectory["2026-W26"] == 2
+        # W25 有 1 个
+        assert profile.learning_trajectory["2026-W25"] == 1
+
+    async def test_failure_no_profile_returns_none(self, mock_db):
+        """T4 边界: profile 不存在 → return None。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+
+        user_id = uuid4()
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(items=[]),  # no progresses
+            FakeResult(scalar=None),  # no profile
+        ])
+
+        result = await svc.ProfileSettlementService().weekly_full_refresh(
+            user_id, db=mock_db,
+        )
+        assert result is None
+
+    async def test_failure_db_exception_returns_none_no_throw(self, mock_db):
+        """T4 边界: DB 失败 → log + return None（**不抛**，决策 7A）。"""
+        from uuid import uuid4
+
+        user_id = uuid4()
+        mock_db.execute = AsyncMock(side_effect=Exception("DB lost"))
+        mock_db.rollback = AsyncMock()
+
+        result = await svc.ProfileSettlementService().weekly_full_refresh(
+            user_id, db=mock_db,
+        )
+        assert result is None
+
+
+# ─── T5: manual_refresh 业务实现 ──────────────────────────
+
+class TestManualRefresh:
+    """T5: 手动刷新（'刷新画像'按钮）— 3 个测试。"""
+
+    async def test_happy_path_deletes_3_cache_keys(self, mock_db, mock_cache):
+        """Happy: 调 weekly_full_refresh + DEL 3 个 Redis key。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+        from datetime import datetime, timezone
+
+        user_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(items=[]),  # no progresses
+            FakeResult(scalar=SimpleNamespace(  # profile
+                user_id=str(user_id),
+                weak_topics=[],
+                mastered_topics=[],
+                learning_trajectory={},
+                updated_at=now,
+            )),
+        ])
+
+        result = await svc.ProfileSettlementService().manual_refresh(
+            user_id, db=mock_db,
+        )
+
+        assert result is not None
+        assert result.triggered_by == "manual_refresh"
+        assert result.cache_invalidated is True
+        # cache.delete 被调 3 次
+        assert mock_cache.delete.await_count == 3
+
+    async def test_failure_weekly_returns_none_returns_none(self, mock_db):
+        """T5 边界: weekly_full_refresh 失败 → manual_refresh 也返 None。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+
+        user_id = uuid4()
+        # weekly 找不到 profile → 返 None
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(items=[]),
+            FakeResult(scalar=None),
+        ])
+
+        result = await svc.ProfileSettlementService().manual_refresh(
+            user_id, db=mock_db,
+        )
+        assert result is None
+
+    async def test_failure_db_exception_returns_none_no_throw(self, mock_db):
+        """T5 边界: DB 失败 → log + return None（**不抛**）。"""
+        from uuid import uuid4
+
+        user_id = uuid4()
+        mock_db.execute = AsyncMock(side_effect=Exception("DB lost"))
+        mock_db.rollback = AsyncMock()
+
+        result = await svc.ProfileSettlementService().manual_refresh(
+            user_id, db=mock_db,
+        )
+        assert result is None
+

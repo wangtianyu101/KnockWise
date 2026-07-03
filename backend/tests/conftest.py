@@ -112,6 +112,7 @@ def mock_cache(monkeypatch):
     # 兼容 services 里可能直接 import 的情况
     monkeypatch.setattr("services.question_bank_service.cache", cache, raising=False)
     monkeypatch.setattr("services.learning_progress_service.cache", cache, raising=False)
+    monkeypatch.setattr("services.profile_settlement_service.cache", cache, raising=False)
     return cache
 
 
