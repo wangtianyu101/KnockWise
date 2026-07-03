@@ -245,6 +245,45 @@ class TestSettleAfterPractice:
         )
         assert result is None
 
+    async def test_no_progress_returns_none(self, mock_db):
+        """T2 边界: question 存在但 progress 不存在 → log warning + return None。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+
+        user_id = uuid4()
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(scalar="网络层"),  # Question.topic 存在
+            FakeResult(scalar=None),  # QuestionProgress 不存在
+        ])
+
+        result = await svc.ProfileSettlementService().settle_after_practice(
+            user_id, "q-1", score=4, db=mock_db,
+        )
+        assert result is None
+
+    async def test_no_profile_returns_none(self, mock_db):
+        """T2 边界: question + progress 都有但 profile 缺失 → log warning + return None。"""
+        from tests.conftest import FakeResult
+        from types import SimpleNamespace
+        from uuid import uuid4
+        from datetime import datetime, timezone
+
+        user_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(scalar="网络层"),
+            FakeResult(scalar=SimpleNamespace(
+                practice_count=4, correct_count=1, last_practiced_at=now,
+            )),
+            FakeResult(scalar=None),  # Profile 不存在
+        ])
+
+        result = await svc.ProfileSettlementService().settle_after_practice(
+            user_id, "q-1", score=4, db=mock_db,
+        )
+        assert result is None
+
 
 # ─── T3: settle_after_interview 业务实现 ─────────────────────
 
@@ -374,6 +413,65 @@ class TestSettleAfterInterview:
 
         assert result is None
         assert mock_db.rollback.await_count >= 1
+
+    async def test_no_profile_returns_none(self, mock_db):
+        """T3 边界: report 存在但 profile 不存在 → return None。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+        from types import SimpleNamespace
+
+        user_id = uuid4()
+        interview_id = uuid4()
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(scalar=SimpleNamespace(top_blind_spots=[])),
+            FakeResult(scalar=None),  # Profile 缺失
+        ])
+
+        result = await svc.ProfileSettlementService().settle_after_interview(
+            user_id, interview_id, db=mock_db,
+        )
+        assert result is None
+
+    async def test_dedup_skips_blind_spot_without_topic(self, mock_db):
+        """T3 边界: blind_spot 没 topic/name 字段 → 跳过（不入 weak）。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+        from datetime import datetime, timezone
+
+        user_id = uuid4()
+        interview_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        # 1 项没 topic，1 项用 "name" 字段（兼容）
+        report = SimpleNamespace(
+            interview_id=str(interview_id),
+            top_blind_spots=[
+                {"error_rate": 0.5},  # 无 topic/name → 跳过
+                {"name": "消息队列", "error_rate": 0.6},  # 用 name 字段
+            ],
+        )
+        report_result = FakeResult(scalar=report)
+        profile = SimpleNamespace(
+            user_id=str(user_id),
+            weak_topics=[],
+            mastered_topics=[],
+            last_active_at=None,
+            updated_at=now,
+        )
+        profile_result = FakeResult(scalar=profile)
+
+        mock_db.execute = AsyncMock(side_effect=[report_result, profile_result])
+
+        result = await svc.ProfileSettlementService().settle_after_interview(
+            user_id, interview_id, db=mock_db,
+        )
+
+        # 跳过无 topic 的项；用 name 字段的项能进 weak
+        assert result is not None
+        topics = {t.topic for t in result.weak_topics}
+        assert "消息队列" in topics
+        # 1 项被跳过
+        assert len(result.weak_topics) == 1
 
 
 # ─── T4: weekly_full_refresh 业务实现 ─────────────────────
@@ -517,4 +615,34 @@ class TestManualRefresh:
             user_id, db=mock_db,
         )
         assert result is None
+
+    async def test_cache_delete_failure_still_succeeds(self, mock_db, mock_cache):
+        """T5 边界: cache delete 失败 → best-effort log，不阻塞返回。"""
+        from tests.conftest import FakeResult
+        from types import SimpleNamespace
+        from uuid import uuid4
+        from datetime import datetime, timezone
+
+        user_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(items=[]),  # no progresses
+            FakeResult(scalar=SimpleNamespace(  # profile
+                user_id=str(user_id),
+                weak_topics=[],
+                mastered_topics=[],
+                learning_trajectory={},
+                updated_at=now,
+            )),
+        ])
+        # cache.delete 抛错（但 service 内部要 try/except 兜底）
+        mock_cache.delete = AsyncMock(side_effect=Exception("Redis down"))
+
+        # 关键：仍返回结果（不抛）
+        result = await svc.ProfileSettlementService().manual_refresh(
+            user_id, db=mock_db,
+        )
+        assert result is not None
+        assert result.triggered_by == "manual_refresh"
 
