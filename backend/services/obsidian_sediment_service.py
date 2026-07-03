@@ -80,10 +80,28 @@ class ObsidianSedimentService:
             return None
 
     def write_daily(self, date: date, content: str) -> Optional[str]:
-        """写每日学习笔记：learning/YYYY-MM-DD.md（包含 YAML frontmatter）。"""
-        # T10 实施：生成 frontmatter + content
-        log.debug(f"write_daily placeholder: date={date}")
-        return None
+        """写每日学习笔记：learning/YYYY-MM-DD.md（包含 YAML frontmatter）。
+
+        T10 实施：
+        - YAML frontmatter：date / generated_at
+        - body：调用方传入的 content
+        - 调用 _write 写文件
+        - 失败 log + return None（决策 7A）
+        """
+        try:
+            rel_path = f"{DAILY_DIR}/{date.isoformat()}.md"
+            frontmatter = "\n".join([
+                "---",
+                f"date: {date.isoformat()}",
+                f"generated_at: {datetime.now(timezone.utc).isoformat()}",
+                "---",
+                "",
+            ])
+            full_content = frontmatter + (content or "")
+            return self._write(rel_path, full_content)
+        except Exception as e:
+            log.warning(f"write_daily failed: date={date} error={e}")
+            return None
 
     def write_weekly(self, week: str, content: str) -> Optional[str]:
         """写周报：weekly/YYYY-Www.md。"""
