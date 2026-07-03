@@ -30,6 +30,10 @@ import os
 from datetime import date as date_type, datetime, timezone
 from typing import Any, List, Optional
 
+from sqlalchemy import func
+
+from core.cache import cache
+
 from core.cache import cache
 
 log = logging.getLogger("codemock.summary")
@@ -58,10 +62,128 @@ class SummaryService:
     async def daily(
         self, user_id: str, date: date_type, db: Any = None
     ) -> Optional[dict]:
-        """生成今日学习总结（Dashboard 顶部卡用，T18 实施）。"""
-        # T16 骨架占位；T18 实施：DB 聚合 + LLM narrative + Redis 缓存
-        log.debug(f"daily placeholder: user={user_id} date={date}")
-        return None
+        """生成今日学习总结（Dashboard 顶部卡用，T18 实施）。
+
+        Returns:
+            dict: {title, date, yesterday_count, mastered, weak_shift, body, _fallback}
+            None: 不会返 None（外层 try/except 兜底到降级版）
+
+        决策 2A：Redis TTL 1h 缓存（key: summary:dashboard:{user_id}:{date}）
+        决策 7A：整个流程不抛（log + 返降级版 `_fallback=true`）
+        """
+        fallback = False  # 跟踪任何子步骤失败，标 _fallback=true
+        try:
+            from sqlalchemy import select
+            from datetime import timedelta
+            from models import Profile, QuestionAnswerLog
+
+            cache_key = f"{DASHBOARD_CACHE_PREFIX}{user_id}:{date.isoformat()}"
+
+            # 1. Redis 缓存查询（best-effort）
+            try:
+                cached = await cache.get(cache_key)
+                if cached:
+                    log.debug(f"daily cache hit: {cache_key}")
+                    return cached
+            except Exception as e:
+                log.debug(f"daily cache.get best-effort failed: {e}")
+
+            # 2. DB 聚合：昨天答了几题
+            yesterday_start = datetime.combine(
+                date, datetime.min.time()
+            ).replace(tzinfo=timezone.utc)
+            yesterday_end = yesterday_start + timedelta(days=1)
+
+            yesterday_count = 0
+            try:
+                q = select(func.count(QuestionAnswerLog.id)).where(
+                    QuestionAnswerLog.user_id == user_id,
+                    QuestionAnswerLog.answered_at >= yesterday_start,
+                    QuestionAnswerLog.answered_at < yesterday_end,
+                )
+                res = await db.execute(q)
+                yesterday_count = res.scalar() or 0
+            except Exception as e:
+                log.debug(f"daily count query best-effort failed: {e}")
+                fallback = True
+
+            # 3. 读 Profile → 推 mastered / weak_shift
+            mastered = []
+            weak_shift = []
+            try:
+                res = await db.execute(
+                    select(Profile).where(Profile.user_id == user_id)
+                )
+                profile = res.scalar_one_or_none()
+                if profile:
+                    mastered = list(profile.mastered_topics or [])[:5]
+                    weak = list(profile.weak_topics or [])[:3]
+                    for w in weak:
+                        weak_shift.append({"topic": w.get("topic", "?")})
+            except Exception as e:
+                log.debug(f"daily profile query best-effort failed: {e}")
+                fallback = True
+
+            # 4. LLM narrative（失败降级）— 返回 (text, llm_success)
+            stats = {
+                "yesterday_count": yesterday_count,
+                "mastered": mastered,
+                "weak_shift": weak_shift,
+            }
+            template = (
+                "请根据以下数据生成 1 段 ≤ 200 字的中文学习总结：\n"
+                "昨天答题数：{yesterday_count}\n"
+                "掌握的 topic: {mastered}\n"
+                "弱项变化: {weak_shift}"
+            )
+            narrative, llm_success = await self._generate_narrative(
+                stats, template,
+            )
+            if not llm_success:
+                fallback = True
+
+            result = {
+                "title": "今日学习总结",
+                "date": date.isoformat(),
+                "yesterday_count": yesterday_count,
+                "mastered": mastered,
+                "weak_shift": weak_shift,
+                "body": narrative,
+                "_fallback": fallback,
+            }
+
+            # 5. Redis 缓存写入（best-effort）
+            try:
+                await cache.set(cache_key, result, ttl=CACHE_TTL)
+            except Exception as e:
+                log.debug(f"daily cache.set best-effort failed: {e}")
+
+            return result
+        except Exception as e:
+            # 决策 7A：整套兜底（DB 全挂也返降级版，**不抛**）
+            log.warning(
+                f"daily failed (will fallback): user={user_id} date={date} error={e}"
+            )
+            return {
+                "title": "今日学习总结",
+                "date": date.isoformat(),
+                "yesterday_count": 0,
+                "mastered": [],
+                "weak_shift": [],
+                "body": self._fallback_narrative({
+                    "yesterday_count": 0, "mastered": [], "weak_shift": []
+                }),
+                "_fallback": True,
+            }
+
+    async def dashboard(
+        self, user_id: str, db: Any = None
+    ) -> Optional[dict]:
+        """Dashboard 顶部 summary，Redis 缓存命中快速返回（T18 实施）。
+
+        = daily(today, db) 的简写，api-spec.md §2 定义走此入口。
+        """
+        return await self.daily(user_id, date_type.today(), db)
 
     async def weekly(
         self, user_id: str, week: str, db: Any = None
@@ -84,14 +206,7 @@ class SummaryService:
         log.debug(f"sync_daily_to_obsidian placeholder: user={user_id}")
         return None
 
-    async def dashboard(
-        self, user_id: str, db: Any = None
-    ) -> Optional[dict]:
-        """Dashboard 顶部 summary，Redis 缓存命中快速返回（T18 实施）。"""
-        log.debug(f"dashboard placeholder: user={user_id}")
-        return None
-
-    async def _generate_narrative(self, stats: dict, template: str) -> str:
+    async def _generate_narrative(self, stats: dict, template: str):
         """LLM 生成自然语言叙述（T17 实施）。
 
         Args:
@@ -99,7 +214,9 @@ class SummaryService:
             template: prompt 模板（含 {yesterday_count} / {mastered} 等占位符）
 
         Returns:
-            str: LLM 生成或规则降级的叙述（**绝不抛异常**）
+            tuple[str, bool]: (narrative_text, llm_success_flag)
+                - (text, True): LLM 调成功
+                - (fallback_text, False): LLM 失败降级（**绝不抛**）
 
         实现要点（决策 7A）：
         - LLM 失败 → 降级到规则生成版本（"昨天你答了 N 道题..."）
@@ -125,11 +242,11 @@ class SummaryService:
             ]
             response = await llm.ainvoke(messages)
             text = response.content if hasattr(response, "content") else str(response)
-            return self._strip_markdown(text)
+            return self._strip_markdown(text), True
         except Exception as e:
             # 决策 7A：LLM 失败降级到规则生成，**不抛**
             log.warning(f"_generate_narrative LLM failed: {e}, falling back")
-            return self._fallback_narrative(stats)
+            return self._fallback_narrative(stats), False
 
     def _get_llm(self):
         """懒加载 ChatOpenAI（V1 qa_service 模式）。"""

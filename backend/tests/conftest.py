@@ -113,6 +113,7 @@ def mock_cache(monkeypatch):
     monkeypatch.setattr("services.question_bank_service.cache", cache, raising=False)
     monkeypatch.setattr("services.learning_progress_service.cache", cache, raising=False)
     monkeypatch.setattr("services.profile_settlement_service.cache", cache, raising=False)
+    monkeypatch.setattr("services.summary_service.cache", cache, raising=False)
     return cache
 
 

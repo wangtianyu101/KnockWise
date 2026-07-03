@@ -5,6 +5,8 @@ V2.3 PR 3 — T16: 骨架测试（class 可实例化 + 5 方法占位 + LLM 模�
 """
 from __future__ import annotations
 
+from unittest.mock import AsyncMock
+
 import pytest
 
 from services import summary_service as svc
@@ -113,10 +115,141 @@ class TestGenerateNarrative:
         monkeypatch.setattr(svc.SummaryService, "_get_llm", boom_llm)
         service = svc.SummaryService()
 
-        result = await service._generate_narrative(
+        text, llm_success = await service._generate_narrative(
             stats={"yesterday_count": 5},
             template="今天答了 {yesterday_count} 题。",
         )
-        # 关键：返回降级版（不抛）
+        # 关键：返回降级版（不抛），flag=False
+        assert text is not None
+        assert "5" in text
+        assert llm_success is False
+
+    async def test_generate_narrative_returns_success_flag(self, monkeypatch):
+        """LLM 调成功 → (text, True) tuple。"""
+        from langchain_core.messages import AIMessage
+
+        # mock 完整 LLM chain
+        class FakeLLM:
+            async def ainvoke(self, messages):
+                return AIMessage(content="这是 LLM 生成的总结。")
+
+        monkeypatch.setattr(svc.SummaryService, "_get_llm", lambda self: FakeLLM())
+        service = svc.SummaryService()
+
+        text, llm_success = await service._generate_narrative(
+            stats={"yesterday_count": 3},
+            template="x {yesterday_count} y",
+        )
+        assert llm_success is True
+        assert "LLM 生成的总结" in text
+
+
+# ─── T18: daily + dashboard（含 Redis 缓存）────────────────
+
+class TestDailyDashboard:
+    """T18: daily/dashboard — Redis 缓存 + DB 聚合 + LLM + 降级。"""
+
+    async def test_daily_cache_hit_returns_cached(self, mock_db, mock_cache):
+        """Redis 命中 → 直接返回缓存，不调 DB/LLM（spec GWT-8）。"""
+        import datetime as _dt
+
+        cached_value = {
+            "title": "今日学习总结",
+            "date": "2026-06-28",
+            "yesterday_count": 5,
+            "mastered": [],
+            "weak_shift": [],
+            "body": "cached body",
+            "_fallback": False,
+        }
+        # cache.get 直接返回 cached_value（不需要序列化）
+        async def fake_get(key):
+            return cached_value
+        mock_cache.get = fake_get
+
+        service = svc.SummaryService()
+        result = await service.daily(
+            "user-1", date=_dt.date(2026, 6, 28), db=mock_db,
+        )
+
+        assert result == cached_value
+        # DB 没被查（cache 命中短路）
+        assert not mock_db.execute.await_count
+
+    async def test_daily_cache_miss_queries_db_and_sets_cache(self, mock_db, mock_cache):
+        """Redis miss → DB 聚合 + LLM + cache.set（happy path）。"""
+        from tests.conftest import FakeResult
+        from types import SimpleNamespace
+        import datetime as _dt
+        from unittest.mock import patch
+
+        today = _dt.date(2026, 6, 28)
+
+        # cache miss → return None
+        async def fake_get(key):
+            return None
+
+        mock_cache.get = fake_get
+        mock_cache.set = AsyncMock()
+
+        # DB 1st: count question_answer_logs → 5
+        # DB 2nd: select Profile
+        mock_db.execute = AsyncMock(side_effect=[
+            FakeResult(scalar=5),  # yesterday_count
+            FakeResult(scalar=SimpleNamespace(  # profile
+                mastered_topics=[{"topic": "React Hooks"}],
+                weak_topics=[{"topic": "网络层"}],
+            )),
+        ])
+
+        # mock LLM：返回已知 narrative + llm_success=True（tuple）
+        with patch.object(
+            svc.SummaryService, "_generate_narrative",
+            new_callable=AsyncMock,
+            return_value=("昨天你答了 5 道题，掌握了 1 个新 topic。", True),
+        ):
+            service = svc.SummaryService()
+            result = await service.daily("user-1", date=today, db=mock_db)
+
         assert result is not None
-        assert "5" in result
+        assert result["yesterday_count"] == 5
+        assert result["_fallback"] is False
+        # cache.set 被调（写入 1h TTL）
+        mock_cache.set.assert_awaited_once()
+
+    async def test_daily_db_failure_falls_back(self, mock_db, mock_cache):
+        """DB 不可达 → 降级返回（_fallback=True，**不抛**）。"""
+        import datetime as _dt
+
+        async def fake_get(key):
+            return None
+
+        mock_cache.get = fake_get
+        mock_cache.set = AsyncMock()
+        mock_db.execute = AsyncMock(side_effect=Exception("DB down"))
+
+        service = svc.SummaryService()
+        result = await service.daily(
+            "user-1", date=_dt.date(2026, 6, 28), db=mock_db,
+        )
+        assert result is not None
+        assert result["_fallback"] is True
+        assert result["yesterday_count"] == 0
+
+    async def test_dashboard_calls_daily(self, mock_db, mock_cache):
+        """dashboard 是 daily(today) 的简写。"""
+        import datetime as _dt
+
+        async def fake_get(key):
+            return None
+
+        mock_cache.get = fake_get
+        mock_cache.set = AsyncMock()
+        mock_db.execute = AsyncMock(side_effect=Exception("DB down"))
+
+        service = svc.SummaryService()
+        result = await service.dashboard("user-1", db=mock_db)
+        # dashboard 走 daily fallback
+        assert result is not None
+        assert result["_fallback"] is True
+        assert result["date"] == _dt.date.today().isoformat()
