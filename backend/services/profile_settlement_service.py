@@ -26,10 +26,13 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.cache import cache
 
 log = logging.getLogger("codemock.profile_settlement")
 
@@ -52,18 +55,165 @@ class ProfileSettlementService:
         """答题后触发：更新 Profile.weak_topics / mastered_topics / last_active_at。
 
         业务规则（T2 实施）：
-        - 读 question_progress + Question.topic → 算 error_rate
-        - error_rate ≥ 0.5 → topic 入 weak_topics
-        - 同一 topic 第 2 次答对且 score ≥ 4 → 从 weak_topics 移到 mastered_topics
-        - 更新 last_active_at = now
+        - 读 Question.topic + QuestionProgress → 算 error_rate = 1 - correct/practice
+        - error_rate ≥ 0.5 → topic 入 weak_topics（更新或新增）
+        - 同一 topic 答对第 2 次且 score ≥ 4 → 从 weak_topics 移到 mastered_topics
+        - 更新 Profile.last_active_at = now
 
         容错（决策 7A）：
-        - 乐观锁：updated_at 比对 → 冲突重试 1 次
-        - 失败：log warning → return None（不抛）
+        - 乐观锁：commit 失败重试 1 次（spec GWT-3）
+        - 整套 try/except → 失败 log warning + return None（**不抛**，spec GWT-9）
         """
-        # T1 骨架占位；T2 实施
-        log.debug(f"settle_after_practice placeholder: user={user_id} qid={qid} score={score}")
-        return None
+        # 局部 import 避免循环依赖（spec.md §3.3 安全）
+        from sqlalchemy import and_, select
+        from models import Profile, Question, QuestionProgress
+        from schemas.settlement import SettlementResult, TopicSettlement
+
+        try:
+            # 1. 读 Question.topic
+            topic_res = await db.execute(
+                select(Question.topic).where(Question.id == qid)
+            )
+            topic = topic_res.scalar_one_or_none()
+            if not topic:
+                log.warning(f"settle_after_practice: question not found qid={qid}")
+                return None
+
+            # 2. 读 QuestionProgress（practice_count + correct_count → error_rate）
+            prog_res = await db.execute(
+                select(QuestionProgress).where(
+                    and_(
+                        QuestionProgress.user_id == str(user_id),
+                        QuestionProgress.question_id == qid,
+                    )
+                )
+            )
+            progress = prog_res.scalar_one_or_none()
+            if not progress:
+                log.warning(
+                    f"settle_after_practice: no progress yet user={user_id} qid={qid}"
+                )
+                return None
+
+            # 3. 算 error_rate
+            if progress.practice_count > 0:
+                error_rate = 1.0 - (
+                    progress.correct_count / progress.practice_count
+                )
+            else:
+                error_rate = 0.0
+
+            # 4. 读 Profile with FOR UPDATE（行锁防并发覆盖，spec GWT-3）
+            prof_res = await db.execute(
+                select(Profile)
+                .where(Profile.user_id == str(user_id))
+                .with_for_update()
+            )
+            profile = prof_res.scalar_one_or_none()
+            if not profile:
+                log.warning(
+                    f"settle_after_practice: profile not found user={user_id}"
+                )
+                return None
+
+            # 5. 算 weak / mastered 列表
+            weak = list(profile.weak_topics or [])
+            mastered = list(profile.mastered_topics or [])
+            now = datetime.now(timezone.utc)
+
+            existing_weak_idx = next(
+                (i for i, t in enumerate(weak) if t.get("topic") == topic), None
+            )
+            existing_mastered_idx = next(
+                (i for i, t in enumerate(mastered) if t.get("topic") == topic), None
+            )
+
+            topic_entry = {
+                "topic": topic,
+                "error_rate": round(error_rate, 2),
+                "practice_count": progress.practice_count,
+                "last_practiced_at": now.isoformat(),
+                "related_question_ids": [qid],
+            }
+
+            # 6. 决策：进 weak / 移到 mastered / 跳过
+            if existing_mastered_idx is not None:
+                # 已经在 mastered → 不动
+                pass
+            elif error_rate >= 0.5:
+                # error_rate 高 → 进 weak
+                if existing_weak_idx is not None:
+                    weak[existing_weak_idx] = topic_entry
+                else:
+                    weak.append(topic_entry)
+            elif (
+                score >= 4
+                and progress.practice_count >= 2
+                and existing_weak_idx is not None
+            ):
+                # 同一 topic 答对第 2 次且 score 高 → 移到 mastered
+                weak = [t for t in weak if t.get("topic") != topic]
+                mastered_entry = {**topic_entry, "error_rate": 0.0}
+                if existing_mastered_idx is not None:
+                    mastered[existing_mastered_idx] = mastered_entry
+                else:
+                    mastered.append(mastered_entry)
+            # else: 维持现状
+
+            # 7. 写回 Profile（乐观锁：commit 失败重试 1 次）
+            profile.weak_topics = weak
+            profile.mastered_topics = mastered
+            profile.last_active_at = now
+            profile.updated_at = now
+
+            committed = False
+            for attempt in range(2):
+                try:
+                    await db.commit()
+                    committed = True
+                    break
+                except Exception as e:
+                    log.debug(
+                        f"settle_after_practice commit attempt {attempt + 1} failed: {e}"
+                    )
+                    try:
+                        await db.rollback()
+                    except Exception:
+                        pass
+            if not committed:
+                log.warning(
+                    f"settle_after_practice: commit failed after retry user={user_id} qid={qid}"
+                )
+                return None
+
+            # 8. 失效 summary cache（best-effort，不阻塞）
+            try:
+                await cache.delete(f"summary:dashboard:{user_id}")
+                await cache.delete(f"summary:profile:{user_id}")
+            except Exception as e:
+                log.debug(
+                    f"settle_after_practice: cache delete best-effort failed: {e}"
+                )
+
+            # 9. 返回 SettlementResult
+            return SettlementResult(
+                user_id=user_id,
+                settled_at=now,
+                weak_topics=[TopicSettlement(**t) for t in weak],
+                mastered_topics=[TopicSettlement(**t) for t in mastered],
+                triggered_by="practice",
+                cache_invalidated=True,
+            )
+        except Exception as e:
+            # 决策 7A：整套兜底 → log + return None，**不抛异常**
+            log.warning(
+                f"settle_after_practice failed: user={user_id} qid={qid} score={score} error={e}"
+            )
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            return None
 
     async def settle_after_interview(
         self, user_id: UUID, interview_id: UUID, db: AsyncSession
