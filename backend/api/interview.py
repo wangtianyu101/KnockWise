@@ -498,6 +498,29 @@ async def complete_interview(
         except Exception as e:
             logger.warning(f"stop_voice_worker failed for {interview_id}: {e}")
 
+        # V2.1 T7: 触发画像沉淀 + Obsidian 写日志 + summary 失效（决策 3A + 4A + 7A）
+        # 拆到 services/interview_settlement.py 避免 interview.py 803 行（决策 4A）
+        try:
+            from services.interview_settlement import (
+                trigger_settle_after_interview,
+                trigger_write_practice_log,
+                trigger_v2_summary_invalidate,
+            )
+            await trigger_settle_after_interview(
+                user_id=UUID(user.id), interview_id=interview_id, db=db,
+            )
+            await trigger_write_practice_log(
+                user_id=UUID(user.id), interview_id=interview_id, db=db,
+            )
+            await trigger_v2_summary_invalidate(
+                user_id=UUID(user.id), db=db,
+            )
+        except Exception as e:
+            # 决策 7A：整套触发链失败不阻塞主业务返回
+            logger.warning(
+                f"V2 trigger chain best-effort failed: interview={interview_id} error={e}"
+            )
+
     return {
         "status": "completed",
         "already_completed": was_already,
