@@ -90,10 +90,11 @@ class TestSettlementSchemasImportable:
 class TestSettleAfterPractice:
     """T2: 答题后触发的画像沉淀 — 4 个测试覆盖 GWT-1/2/3/9。"""
 
-    async def test_happy_path_adds_to_weak_topics(self, mock_db):
+    async def test_happy_path_adds_to_weak_topics(self, mock_db, mock_cache):
         """GWT-1: score=4, error_rate=0.75 → weak_topics 出现新项 + last_active_at 更新。"""
         from tests.conftest import FakeResult
         from uuid import uuid4
+        from unittest.mock import patch
 
         user_id = uuid4()
         now = datetime.now(timezone.utc)
@@ -121,9 +122,19 @@ class TestSettleAfterPractice:
             topic_result, progress_result, profile_result,
         ])
 
-        result = await svc.ProfileSettlementService().settle_after_practice(
-            user_id, "q-1", score=4, db=mock_db,
-        )
+        # T13: write_daily 也被调
+        with patch(
+            "services.obsidian_sediment_service.ObsidianSedimentService"
+        ) as MockObsidian:
+            mock_obsidian_instance = MockObsidian.return_value
+            mock_obsidian_instance.write_daily = AsyncMock(return_value="/tmp/x.md")
+
+            result = await svc.ProfileSettlementService().settle_after_practice(
+                user_id, "q-1", score=4, db=mock_db,
+            )
+
+            # 关键：write_daily 被调
+            mock_obsidian_instance.write_daily.assert_awaited_once()
 
         assert result is not None
         assert result.triggered_by == "practice"

@@ -195,7 +195,25 @@ class ProfileSettlementService:
                     f"settle_after_practice: cache delete best-effort failed: {e}"
                 )
 
-            # 9. 返回 SettlementResult
+            # 9. V2.2 T13: 触发 Obsidian 写 daily 笔记（best-effort，决策 7A）
+            try:
+                from services.obsidian_sediment_service import ObsidianSedimentService
+                from datetime import date as _date
+                today = _date.today()
+                content = self._build_daily_content(
+                    topic=topic,
+                    error_rate=error_rate,
+                    practice_count=progress.practice_count,
+                    score=score,
+                    qid=qid,
+                )
+                await ObsidianSedimentService().write_daily(today, content)
+            except Exception as e:
+                log.debug(
+                    f"settle_after_practice: write_daily best-effort failed: {e}"
+                )
+
+            # 10. 返回 SettlementResult
             return SettlementResult(
                 user_id=user_id,
                 settled_at=now,
@@ -437,6 +455,22 @@ class ProfileSettlementService:
             except Exception:
                 pass
             return None
+
+    @staticmethod
+    def _build_daily_content(
+        topic: str, error_rate: float, practice_count: int, score: int, qid: str
+    ) -> str:
+        """生成每日 Obsidian 笔记 body（T13 辅助方法）。"""
+        return "\n".join([
+            f"# 今日学习 ({qid})",
+            "",
+            f"- **题目**: {qid}",
+            f"- **Topic**: {topic}",
+            f"- **Score**: {score}/5",
+            f"- **Practice count**: {practice_count}",
+            f"- **Error rate**: {error_rate:.0%}",
+            "",
+        ])
 
     async def manual_refresh(
         self, user_id: UUID, db: AsyncSession
