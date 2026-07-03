@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { getProfile, getToken, clearToken } from "@/lib/api";
+import DailySummaryCard from "@/components/v2-settlement/DailySummaryCard";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -69,6 +70,9 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold">欢迎回来，{displayName}</h1>
           <p className="text-gray-400 text-sm mt-1">中级工程师 · 3年经验</p>
         </div>
+
+        {/* V2.3-T23: 今日学习总结卡（V2_ENABLED feature flag 控制） */}
+        <DailySummaryCard />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           {[
