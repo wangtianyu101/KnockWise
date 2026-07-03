@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { getToken } from "@/lib/api";
+import RecentSedimentsCard from "@/components/v2-settlement/RecentSedimentsCard";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -122,6 +123,9 @@ export default function Knowledge() {
             </div>
           </div>
         )}
+
+        {/* V2.3-T24: 最近学习沉淀卡（V2_ENABLED feature flag 控制） */}
+        {tab === "stats" && stats && <RecentSedimentsCard />}
       </main>
     </div>
   );
