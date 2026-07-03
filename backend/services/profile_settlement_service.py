@@ -330,7 +330,22 @@ class ProfileSettlementService:
                     f"settle_after_interview: cache delete best-effort failed: {e}"
                 )
 
-            # 6. 返回 SettlementResult
+            # 6. V2.2 T14: 触发 Obsidian 写 practice_log（best-effort，决策 7A）
+            try:
+                from services.obsidian_sediment_service import ObsidianSedimentService
+                content = self._build_practice_log_content(
+                    interview_id=interview_id,
+                    blind_spots=top_blind_spots,
+                )
+                await ObsidianSedimentService().write_practice_log(
+                    session_id=interview_id, content=content,
+                )
+            except Exception as e:
+                log.debug(
+                    f"settle_after_interview: write_practice_log best-effort failed: {e}"
+                )
+
+            # 7. 返回 SettlementResult
             return SettlementResult(
                 user_id=user_id,
                 settled_at=now,
@@ -471,6 +486,26 @@ class ProfileSettlementService:
             f"- **Error rate**: {error_rate:.0%}",
             "",
         ])
+
+    @staticmethod
+    def _build_practice_log_content(
+        interview_id: UUID, blind_spots: list
+    ) -> str:
+        """生成面试日志 body（T14 辅助方法）。"""
+        lines = [
+            f"# 面试复盘 ({interview_id})",
+            "",
+            f"## 盲点",
+            "",
+        ]
+        if blind_spots:
+            for spot in blind_spots:
+                topic = spot.get("topic") or spot.get("name", "?")
+                err = spot.get("error_rate", 0.5)
+                lines.append(f"- {topic} (error_rate: {err:.0%})")
+        else:
+            lines.append("（无明显盲点）")
+        return "\n".join(lines)
 
     async def manual_refresh(
         self, user_id: UUID, db: AsyncSession
