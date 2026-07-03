@@ -238,3 +238,56 @@ class TestWritePracticeLog:
             vault_path=tmp_path / "nope"
         )
         assert service.write_practice_log(_uuid.uuid4(), "x") is None
+
+
+# ─── T15: 业务方法容错（try/except 兜底）────────────────
+
+class TestWriteMethodExceptionHandling:
+    """T15: 各 write 方法内部 try/except 兜底（决策 7A）。"""
+
+    def test_write_daily_exception_returns_none(self, tmp_path, monkeypatch):
+        """write_daily 内部异常 → return None（决策 7A）。"""
+        from datetime import date
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+
+        # 强制 _write 抛错（虽然 _write 自己 try/except，但 write_daily 还有外层 try）
+        def boom(*args, **kwargs):
+            raise RuntimeError("unexpected")
+
+        monkeypatch.setattr(service, "_write", boom)
+        result = service.write_daily(date(2026, 6, 28), "x")
+        assert result is None
+
+    def test_write_weekly_exception_returns_none(self, tmp_path, monkeypatch):
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        monkeypatch.setattr(
+            service, "_write",
+            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+        assert service.write_weekly("2026-W26", "x") is None
+
+    def test_write_monthly_exception_returns_none(self, tmp_path, monkeypatch):
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        monkeypatch.setattr(
+            service, "_write",
+            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+        assert service.write_monthly("2026-06", "x") is None
+
+    def test_write_mastered_dump_exception_returns_none(self, tmp_path, monkeypatch):
+        import uuid as _uuid
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        monkeypatch.setattr(
+            service, "_write",
+            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+        assert service.write_mastered_dump(_uuid.uuid4(), []) is None
+
+    def test_write_practice_log_exception_returns_none(self, tmp_path, monkeypatch):
+        import uuid as _uuid
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        monkeypatch.setattr(
+            service, "_write",
+            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+        assert service.write_practice_log(_uuid.uuid4(), "x") is None
