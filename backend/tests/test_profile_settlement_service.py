@@ -245,3 +245,133 @@ class TestSettleAfterPractice:
         )
         assert result is None
 
+
+# ─── T3: settle_after_interview 业务实现 ─────────────────────
+
+class TestSettleAfterInterview:
+    """T3: 面试后触发的画像沉淀 — 4 个测试覆盖 happy/edge/no_report/db_failure。"""
+
+    async def test_happy_path_aggregates_blind_spots_into_weak(self, mock_db):
+        """Happy: Report.top_blind_spots 3 项 → 合并进 Profile.weak_topics。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+
+        user_id = uuid4()
+        interview_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        # 1st execute: Report
+        report = SimpleNamespace(
+            interview_id=str(interview_id),
+            top_blind_spots=[
+                {"topic": "分布式锁", "error_rate": 0.7, "related_question_ids": ["q-1"]},
+                {"topic": "消息队列", "error_rate": 0.6, "related_question_ids": ["q-2"]},
+                {"topic": "索引优化", "error_rate": 0.5, "related_question_ids": ["q-3"]},
+            ],
+        )
+        report_result = FakeResult(scalar=report)
+        # 2nd execute: Profile
+        profile = SimpleNamespace(
+            user_id=str(user_id),
+            weak_topics=[],
+            mastered_topics=[],
+            last_active_at=None,
+            updated_at=now,
+        )
+        profile_result = FakeResult(scalar=profile)
+
+        mock_db.execute = AsyncMock(side_effect=[report_result, profile_result])
+
+        result = await svc.ProfileSettlementService().settle_after_interview(
+            user_id, interview_id, db=mock_db,
+        )
+
+        assert result is not None
+        assert result.triggered_by == "interview"
+        topics = {t.topic for t in result.weak_topics}
+        assert "分布式锁" in topics
+        assert "消息队列" in topics
+        assert "索引优化" in topics
+        # 3 项都进 weak
+        assert len(result.weak_topics) == 3
+        # last_active_at 被设
+        assert profile.last_active_at is not None
+
+    async def test_edge_dedup_no_duplicate_topics(self, mock_db):
+        """Edge: top_blind_spots 包含已在 weak 的 topic → 不重复添加。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+
+        user_id = uuid4()
+        interview_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        report = SimpleNamespace(
+            interview_id=str(interview_id),
+            top_blind_spots=[
+                {"topic": "分布式锁", "error_rate": 0.8},  # 已在 weak
+                {"topic": "消息队列", "error_rate": 0.6},  # 新的
+            ],
+        )
+        report_result = FakeResult(scalar=report)
+        profile = SimpleNamespace(
+            user_id=str(user_id),
+            weak_topics=[{
+                "topic": "分布式锁",
+                "error_rate": 0.5,
+                "practice_count": 1,
+                "last_practiced_at": "2026-06-27T00:00:00+00:00",
+                "related_question_ids": [],
+            }],
+            mastered_topics=[],
+            last_active_at=None,
+            updated_at=now,
+        )
+        profile_result = FakeResult(scalar=profile)
+
+        mock_db.execute = AsyncMock(side_effect=[report_result, profile_result])
+
+        result = await svc.ProfileSettlementService().settle_after_interview(
+            user_id, interview_id, db=mock_db,
+        )
+
+        assert result is not None
+        topics = [t.topic for t in result.weak_topics]
+        # 分布式锁 不重复
+        assert topics.count("分布式锁") == 1
+        # 消息队列 新增
+        assert "消息队列" in topics
+        # 总共 2 项
+        assert len(result.weak_topics) == 2
+
+    async def test_failure_no_report_returns_none(self, mock_db):
+        """T3 边界: interview 没 Report → log warning + return None。"""
+        from tests.conftest import FakeResult
+        from uuid import uuid4
+
+        user_id = uuid4()
+        interview_id = uuid4()
+        mock_db.execute = AsyncMock(return_value=FakeResult(scalar=None))
+
+        result = await svc.ProfileSettlementService().settle_after_interview(
+            user_id, interview_id, db=mock_db,
+        )
+        assert result is None
+
+    async def test_failure_db_exception_returns_none_no_throw(self, mock_db):
+        """T3 边界: DB 失败 → log + return None，**不抛**（决策 7A）。"""
+        from uuid import uuid4
+
+        user_id = uuid4()
+        interview_id = uuid4()
+        mock_db.execute = AsyncMock(side_effect=Exception("DB down"))
+        mock_db.rollback = AsyncMock()
+
+        # 关键：不抛
+        result = await svc.ProfileSettlementService().settle_after_interview(
+            user_id, interview_id, db=mock_db,
+        )
+
+        assert result is None
+        assert mock_db.rollback.await_count >= 1
+

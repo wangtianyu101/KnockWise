@@ -221,15 +221,118 @@ class ProfileSettlementService:
         """面试后触发：聚合本场盲点 → 更新 last_active_at。
 
         业务规则（T3 实施）：
-        - 读 interview.overall_score + 11 维雷达
-        - 聚合盲点 top 3 → 写入 weak_topics（如尚未存在）
-        - 更新 last_active_at = now
+        - 读 Report（per interview）→ top_blind_spots（list of {topic, error_rate, ...}）
+        - 合并 top_blind_spots 进 Profile.weak_topics（去重，保留原值）
+        - 更新 Profile.last_active_at = now
 
-        容错（决策 7A）：失败 log → return None（不抛）
+        容错（决策 7A）：整套 try/except → 失败 log + return None（**不抛**）
+        乐观锁：commit 失败重试 1 次
         """
-        # T1 骨架占位；T3 实施
-        log.debug(f"settle_after_interview placeholder: user={user_id} interview={interview_id}")
-        return None
+        # 局部 import 避免循环依赖
+        from sqlalchemy import select
+        from models import Profile, Report
+        from schemas.settlement import SettlementResult, TopicSettlement
+
+        try:
+            # 1. 读 Report（per interview）
+            report_res = await db.execute(
+                select(Report).where(Report.interview_id == str(interview_id))
+            )
+            report = report_res.scalar_one_or_none()
+            if not report:
+                log.warning(
+                    f"settle_after_interview: report not found interview={interview_id}"
+                )
+                return None
+
+            top_blind_spots = list(report.top_blind_spots or [])
+
+            # 2. 读 Profile with FOR UPDATE（行锁防并发覆盖）
+            prof_res = await db.execute(
+                select(Profile)
+                .where(Profile.user_id == str(user_id))
+                .with_for_update()
+            )
+            profile = prof_res.scalar_one_or_none()
+            if not profile:
+                log.warning(
+                    f"settle_after_interview: profile not found user={user_id}"
+                )
+                return None
+
+            # 3. 合并 top_blind_spots → weak_topics（去重，保留原值）
+            weak = list(profile.weak_topics or [])
+            existing_topics = {t.get("topic") for t in weak}
+            now = datetime.now(timezone.utc)
+
+            for spot in top_blind_spots:
+                topic = spot.get("topic") or spot.get("name")
+                if not topic or topic in existing_topics:
+                    continue
+                weak.append({
+                    "topic": topic,
+                    "error_rate": float(spot.get("error_rate", 0.5)),
+                    "practice_count": int(spot.get("practice_count", 1)),
+                    "last_practiced_at": now.isoformat(),
+                    "related_question_ids": list(spot.get("related_question_ids", [])),
+                })
+                existing_topics.add(topic)
+
+            # 4. 写回 Profile（乐观锁重试 1 次）
+            profile.weak_topics = weak
+            profile.last_active_at = now
+            profile.updated_at = now
+
+            committed = False
+            for attempt in range(2):
+                try:
+                    await db.commit()
+                    committed = True
+                    break
+                except Exception as e:
+                    log.debug(
+                        f"settle_after_interview commit attempt {attempt + 1} failed: {e}"
+                    )
+                    try:
+                        await db.rollback()
+                    except Exception:
+                        pass
+            if not committed:
+                log.warning(
+                    f"settle_after_interview: commit failed after retry user={user_id} interview={interview_id}"
+                )
+                return None
+
+            # 5. 失效 summary cache（best-effort）
+            try:
+                await cache.delete(f"summary:dashboard:{user_id}")
+                await cache.delete(f"summary:profile:{user_id}")
+            except Exception as e:
+                log.debug(
+                    f"settle_after_interview: cache delete best-effort failed: {e}"
+                )
+
+            # 6. 返回 SettlementResult
+            return SettlementResult(
+                user_id=user_id,
+                settled_at=now,
+                weak_topics=[TopicSettlement(**t) for t in weak],
+                mastered_topics=[
+                    TopicSettlement(**t) for t in (profile.mastered_topics or [])
+                ],
+                triggered_by="interview",
+                cache_invalidated=True,
+            )
+        except Exception as e:
+            # 决策 7A：整套兜底 → log + return None，**不抛异常**
+            log.warning(
+                f"settle_after_interview failed: user={user_id} interview={interview_id} error={e}"
+            )
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            return None
 
     async def weekly_full_refresh(
         self, user_id: UUID, db: AsyncSession
