@@ -237,6 +237,21 @@ async def upsert_progress(
 
     # invalidate review_queue cache
     await cache.delete(f"review_queue:{user_id}")
+
+    # V2.1 T6: 触发画像沉淀（决策 3A — service 内触发，决策 7A — 不阻塞 + log）
+    # 局部 import 避免循环依赖（profile_settlement_service 可能间接引用 learning_progress_service）
+    try:
+        from uuid import UUID
+        from services.profile_settlement_service import ProfileSettlementService
+        await ProfileSettlementService().settle_after_practice(
+            user_id=UUID(user_id), qid=question_id, score=score, db=db,
+        )
+    except Exception as e:
+        # 决策 7A：沉淀失败不阻塞主业务，log warning 即可
+        log.warning(
+            f"upsert_progress: settlement trigger best-effort failed user={user_id} qid={question_id} error={e}"
+        )
+
     return p
 
 

@@ -160,6 +160,57 @@ class TestUpsertProgress:
         await svc.upsert_progress(mock_db, "u-1", "q-1", score=3)
         mock_cache.delete.assert_awaited_with("review_queue:u-1")
 
+    async def test_triggers_settlement_after_practice(self, mock_db, mock_cache):
+        """T6: 答题后触发 ProfileSettlementService.settle_after_practice（决策 3A）。
+
+        验证：upsert_progress 末尾调 settlement.best-effort，**不阻塞**主业务。
+        """
+        from tests.conftest import FakeResult
+        from unittest.mock import patch
+        from uuid import UUID
+        import uuid as _uuid
+
+        user_uuid = str(_uuid.uuid4())
+        mock_db.execute = AsyncMock(return_value=FakeResult(scalar=None))
+
+        with patch(
+            "services.profile_settlement_service.ProfileSettlementService"
+        ) as MockSettle:
+            mock_instance = MockSettle.return_value
+            mock_instance.settle_after_practice = AsyncMock(return_value=None)
+
+            result = await svc.upsert_progress(mock_db, user_uuid, "q-1", score=4)
+
+            # 关键：settlement 被调
+            mock_instance.settle_after_practice.assert_awaited_once()
+            call_kwargs = mock_instance.settle_after_practice.await_args.kwargs
+            assert call_kwargs["qid"] == "q-1"
+            assert call_kwargs["score"] == 4
+            assert call_kwargs["user_id"] == UUID(user_uuid)  # str → UUID 转换
+            # 主业务不阻塞（返回 result）
+            assert result is not None
+
+    async def test_settlement_failure_does_not_block_main_business(self, mock_db, mock_cache):
+        """T6: settlement 抛异常 → upsert_progress 仍正常返回（决策 7A 不阻塞）。"""
+        from tests.conftest import FakeResult
+        from unittest.mock import patch
+        import uuid as _uuid
+
+        user_uuid = str(_uuid.uuid4())
+        mock_db.execute = AsyncMock(return_value=FakeResult(scalar=None))
+
+        with patch(
+            "services.profile_settlement_service.ProfileSettlementService"
+        ) as MockSettle:
+            mock_instance = MockSettle.return_value
+            mock_instance.settle_after_practice = AsyncMock(
+                side_effect=Exception("settlement crashed")
+            )
+
+            # 关键：upsert_progress 不抛
+            result = await svc.upsert_progress(mock_db, user_uuid, "q-1", score=4)
+            assert result is not None
+
 
 # ─── upsert_from_interview ────────────────────────────────────
 
