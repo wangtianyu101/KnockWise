@@ -105,31 +105,81 @@ class ObsidianSedimentService:
 
     def write_weekly(self, week: str, content: str) -> Optional[str]:
         """写周报：weekly/YYYY-Www.md。"""
-        # T11 实施
-        log.debug(f"write_weekly placeholder: week={week}")
-        return None
+        try:
+            rel_path = f"{WEEKLY_DIR}/{week}.md"
+            frontmatter = "\n".join([
+                "---",
+                f"week: {week}",
+                f"generated_at: {datetime.now(timezone.utc).isoformat()}",
+                "---",
+                "",
+            ])
+            return self._write(rel_path, frontmatter + (content or ""))
+        except Exception as e:
+            log.warning(f"write_weekly failed: week={week} error={e}")
+            return None
 
     def write_monthly(self, month: str, content: str) -> Optional[str]:
         """写月报：monthly/YYYY-MM.md。"""
-        # T11 实施
-        log.debug(f"write_monthly placeholder: month={month}")
-        return None
+        try:
+            rel_path = f"{MONTHLY_DIR}/{month}.md"
+            frontmatter = "\n".join([
+                "---",
+                f"month: {month}",
+                f"generated_at: {datetime.now(timezone.utc).isoformat()}",
+                "---",
+                "",
+            ])
+            return self._write(rel_path, frontmatter + (content or ""))
+        except Exception as e:
+            log.warning(f"write_monthly failed: month={month} error={e}")
+            return None
 
     def write_mastered_dump(
         self, user_id: UUID, topics: List[dict]
     ) -> Optional[str]:
         """写已掌握 topic dump：mastered/<user_id>.md。"""
-        # T11 实施
-        log.debug(f"write_mastered_dump placeholder: user={user_id}")
-        return None
+        try:
+            rel_path = f"{MASTERED_DIR}/{user_id}.md"
+            body_lines = [f"- {t.get('topic', '?')}" for t in topics]
+            frontmatter = "\n".join([
+                "---",
+                f"user_id: {user_id}",
+                f"count: {len(topics)}",
+                f"generated_at: {datetime.now(timezone.utc).isoformat()}",
+                "---",
+                "",
+                "# Mastered Topics\n\n",
+            ])
+            return self._write(rel_path, frontmatter + "\n".join(body_lines))
+        except Exception as e:
+            log.warning(
+                f"write_mastered_dump failed: user={user_id} error={e}"
+            )
+            return None
 
     def write_practice_log(
         self, session_id: UUID, content: str
     ) -> Optional[str]:
-        """写面试日志：interview/YYYY-MM-DD-<session_id>.md。
+        """写面试日志：interview/YYYY-MM-DD-<id8>.md。
 
         session_id 实际是 interview_id（UUID）；路径里用前 8 字符避免太长。
         """
-        # T12 实施
-        log.debug(f"write_practice_log placeholder: session={session_id}")
-        return None
+        try:
+            today = datetime.now(timezone.utc).date()
+            id_short = str(session_id)[:8]
+            rel_path = f"{INTERVIEW_DIR}/{today.isoformat()}-{id_short}.md"
+            frontmatter = "\n".join([
+                "---",
+                f"session_id: {session_id}",
+                f"date: {today.isoformat()}",
+                f"generated_at: {datetime.now(timezone.utc).isoformat()}",
+                "---",
+                "",
+            ])
+            return self._write(rel_path, frontmatter + (content or ""))
+        except Exception as e:
+            log.warning(
+                f"write_practice_log failed: session={session_id} error={e}"
+            )
+            return None

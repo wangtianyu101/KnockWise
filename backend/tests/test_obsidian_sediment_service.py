@@ -148,3 +148,93 @@ class TestWriteDaily:
         # 这是已知行为：同日多次写 = 最后一次覆盖（spec 没有强制追加）
         text = target.read_text(encoding="utf-8")
         assert "Second session" in text
+
+
+# ─── T11: write_weekly / write_monthly / write_mastered_dump ─────
+
+class TestWriteWeekly:
+    def test_happy_creates_weekly_file(self, tmp_path):
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        result = service.write_weekly("2026-W26", "# 本周总结")
+        assert result is not None
+        assert "weekly/2026-W26.md" in result
+        text = Path(result).read_text(encoding="utf-8")
+        assert "week: 2026-W26" in text
+        assert "# 本周总结" in text
+
+    def test_vault_missing(self, tmp_path):
+        service = svc.ObsidianSedimentService(
+            vault_path=tmp_path / "nope"
+        )
+        assert service.write_weekly("2026-W26", "x") is None
+
+
+class TestWriteMonthly:
+    def test_happy_creates_monthly_file(self, tmp_path):
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        result = service.write_monthly("2026-06", "# 6 月")
+        assert result is not None
+        assert "monthly/2026-06.md" in result
+        text = Path(result).read_text(encoding="utf-8")
+        assert "month: 2026-06" in text
+        assert "# 6 月" in text
+
+    def test_vault_missing(self, tmp_path):
+        service = svc.ObsidianSedimentService(
+            vault_path=tmp_path / "nope"
+        )
+        assert service.write_monthly("2026-06", "x") is None
+
+
+class TestWriteMasteredDump:
+    def test_happy_writes_topic_list(self, tmp_path):
+        import uuid as _uuid
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        user_id = _uuid.uuid4()
+        topics = [
+            {"topic": "React Hooks"},
+            {"topic": "TypeScript 泛型"},
+            {"topic": "SQL 窗口函数"},
+        ]
+
+        result = service.write_mastered_dump(user_id, topics)
+        assert result is not None
+        assert f"mastered/{user_id}.md" in result
+        text = Path(result).read_text(encoding="utf-8")
+        assert "count: 3" in text
+        assert "- React Hooks" in text
+        assert "- TypeScript 泛型" in text
+        assert "- SQL 窗口函数" in text
+
+    def test_empty_topics(self, tmp_path):
+        import uuid as _uuid
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        result = service.write_mastered_dump(_uuid.uuid4(), [])
+        assert result is not None
+        text = Path(result).read_text(encoding="utf-8")
+        assert "count: 0" in text
+
+
+# ─── T12: write_practice_log ────────────────────────────
+
+class TestWritePracticeLog:
+    def test_happy_writes_interview_file(self, tmp_path):
+        import uuid as _uuid
+        service = svc.ObsidianSedimentService(vault_path=tmp_path)
+        interview_id = _uuid.uuid4()
+
+        result = service.write_practice_log(interview_id, "# 面试内容")
+        assert result is not None
+        # 路径含 interview/<date>-<id8>.md
+        assert "interview/" in result
+        assert ".md" in result
+        text = Path(result).read_text(encoding="utf-8")
+        assert f"session_id: {interview_id}" in text
+        assert "# 面试内容" in text
+
+    def test_vault_missing(self, tmp_path):
+        import uuid as _uuid
+        service = svc.ObsidianSedimentService(
+            vault_path=tmp_path / "nope"
+        )
+        assert service.write_practice_log(_uuid.uuid4(), "x") is None
