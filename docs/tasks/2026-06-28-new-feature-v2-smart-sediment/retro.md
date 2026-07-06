@@ -113,6 +113,12 @@ related:
   - 影响：2 测试 fail，1 轮修
   - **改进**: async 函数 + 测试 await 必须同时改，**单 commit 验证**（跑 pytest 再 commit）
 
+- ❌ **🔴 V2 前端组件用了 antd 但 package.json 没装**（T23-T25 commit 隐患，2026-07-06 发现）
+  - 现象：DailySummaryCard / RecentSedimentsCard / ProfilePage 都 `import { Card } from 'antd'`，但 V1 frontend package.json 没有 antd。vite/Next.js dev build 都会因找不到 antd 报错
+  - 根因：写 component-spec.md 时假设 antd 已装（T23-T25 都基于这个假设），但 V1 frontend 走 Tailwind 自定义 CSS 风格，**从来没引入 antd**
+  - 影响：V2 frontend commit (3 commits) 在 dev/prod 都不能 build，是个**真实生产隐患**（之前没用户跑过所以没暴露）
+  - **改进**: TBD — 选项 A（npm install antd + @ant-design/icons + recharts 加进 package.json）/ 选项 B（V2 组件重写用原生 Tailwind，去掉 antd 依赖，匹配 V1 风格）
+
 ---
 
 ## 4. 改进项（必填 · 必须分配）
@@ -143,6 +149,14 @@ related:
 - [ ] **改进 6**: spec.md / plan.md / api-spec.md / component-spec.md 7 个 V2 文档 commit
   - 负责人: @王天宇（V2.5 待补 commit）
   - 截止: 2026-07-04
+
+- [ ] **🔴 改进 7 (新增 · 2026-07-06 发现)**: V2 前端 antd 依赖缺口（T23-T25 commit 隐患）
+  - 负责人: @王天宇
+  - 截止: 2026-07-08
+  - 沉淀到: `frontend/package.json` + `docs/tasks/2026-06-28-new-feature-v2-smart-sediment/retro.md`
+  - 选项 A：npm install antd @ant-design/icons recharts → V2 组件保持现状
+  - 选项 B：V2 组件重写用 Tailwind → 匹配 V1 风格，0 新依赖
+  - 倾向：**选项 A**（component-spec.md 描述按 antd 写的，重写工作量大；npm install 简单）
 
 ---
 
