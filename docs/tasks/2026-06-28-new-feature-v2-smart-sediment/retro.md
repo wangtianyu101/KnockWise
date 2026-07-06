@@ -157,6 +157,7 @@ related:
   - 选项 A：npm install antd @ant-design/icons recharts → V2 组件保持现状
   - 选项 B：V2 组件重写用 Tailwind → 匹配 V1 风格，0 新依赖
   - 倾向：**选项 A**（component-spec.md 描述按 antd 写的，重写工作量大；npm install 简单）
+  - 实施结果：✅ 选项 A 完成（antd 6.5 + icons 6.3 + recharts 2.15 装好 + 16 V2 组件测试通过）
 
 ---
 
