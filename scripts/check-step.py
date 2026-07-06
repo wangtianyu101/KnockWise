@@ -156,11 +156,12 @@ def check_tasks(content):
 
     # 检查每个任务都有估时 ≤ 1h（只检查任务行内的估时，排除"总估时"）
     # 提取每个 T1/T2/... 任务块，再找块内的"估时"字段
+    # 兼容 markdown bold：**估时**: / **估时**:** / 估时:（retro §3 改进项 #1）
     task_blocks = re.findall(r'-\s*\[\s*\]\s*T\d+.*?(?=-\s*\[\s*\]\s*T\d+|^##|\Z)', content, re.MULTILINE | re.DOTALL)
     over_hour_count = 0
     for block in task_blocks:
-        # 找任务内的"估时"字段
-        estimate_match = re.search(r'估时[:：]\s*(\d+)\s*h', block)
+        # 找任务内的"估时"字段（容忍可选 ** bold 标记）
+        estimate_match = re.search(r'\*{0,2}估时\*{0,2}:\s*(\d+)\s*h', block)
         if estimate_match:
             hours = int(estimate_match.group(1))
             if hours > 1:
@@ -173,13 +174,13 @@ def check_tasks(content):
     if commit_count < len(tasks) and len(tasks) > 0:
         errors.append(f'任务数 {len(tasks)} 但只 {commit_count} 个提到 commit，可能未对齐')
 
-    # 3. 任务对应测试（test_case_ref 或类似）
-    test_refs = len(re.findall(r'对应测试|测试:|test[-_]case', content, re.IGNORECASE))
+    # 3. 任务对应测试（容忍 bold）
+    test_refs = len(re.findall(r'对应测试|\*{0,2}测试\*{0,2}:|test[-_]case', content, re.IGNORECASE))
     if test_refs < len(tasks) and len(tasks) > 0:
         errors.append(f'任务 {len(tasks)} 个但只 {test_refs} 个标注测试用例')
 
-    # 4. 依赖关系明确
-    if not re.search(r'依赖[:：]|depends on|前置', content, re.IGNORECASE):
+    # 4. 依赖关系明确（容忍 bold）
+    if not re.search(r'\*{0,2}依赖\*{0,2}[:：]|depends on|前置', content, re.IGNORECASE):
         errors.append('任务依赖关系未明确（应有"依赖: T3"格式）')
 
     # 5. 总估时字段
