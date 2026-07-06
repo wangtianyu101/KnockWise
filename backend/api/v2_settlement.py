@@ -12,7 +12,7 @@
 - 走 JWT 认证（Depends(get_current_user)）
 - 路径前缀 /api/v2
 - 响应头加 X-API-Version: v2.0
-- 限流（spec §3.2 表格）— slowapi 暂不引入，留在 V2.4 优化
+- 限流（spec §3.2 表格）— slowapi 接入（L4 review 改进项）
 - 失败兜底：HTTP 200 + 降级版（决策 7A），不返 5xx
 """
 from __future__ import annotations
@@ -21,11 +21,12 @@ import logging
 from datetime import date as date_type
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from core.dependencies import get_current_user
+from core.limiter import limiter  # V2 L4 review 限流
 from models import User
 from services.summary_service import SummaryService
 from services.profile_settlement_service import ProfileSettlementService
@@ -41,7 +42,9 @@ router = APIRouter(prefix="/api/v2", tags=["v2-settlement"])
 # ─── /api/v2/dashboard/summary ─────────────────────
 
 @router.get("/dashboard/summary")
+@limiter.limit("5/60second")
 async def get_dashboard_summary(
+    request: Request,
     date: Optional[str] = Query(
         None, description="YYYY-MM-DD, 默认 = today (用户时区)"
     ),
@@ -79,7 +82,9 @@ async def get_dashboard_summary(
 # ─── /api/v2/profile/weekly ────────────────────────
 
 @router.get("/profile/weekly")
+@limiter.limit("1/60second")
 async def get_profile_weekly(
+    request: Request,
     week: str = Query(..., description="ISO week (YYYY-Www)"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -101,7 +106,9 @@ async def get_profile_weekly(
 # ─── /api/v2/profile/monthly ───────────────────────
 
 @router.get("/profile/monthly")
+@limiter.limit("1/60second")
 async def get_profile_monthly(
+    request: Request,
     month: str = Query(..., description="YYYY-MM"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -122,7 +129,9 @@ async def get_profile_monthly(
 # ─── /api/v2/profile/refresh ───────────────────────
 
 @router.post("/profile/refresh")
+@limiter.limit("1/60second")
 async def post_profile_refresh(
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -142,7 +151,9 @@ async def post_profile_refresh(
 # ─── /api/v2/knowledge/recent-sediments ────────────
 
 @router.get("/knowledge/recent-sediments")
+@limiter.limit("20/60second")
 async def get_recent_sediments(
+    request: Request,
     limit: int = Query(5, ge=1, le=20, description="默认 5, 最大 20"),
     user: User = Depends(get_current_user),
 ):
@@ -184,7 +195,9 @@ async def get_recent_sediments(
 # ─── /api/v2/obsidian/sync ─────────────────────────
 
 @router.post("/obsidian/sync")
+@limiter.limit("1/60second")
 async def post_obsidian_sync(
+    request: Request,
     date: str = Query(..., description="YYYY-MM-DD"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

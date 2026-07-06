@@ -350,3 +350,76 @@ class TestEndToEndPipeline:
                 assert r2.json()["mastered_count"] == 3
         finally:
             app.dependency_overrides.clear()
+
+
+# ─── L4 改进项：限流 + 错误响应统一验证 ──────────────────
+
+class TestRateLimitAndErrorFormat:
+    """验证 slowapi 限流（spec §3.2）+ 错误响应格式（spec §3.4）。"""
+
+    def test_429_rate_limit_returns_unified_error_format(self):
+        """触发 429 → 响应走 spec §3.4 统一错误格式。"""
+        from core.dependencies import get_current_user
+        from core.limiter import limiter
+        user = SimpleNamespace(id="user-1")
+        app.dependency_overrides[get_current_user] = lambda: user
+
+        limiter.reset()
+        try:
+            with patch(
+                "api.v2_settlement.SummaryService"
+            ) as MockSvc:
+                MockSvc.return_value.dashboard = AsyncMock(return_value={
+                    "title": "x", "date": "2026-06-28", "yesterday_count": 0,
+                    "mastered": [], "weak_shift": [], "body": "x", "_fallback": False,
+                })
+
+                client = TestClient(app)
+                # /dashboard/summary 限流是 5/60s，第 6 次应返 429
+                responses = [
+                    client.get("/api/v2/dashboard/summary") for _ in range(6)
+                ]
+                # 前 5 个 200，第 6 个 429
+                assert all(r.status_code == 200 for r in responses[:5]), \
+                    f"前 5 个应 200，实际 {[r.status_code for r in responses[:5]]}"
+                assert responses[5].status_code == 429, \
+                    f"第 6 个应 429，实际 {responses[5].status_code}"
+
+                # 验证 429 走 spec §3.4 格式
+                body = responses[5].json()
+                assert "error" in body, f"429 响应应含 error 字段，实际 {body}"
+                assert body["error"]["code"] == "RATE_LIMITED"
+                assert "message" in body["error"]
+                assert "details" in body["error"]
+        finally:
+            limiter.reset()
+            app.dependency_overrides.clear()
+
+    def test_refresh_429_works_on_2nd_call_in_60s(self):
+        """profile/refresh 限流 1/60s — 第 2 次返 429。"""
+        from core.dependencies import get_current_user
+        from core.limiter import limiter
+        from uuid import uuid4
+        user = SimpleNamespace(id=str(uuid4()))
+        app.dependency_overrides[get_current_user] = lambda: user
+
+        limiter.reset()
+        try:
+            with patch(
+                "api.v2_settlement.ProfileSettlementService"
+            ) as MockSvc:
+                MockSvc.return_value.manual_refresh = AsyncMock(return_value={
+                    "user_id": user.id, "settled_at": "2026-06-28T15:30:00Z",
+                    "weak_topics": [], "mastered_topics": [],
+                    "triggered_by": "manual_refresh", "cache_invalidated": True,
+                })
+
+                client = TestClient(app)
+                r1 = client.post("/api/v2/profile/refresh")
+                r2 = client.post("/api/v2/profile/refresh")
+
+                assert r1.status_code == 200, f"第 1 次应 200，实际 {r1.status_code}"
+                assert r2.status_code == 429, f"第 2 次应 429，实际 {r2.status_code}"
+        finally:
+            limiter.reset()
+            app.dependency_overrides.clear()

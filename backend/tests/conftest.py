@@ -179,3 +179,18 @@ def fake_question():
     q.source = "seed"
     q.created_by = None
     return q
+
+# ─── 限流 fixture（slowapi 在测试中禁用）───────────────────────
+
+import pytest
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+
+@pytest.fixture(autouse=True)
+def reset_limiter():
+    """每个测试前清空 slowapi 限流状态，避免串行测试触发限流。"""
+    from core.limiter import limiter
+    limiter.reset()
+    yield
+    limiter.reset()

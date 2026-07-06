@@ -1,7 +1,11 @@
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+
+from core.limiter import limiter
 
 from api.auth import router as auth_router
 from api.profile import router as profile_router
@@ -17,7 +21,22 @@ from api.v2_settlement import router as v2_settlement_router  # V2.3 智能沉�
 
 logger = logging.getLogger("codemock")
 
+# V2.3 限流（L4 review 改进项 · spec §3.2 表格）
 app = FastAPI(title="CodeMock", version="0.1.0")
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    lambda req, exc: JSONResponse(
+        status_code=429,
+        content={
+            "error": {
+                "code": "RATE_LIMITED",
+                "message": f"Rate limit exceeded: {exc.detail}",
+                "details": {"limit": str(exc.detail)},
+            }
+        },
+    ),
+)
 
 app.add_middleware(
     CORSMiddleware,
