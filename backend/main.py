@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
@@ -37,6 +38,78 @@ app.add_exception_handler(
         },
     ),
 )
+
+
+# V2.3 错误响应统一（spec §3.4）：所有 4xx 走 {error: {code, message, details}}
+# - RequestValidationError（Pydantic 自动校验失败）→ 422 with field/constraint/all_errors
+# - HTTPException（手动 raise 的 401/403/404/422/500）→ wrap detail
+# - RateLimitExceeded（slowapi）→ 429 with limit
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """422 统一 spec §3.4 格式（Pydantic 自动校验失败）。"""
+    errors = exc.errors()
+    first = errors[0] if errors else {}
+    field = ".".join(str(p) for p in first.get("loc", [])) if first else "unknown"
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": first.get("msg", "Validation failed"),
+                "details": {
+                    "field": field,
+                    "constraint": first.get("type", "unknown"),
+                    "input": str(first.get("input", ""))[:200],  # 截断防泄漏
+                    "all_errors": [
+                        {
+                            "field": ".".join(str(p) for p in e.get("loc", [])),
+                            "constraint": e.get("type", "unknown"),
+                        }
+                        for e in errors
+                    ],
+                },
+            }
+        },
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """通用 HTTPException 包装：401/403/404/500 等都走 spec §3.4。
+
+    V2.5 优化项提前（之前 FastAPI 默认 {detail: ...}）。
+    """
+    # code 映射（按 HTTP status 选最贴近的 spec code）
+    code_map = {
+        400: "BAD_REQUEST",
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        405: "METHOD_NOT_ALLOWED",
+        422: "VALIDATION_ERROR",
+        500: "INTERNAL_ERROR",
+        503: "SERVICE_UNAVAILABLE",
+    }
+    code = code_map.get(exc.status_code, f"HTTP_{exc.status_code}")
+
+    # detail 可能是 dict 或 str（兼容历史调用）
+    if isinstance(exc.detail, dict):
+        details = exc.detail
+        message = str(details.get("message", exc.detail))
+    else:
+        details = {"detail": str(exc.detail)}
+        message = str(exc.detail)
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "details": details,
+            }
+        },
+    )
 
 app.add_middleware(
     CORSMiddleware,

@@ -423,3 +423,62 @@ class TestRateLimitAndErrorFormat:
         finally:
             limiter.reset()
             app.dependency_overrides.clear()
+
+
+# ─── L4 改进 #3：422 错误格式统一 ────────────────────────
+
+class TestUnifiedErrorFormat:
+    """spec §3.4：所有 4xx 错误走 {error: {code, message, details}} 格式。"""
+
+    def test_422_uses_unified_error_format(self):
+        """422 走 spec §3.4 格式（V2.5 优化项提前）。
+
+        注意：manual HTTPException 走 http_exception_handler（details 包原 detail）；
+        Pydantic 自动校验失败走 validation_exception_handler（details 含 field/constraint/all_errors）。
+        两条路径都验证 error.code/message/details 顶层字段。
+        """
+        from core.dependencies import get_current_user
+        from core.limiter import limiter
+        user = SimpleNamespace(id="user-1")
+        app.dependency_overrides[get_current_user] = lambda: user
+
+        limiter.reset()
+        try:
+            client = TestClient(app)
+            response = client.get("/api/v2/profile/weekly?week=invalid")
+
+            assert response.status_code == 422
+            body = response.json()
+            # spec §3.4 顶层格式
+            assert "error" in body, f"422 应含 error 字段，实际 {body}"
+            assert body["error"]["code"] == "VALIDATION_ERROR"
+            assert "message" in body["error"]
+            assert "details" in body["error"]
+            # details 可包含 field（manual HTTPException） 或 detail（原 detail 字符串）
+        finally:
+            limiter.reset()
+            app.dependency_overrides.clear()
+
+    def test_pydantic_validation_includes_field_details(self):
+        """Pydantic 自动校验失败时，details 含 field/constraint（更深层结构）。"""
+        from core.dependencies import get_current_user
+        from core.limiter import limiter
+        user = SimpleNamespace(id="user-1")
+        app.dependency_overrides[get_current_user] = lambda: user
+
+        limiter.reset()
+        try:
+            client = TestClient(app)
+            # ?limit=9999 → Query(le=20) Pydantic 自动校验失败
+            response = client.get("/api/v2/knowledge/recent-sediments?limit=9999")
+
+            assert response.status_code == 422
+            body = response.json()
+            assert "error" in body
+            assert body["error"]["code"] == "VALIDATION_ERROR"
+            assert "field" in body["error"]["details"]
+            assert "constraint" in body["error"]["details"]
+            assert "all_errors" in body["error"]["details"]
+        finally:
+            limiter.reset()
+            app.dependency_overrides.clear()
