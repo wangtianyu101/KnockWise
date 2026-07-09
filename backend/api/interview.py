@@ -111,6 +111,7 @@ async def list_interviews(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     status: str = "",
+    round: str = "",
     topic: str = "",
     favorites: bool = False,
     q: str = "",
@@ -118,6 +119,8 @@ async def list_interviews(
     size: int = 20,
 ):
     """List user's interviews with optional filters and pagination.
+
+    V1 closure 🟡 #10：补 round 筛选参数（之前漏掉，spec plan.md 列出 round=）。
 
     `favorites=true` returns only bookmarked interviews (independent of
     status). Soft-deleted interviews (deleted_at IS NOT NULL) are always
@@ -134,6 +137,9 @@ async def list_interviews(
     if status:
         query = query.where(Interview.status == status)
         count_q = count_q.where(Interview.status == status)
+    if round:
+        query = query.where(Interview.round == round)
+        count_q = count_q.where(Interview.round == round)
     if favorites:
         query = query.where(Interview.is_favorite.is_(True))
         count_q = count_q.where(Interview.is_favorite.is_(True))
