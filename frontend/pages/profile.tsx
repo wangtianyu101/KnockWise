@@ -153,7 +153,7 @@ export default function ProfilePage() {
       <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3.5 bg-[#0c1024]/90 backdrop-blur-xl border-b border-indigo-500/10">
         <div className="flex items-center gap-3">
           <span className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            DevBrain
+            KnockWise
           </span>
           <div className="hidden md:flex gap-1 ml-6">
             <NavLink href="/dashboard">仪表盘</NavLink>

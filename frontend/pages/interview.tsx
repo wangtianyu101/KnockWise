@@ -100,7 +100,7 @@ export default function InterviewPage() {
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
-    const raw = localStorage.getItem("codemock_setup");
+    const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("codemock_setup");
     if (raw) {
       try { setSetupInfo(JSON.parse(raw)); } catch {}
     }
@@ -114,7 +114,7 @@ export default function InterviewPage() {
   async function initInterview() {
     try {
       await getProfile();
-      const raw = localStorage.getItem("codemock_setup");
+      const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("codemock_setup");
       let round = "round1";
       if (raw) {
         try { const s = JSON.parse(raw); round = s.round || "round1"; } catch {}
@@ -212,7 +212,7 @@ export default function InterviewPage() {
       <div className="px-6 py-3 border-b border-indigo-500/20 flex items-center justify-between bg-gray-950/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            CodeMock
+            KnockWise
           </h1>
           {setupInfo && (
             <span className="text-xs text-gray-500 hidden sm:inline">

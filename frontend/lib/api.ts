@@ -49,19 +49,33 @@ import type {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// V3.8 P4a: 双 key fallback · 老 codemock_token 自动迁移到 knockwise_token
+const TOKEN_KEY_NEW = "knockwise_token";
+const TOKEN_KEY_OLD = "codemock_token";
+
 let token: string | null = null;
 
 export function setToken(t: string) {
   token = t;
   if (typeof window !== "undefined") {
-    localStorage.setItem("codemock_token", t);
+    localStorage.setItem(TOKEN_KEY_NEW, t);
+    localStorage.removeItem(TOKEN_KEY_OLD);
   }
 }
 
 export function getToken(): string | null {
   if (token) return token;
   if (typeof window !== "undefined") {
-    token = localStorage.getItem("codemock_token");
+    let t = localStorage.getItem(TOKEN_KEY_NEW);
+    if (!t) {
+      // 兼容老 key · 自动迁移
+      t = localStorage.getItem(TOKEN_KEY_OLD);
+      if (t) {
+        localStorage.setItem(TOKEN_KEY_NEW, t);
+        localStorage.removeItem(TOKEN_KEY_OLD);
+      }
+    }
+    token = t;
   }
   return token;
 }
@@ -99,7 +113,8 @@ async function request(path: string, options: RequestInit = {}): Promise<any> {
 export function clearToken() {
   token = null;
   if (typeof window !== "undefined") {
-    localStorage.removeItem("codemock_token");
+    localStorage.removeItem(TOKEN_KEY_NEW);
+    localStorage.removeItem(TOKEN_KEY_OLD);
   }
 }
 

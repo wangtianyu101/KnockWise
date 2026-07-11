@@ -1,7 +1,7 @@
 /**
  * Dashboard — V3.8 P2 重写
  *
- * 重构前：4 模块卡 + 2x2 stats + 旧横条 nav（DevBrain）
+ * 重构前：4 模块卡 + 2x2 stats + 旧横条 nav（KnockWise）
  * 重构后：
  *   - 顶部：大标题（Layout 已注入 TopNav）
  *   - HeroCard（5 状态 · P2 新）
