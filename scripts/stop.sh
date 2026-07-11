@@ -15,7 +15,7 @@
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PID_FILE="/tmp/intervue-pids.txt"
+PID_FILE="/tmp/knockwise-pids.txt"
 TARGET="${1:-}"
 FORCE_KILL=false
 
