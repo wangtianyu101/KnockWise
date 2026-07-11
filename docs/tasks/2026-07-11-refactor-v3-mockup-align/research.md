@@ -30,7 +30,7 @@ related:
 │   • 8 个有 nav 的页面（去 nav）  │          • backend/*                │
 │   • 1 个 components/v3 扩       │          • mockup.html（参照）      │
 │   • 1 个 components/v3+ 新增    │          • seed_data                │
-│   • 2 处品牌名（DevBrain/CodeMock）│        • livekit.yaml            │
+│   • 2 处品牌名（KnockWise/KnockWise）│        • livekit.yaml            │
 │                                                                       │
 └──────────────────────────────────────────────────────────────────────┘
 ```
@@ -59,7 +59,7 @@ related:
 | 用户找不到 AI 推送历史 | mockup §sidebar (`v3-mockup.html:901-907`) 有"今日推荐 / 推送历史"，前端 0 路由 |
 | 用户找不到设置 | mockup §sidebar (`v3-mockup.html:919-925`) 有"设置"，前端 0 路由 |
 | 8 个页面有重复的横向 nav | grep "sticky top-0" 命中 8 个 page（dashboard/news/knowledge/profile/interview/profile/analytics/report）|
-| 品牌名 3 套并存 | dashboard/profile = "DevBrain" · index.tsx = "CodeMock" · mockup = "Intervue" |
+| 品牌名 3 套并存 | dashboard/profile = "KnockWise" · index.tsx = "KnockWise" · mockup = "Intervue" |
 | V3 design-spec.md §3.6 Sidebar 已写完但 0 行代码 | 决策 L 已拍（用户 2026-07-10 拍方案 C），mockup 做了，真代码没做 |
 | verify.md L5 报"5/5 gate 全过"是误导 | L31 写"mockup.html 是 staging 替代"—— 用 mockup 自查，没真跑 next dev 比对 |
 
@@ -76,8 +76,8 @@ related:
 |---|---|---|---|
 | `frontend/pages/_app.tsx` | 6 | 入口 | 加 Sidebar 注入 |
 | `frontend/pages/dashboard.tsx` | 175 | Dashboard | 重写视觉 + 加 Hero/雷达/stats |
-| `frontend/pages/index.tsx` | 164 | 登录页 | 改名 CodeMock → Intervue |
-| `frontend/pages/profile.tsx` | ~300 | 画像 | 改名 DevBrain → Intervue + 去 nav |
+| `frontend/pages/index.tsx` | 164 | 登录页 | 改名 KnockWise → Intervue |
+| `frontend/pages/profile.tsx` | ~300 | 画像 | 改名 KnockWise → Intervue + 去 nav |
 | `frontend/pages/news.tsx` | ~250 | 信息流 | 去 nav |
 | `frontend/pages/knowledge.tsx` | ~280 | 知识库 | 去 nav |
 | `frontend/pages/interview/profile.tsx` | ~400 | 面试总览 | 去 nav + 改名 |
@@ -168,7 +168,7 @@ related:
 | P1 | Sidebar 组件 + _app.tsx 注入（page nav 暂时保留） | 3h | Sidebar 6 组件 ≥ 80% 覆盖 |
 | P2 | Dashboard 重写（Hero + 3 雷达 + 5 列 stats + 3 卡）| 3h | HeroCard/StatsBar/RadarMini 各 4 测试 |
 | P3 | 5 个新路由壳（ai-today/history/admin-questions/admin-sync/settings） | 4h | 路由可达性测试 |
-| P4 | 17 个 page 删原 nav + 品牌名统一（CodeMock/DevBrain → KnockWise）+ mockup.html 3 处 + package.json name + 后端 cli 注释 + CLAUDE.md/docs/README | 3h | 现有 154 测试不破 |
+| P4 | 17 个 page 删原 nav + 品牌名统一（KnockWise/KnockWise → KnockWise）+ mockup.html 3 处 + package.json name + 后端 cli 注释 + CLAUDE.md/docs/README | 3h | 现有 154 测试不破 |
 | P5 | verify（装 playwright ~2h + 写 ~30 截图测试 + 真起 next dev 比对） | 5h | L5 playwright 自动化跑 |
 
 ### 3.2 方案 B：一次性大重构
@@ -205,7 +205,7 @@ related:
 | **现有 154 测试因 Sidebar 注入而挂** | 🔴 高 | P1 阶段先跑一遍 `npm test`，确认哪些 page 用 `<nav>` 选择器；改测试或加 `data-testid` |
 | **Ant Design 与 Tailwind 样式冲突**（antd 装了但 dashboard/profile/qa 用，其他 page 不用） | 🟡 中 | 调研：确认 antd 只在少数 page 用（已确认），不影响 Sidebar 引入 |
 | **5 个新路由用空壳 → 用户点空白页** | 🟡 中 | P3 阶段每个新路由至少要有 loading state + "建设中"占位（EmptyState 组件已可用）|
-| **品牌名统一漏改** | 🟢 低 | grep "DevBrain\|CodeMock" 全局搜，4 处（dashboard/profile/login/CLAUDE.md） |
+| **品牌名统一漏改** | 🟢 低 | grep "KnockWise\|KnockWise" 全局搜，4 处（dashboard/profile/login/CLAUDE.md） |
 | **设计文档 §3.6 与 mockup 细微差异** | 🟡 中 | design-spec §3.6 是 mockup 子集；以 mockup 为准，design-spec 同步更新 |
 | **Dashboard 数据接口 `/api/dashboard` 字段对不上**（Hero 需要 3 次雷达数据） | 🔴 高 | **P2 开工前必须**先查 `/api/dashboard` 返回结构；若没雷达字段，先开新 API（如 `/api/interview/recent?limit=3`） |
 | **删除原 nav 后 page 失去面包屑/退出按钮** | 🟡 中 | Sidebar 顶部用户菜单 + breadcrumb 区域覆盖 |
@@ -253,10 +253,10 @@ related:
 | 文件 | 当前 | 改后 | 行号 |
 |---|---|---|---|
 | `docs/tasks/.../mockups/v3-mockup.html` | Intervue × 3 | KnockWise | 714, 743, 948-951 区域 |
-| `frontend/pages/dashboard.tsx` | DevBrain | KnockWise | 57 |
-| `frontend/pages/profile.tsx` | DevBrain | KnockWise | 156 |
-| `frontend/pages/index.tsx` | CodeMock | KnockWise | 79（含 SVG 渐变文字）|
-| `frontend/package.json` | "name": "codemock-frontend" | "name": "knockwise-frontend" | 2 |
+| `frontend/pages/dashboard.tsx` | KnockWise | KnockWise | 57 |
+| `frontend/pages/profile.tsx` | KnockWise | KnockWise | 156 |
+| `frontend/pages/index.tsx` | KnockWise | KnockWise | 79（含 SVG 渐变文字）|
+| `frontend/package.json` | "name": "knockwise-frontend" | "name": "knockwise-frontend" | 2 |
 | `backend/cli/sync_questions.py` | "Intervue 题目同步 CLI" | "KnockWise 题目同步 CLI" | 28 |
 | `docs/api/README.md` | 标题 Intervue | KnockWise | 1 |
 | `CLAUDE.md` §四项目目录名 Intervue | "Intervue" | "KnockWise"（路径不动）| 全文 |
@@ -302,7 +302,7 @@ related:
 
 - 我之前调研时**只看了 mockup.html 文字**，没去核实项目根名 / package.json / login page 实际品牌
 - 结果：把 "Intervue"（mockup 文字）当成项目品牌推荐给用户
-- 实际：**项目品牌是 KnockWise**（用户原话："现在整个项目都叫这个"），同时存在 4 套：CodeMock（package.json + index.tsx）/ DevBrain（dashboard + profile）/ Intervue（mockup + CLAUDE.md 目录名）/ KnockWise（用户认定）
+- 实际：**项目品牌是 KnockWise**（用户原话："现在整个项目都叫这个"），同时存在 4 套：KnockWise（package.json + index.tsx）/ KnockWise（dashboard + profile）/ Intervue（mockup + CLAUDE.md 目录名）/ KnockWise（用户认定）
 - **缓解**：§5.4 已列出 10+ 处 KnockWise 改名清单 + mockup.html 自身也要改（用户明确"全改掉"）
 - **教训给未来的我**：调研品牌/产品名类项目级信息时，**至少查 3 处**（mockup + package.json + login page + 目录名），不能信单一来源
 
@@ -329,17 +329,17 @@ related:
 
 | 类别 | 位置 | 当前 | 数量 | 优先级 | 影响 |
 |---|---|---|---|---|---|
-| **用户可见 logo/标题** | dashboard.tsx:57 / profile.tsx:156 / index.tsx:79 / interview.tsx:215 | DevBrain / DevBrain / CodeMock / CodeMock | 4 | 🔴 P0 | 立刻改 |
-| **package.json names** | frontend/package.json:2 + package-lock.json:2,8 | `codemock-frontend` | 3 | 🔴 P0 | 立刻改 |
-| **README.md** | `/README.md:1` | `# CodeMock` | 1 | 🔴 P0 | 立刻改 |
+| **用户可见 logo/标题** | dashboard.tsx:57 / profile.tsx:156 / index.tsx:79 / interview.tsx:215 | KnockWise / KnockWise / KnockWise / KnockWise | 4 | 🔴 P0 | 立刻改 |
+| **package.json names** | frontend/package.json:2 + package-lock.json:2,8 | `knockwise-frontend` | 3 | 🔴 P0 | 立刻改 |
+| **README.md** | `/README.md:1` | `# KnockWise` | 1 | 🔴 P0 | 立刻改 |
 | **mockup.html** | v3-mockup.html:714, 743, 948-951 | Intervue ×3 | 3 | 🔴 P0 | 立刻改 |
-| **后端 logger 命名** | backend/main.py:23,26 / core/{database,cache,dependencies}.py / api/{auth,interview,admin,learn,profile,analytics,v2_settlement,voice_ws}.py / services/{interview,learning_progress,study_plan,question_bank,qa,obsidian,profile_settlement,summary,resume_parser,asr_tts,agora,archive,interview_settlement,collection,question_sync,question_quality,scheduler}.py / voice/{stt,livekit_worker,whisper_live_server,turn_manager,interview_room}.py | `codemock.*` / `codemock-voice` / `codemock-voice-worker` / `codemock-turn` | **~40 logger** | 🟡 P2 | 测试断言里有 `assert svc.log.name == "codemock.xxx"`（test_summary_service.py:48, test_profile_settlement_service.py:55 等）|
-| **localStorage key** | lib/api.ts:57,64,102 / VoiceRoom.tsx:62 / lib/livekit.ts:10 / setup.tsx:29 / report.tsx:156 / interview.tsx:103,117 | `codemock_token` + `codemock_setup` | **8 处** | 🔴 P0 | 改名 → 老用户 token/setup 失效；需要双 key fallback 或迁移脚本 |
-| **Docker/DB 配置** | docker-compose.yml:6,7,8,49 / backend/core/config.py:6 | `codemock` DB 名 + 用户名 + 密码 + URL | 5 | 🟡 P1 | 改了要重建 DB（CLAUDE.md §二"绝对不能动：MySQL 真实数据"），**不动真实 DB**，只改 docker-compose |
-| **后端 FastAPI title** | backend/main.py:26 | `app = FastAPI(title="CodeMock", ...)` | 1 | 🟢 P3 | 改了只影响 `/docs` 标题 |
-| **测试 docstring / 注释** | backend/tests/test_core.py:1 / backend/test_agent.py:20 / backend/agents/followup_agent.py:1 / backend/models/__init__.py:1 | CodeMock 文案 | 4 | 🟢 P3 | 注释 |
+| **后端 logger 命名** | backend/main.py:23,26 / core/{database,cache,dependencies}.py / api/{auth,interview,admin,learn,profile,analytics,v2_settlement,voice_ws}.py / services/{interview,learning_progress,study_plan,question_bank,qa,obsidian,profile_settlement,summary,resume_parser,asr_tts,agora,archive,interview_settlement,collection,question_sync,question_quality,scheduler}.py / voice/{stt,livekit_worker,whisper_live_server,turn_manager,interview_room}.py | `knockwise.*` / `knockwise-voice` / `knockwise-voice-worker` / `knockwise-turn` | **~40 logger** | 🟡 P2 | 测试断言里有 `assert svc.log.name == "knockwise.xxx"`（test_summary_service.py:48, test_profile_settlement_service.py:55 等）|
+| **localStorage key** | lib/api.ts:57,64,102 / VoiceRoom.tsx:62 / lib/livekit.ts:10 / setup.tsx:29 / report.tsx:156 / interview.tsx:103,117 | `knockwise_token` + `knockwise_setup` | **8 处** | 🔴 P0 | 改名 → 老用户 token/setup 失效；需要双 key fallback 或迁移脚本 |
+| **Docker/DB 配置** | docker-compose.yml:6,7,8,49 / backend/core/config.py:6 | `knockwise` DB 名 + 用户名 + 密码 + URL | 5 | 🟡 P1 | 改了要重建 DB（CLAUDE.md §二"绝对不能动：MySQL 真实数据"），**不动真实 DB**，只改 docker-compose |
+| **后端 FastAPI title** | backend/main.py:26 | `app = FastAPI(title="KnockWise", ...)` | 1 | 🟢 P3 | 改了只影响 `/docs` 标题 |
+| **测试 docstring / 注释** | backend/tests/test_core.py:1 / backend/test_agent.py:20 / backend/agents/followup_agent.py:1 / backend/models/__init__.py:1 | KnockWise 文案 | 4 | 🟢 P3 | 注释 |
 | **CLI 注释** | backend/cli/sync_questions.py:28 | "Intervue 题目同步 CLI" | 1 | 🟢 P3 | 注释 |
-| **Skill 文档** | .claude/skills/intervue-dev/SKILL.md:3,6,10,23,58,138 | "Intervue (CodeMock)" | 6+ | 🟢 P3 | AI 内部知识 |
+| **Skill 文档** | .claude/skills/intervue-dev/SKILL.md:3,6,10,23,58,138 | "Intervue (KnockWise)" | 6+ | 🟢 P3 | AI 内部知识 |
 | **scripts 日志/PID** | scripts/start.sh:23,90,97,119,126,143,150 / stop.sh:18 | `/tmp/intervue-pids.txt` + `/tmp/intervue-*.log` | 8 | 🟡 P1 | 改名后 stop.sh 找不到 PID 文件 |
 | **CLAUDE.md 项目目录名** | CLAUDE.md 全文 | Intervue 目录名引用 | 多 | 🟢 P3 | 文档文案，路径不动 |
 
@@ -367,7 +367,7 @@ related:
 | **news.tsx** | tab/dailies/weeklies/report/stats/sources | `/api/news/{daily,weekly,stats,sources,daily/latest}` | ❌ | ❌ 0 |
 | **knowledge.tsx** | tab/searchQ/results/files/note/stats/graphData | `/api/knowledge/{browse,stats,search}` | ❌ | ❌ 0 |
 | **setup.tsx** | step/config | 纯客户端 | ✅ | ❌ 0 |
-| **interview.tsx** | messages/question/interviewId/phase + 8 个 | startInterview + getNextQuestion + submitAnswer + localStorage `codemock_setup` | ❌ | ❌ 0 |
+| **interview.tsx** | messages/question/interviewId/phase + 8 个 | startInterview + getNextQuestion + submitAnswer + localStorage `knockwise_setup` | ❌ | ❌ 0 |
 | **onboarding.tsx** | step/profile | updateProfile/getProfile | ✅ | ❌ 0 |
 | **report.tsx** | report/loading | generateReport/getReport | ❌ | ❌ 0 |
 | **learn/index.tsx** | — | `/api/learn/questions` | ❌ | ✅ 12 |
@@ -387,7 +387,7 @@ related:
 - **8 个 page 完全无测试**（dashboard/news/knowledge/setup/interview/onboarding/report + 全部 5 个 interview/* 子页 + plan/collections）
 - **现有测试集中**：v3/V2 共享组件 + 4 个核心学习页面（learn/review/qa/profile）
 - **5 个 interview/* 子页 + dashboard 全无测试**，是 P1 Sidebar 注入后高风险区域
-- **localStorage key 依赖**：`interview.tsx:103,117`（`codemock_setup`）+ 多个文件 `codemock_token` —— KnockWise 改名必须双 key fallback
+- **localStorage key 依赖**：`interview.tsx:103,117`（`knockwise_setup`）+ 多个文件 `knockwise_token` —— KnockWise 改名必须双 key fallback
 
 ---
 

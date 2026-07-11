@@ -25,7 +25,7 @@ related:
 
 ### 0.1 品牌
 
-- **品牌名**：KnockWise（统一文案，无 Intervue / DevBrain / CodeMock 残留）
+- **品牌名**：KnockWise（统一文案，无 Intervue / KnockWise / KnockWise 残留）
 - **品牌色**：主色 `#6366f1`（indigo-500）+ 强调色 `#a78bfa`（violet-400）+ 警告色 `#f59e0b`（amber-500）
 - **背景**：深蓝黑 `#050914` + 玻璃拟态（`rgba(15, 20, 40, 0.7)` + `backdrop-filter: blur(20px) saturate(180%)`）
 

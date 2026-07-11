@@ -98,7 +98,7 @@ related:
 | Service 层 | `backend/services/*.py` 20+ service | 业务逻辑不动 |
 | 数据模型 | `backend/models/__init__.py` 19 表 | schema 不动 |
 | DB migration | `backend/core/database.py:_MIGRATIONS` | 不加新 ALTER |
-| 真实 MySQL 数据 | `codemock` 数据库 + 50 道种子题 | CLAUDE.md §二冻结 |
+| 真实 MySQL 数据 | `knockwise` 数据库 + 50 道种子题 | CLAUDE.md §二冻结 |
 | livekit.yaml | `livekit.yaml` | 冻结 |
 | seed_data | `backend/seed_data/*.json` | 冻结 |
 
@@ -443,7 +443,7 @@ export default function SettingsPage() {
 | **P2 Dashboard** | `__tests__/pages/dashboard.test.tsx` | 4-5 | smoke |
 | **P3 5 路由可达性** | `__tests__/pages/{admin-questions,admin-sync,ai-today,ai-history,settings}.test.tsx` | 5 | smoke |
 | **P3 后端 /recent** | `backend/tests/test_interview_recent_endpoint.py` | 9 | ≥ 85% |
-| **P4c logger 测试同步** | 改 30 个 `assert svc.log.name == "codemock.xxx"` → `"knockwise.xxx"` | 30 | 不动逻辑 |
+| **P4c logger 测试同步** | 改 30 个 `assert svc.log.name == "knockwise.xxx"` → `"knockwise.xxx"` | 30 | 不动逻辑 |
 | **P5 playwright** | `frontend/tests/e2e/{17 page + sidebar 折叠 + dashboard 6 组件}.spec.ts` | 25 | 视觉 baseline |
 
 ### 4.2 现有测试（154 测试 · 冻结 · 不动）
@@ -465,9 +465,9 @@ export default function SettingsPage() {
 ### 5.1 现状
 
 ```javascript
-// 旧 key（codemock 时代）
-localStorage.getItem("codemock_token")
-localStorage.getItem("codemock_setup")
+// 旧 key（knockwise 时代）
+localStorage.getItem("knockwise_token")
+localStorage.getItem("knockwise_setup")
 ```
 
 ### 5.2 迁移策略：双 key fallback
@@ -479,11 +479,11 @@ export function getToken(): string | null {
   const newToken = localStorage.getItem("knockwise_token");
   if (newToken) return newToken;
   // 旧 key fallback（迁移期）
-  const oldToken = localStorage.getItem("codemock_token");
+  const oldToken = localStorage.getItem("knockwise_token");
   if (oldToken) {
     // 自动迁移：写入新 key + 删旧 key
     localStorage.setItem("knockwise_token", oldToken);
-    localStorage.removeItem("codemock_token");
+    localStorage.removeItem("knockwise_token");
     return oldToken;
   }
   return null;
@@ -492,12 +492,12 @@ export function getToken(): string | null {
 export function setToken(token: string): void {
   localStorage.setItem("knockwise_token", token);
   // 清理旧 key（防止遗留）
-  localStorage.removeItem("codemock_token");
+  localStorage.removeItem("knockwise_token");
 }
 
 export function clearToken(): void {
   localStorage.removeItem("knockwise_token");
-  localStorage.removeItem("codemock_token");
+  localStorage.removeItem("knockwise_token");
 }
 ```
 
@@ -505,7 +505,7 @@ export function clearToken(): void {
 
 ```typescript
 // pages/setup.tsx + pages/report.tsx + pages/interview.tsx
-const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("codemock_setup");
+const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("knockwise_setup");
 // 读后写回新 key，删旧 key
 ```
 
@@ -513,7 +513,7 @@ const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("cod
 
 | # | 测试名 | 输入 | 期望 |
 |---|---|---|---|
-| 1 | `test_token_migration` | 只 codemock_token 存在 | 返回 token + knockwise_token 写入 + codemock_token 删除 |
+| 1 | `test_token_migration` | 只 knockwise_token 存在 | 返回 token + knockwise_token 写入 + knockwise_token 删除 |
 | 2 | `test_token_new` | knockwise_token 存在 | 返回 token |
 | 3 | `test_token_empty` | 都没 | 返回 null |
 | 4 | `test_clear_token` | 两个都存在 | 都删 |
@@ -527,20 +527,20 @@ const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("cod
 
 | 文件 | 当前 | 改后 | 行号 |
 |---|---|---|---|
-| `frontend/pages/dashboard.tsx` | DevBrain | KnockWise | 57 |
-| `frontend/pages/profile.tsx` | DevBrain | KnockWise | 156 |
-| `frontend/pages/index.tsx` | CodeMock | KnockWise | 79 + SVG 文案 |
-| `frontend/pages/interview.tsx` | CodeMock | KnockWise | 215 |
-| `frontend/package.json` | "name": "codemock-frontend" | "name": "knockwise-frontend" | 2 |
-| `frontend/package-lock.json` | "name": "codemock-frontend" | "name": "knockwise-frontend" | 2, 8 |
-| `README.md` | # CodeMock | # KnockWise | 1 |
+| `frontend/pages/dashboard.tsx` | KnockWise | KnockWise | 57 |
+| `frontend/pages/profile.tsx` | KnockWise | KnockWise | 156 |
+| `frontend/pages/index.tsx` | KnockWise | KnockWise | 79 + SVG 文案 |
+| `frontend/pages/interview.tsx` | KnockWise | KnockWise | 215 |
+| `frontend/package.json` | "name": "knockwise-frontend" | "name": "knockwise-frontend" | 2 |
+| `frontend/package-lock.json` | "name": "knockwise-frontend" | "name": "knockwise-frontend" | 2, 8 |
+| `README.md` | # KnockWise | # KnockWise | 1 |
 | `docs/tasks/.../mockups/v3-mockup.html` | Intervue × 3 | KnockWise | 714, 743, 948-951 |
-| `frontend/lib/api.ts` | codemock_token | knockwise_token（+ 双 key fallback） | 57, 64, 102 |
-| `frontend/components/VoiceRoom.tsx` | codemock_token | knockwise_token（+ fallback） | 62 |
-| `frontend/lib/livekit.ts` | codemock_token | knockwise_token（+ fallback） | 10 |
-| `frontend/pages/setup.tsx` | codemock_setup | knockwise_setup（+ fallback） | 29 |
-| `frontend/pages/report.tsx` | codemock_setup | knockwise_setup（+ fallback） | 156 |
-| `frontend/pages/interview.tsx` | codemock_setup | knockwise_setup（+ fallback） | 103, 117 |
+| `frontend/lib/api.ts` | knockwise_token | knockwise_token（+ 双 key fallback） | 57, 64, 102 |
+| `frontend/components/VoiceRoom.tsx` | knockwise_token | knockwise_token（+ fallback） | 62 |
+| `frontend/lib/livekit.ts` | knockwise_token | knockwise_token（+ fallback） | 10 |
+| `frontend/pages/setup.tsx` | knockwise_setup | knockwise_setup（+ fallback） | 29 |
+| `frontend/pages/report.tsx` | knockwise_setup | knockwise_setup（+ fallback） | 156 |
+| `frontend/pages/interview.tsx` | knockwise_setup | knockwise_setup（+ fallback） | 103, 117 |
 
 ### 6.2 🟡 P4b 应改（一致性 · 15 处）
 
@@ -548,12 +548,12 @@ const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("cod
 |---|---|---|---|
 | `scripts/start.sh` | intervue-pids.txt + intervue-{livekit,backend,frontend}.log | knockwise-* | 23, 90, 97, 119, 126, 143, 150 |
 | `scripts/stop.sh` | intervue-pids.txt | knockwise-pids.txt | 18 |
-| `docker-compose.yml` | codemock DB/USER/PASSWORD | knockwise（新部署生效，不动真 DB） | 6, 7, 8, 49 |
-| `backend/main.py` | FastAPI(title="CodeMock", ...) | title="KnockWise" | 26 |
-| `backend/main.py` | logger = "codemock" | logger = "knockwise" | 23 |
-| `backend/main.py` | return {"status": "ok", "service": "codemock"} | "service": "knockwise" | 223 |
+| `docker-compose.yml` | knockwise DB/USER/PASSWORD | knockwise（新部署生效，不动真 DB） | 6, 7, 8, 49 |
+| `backend/main.py` | FastAPI(title="KnockWise", ...) | title="KnockWise" | 26 |
+| `backend/main.py` | logger = "knockwise" | logger = "knockwise" | 23 |
+| `backend/main.py` | return {"status": "ok", "service": "knockwise"} | "service": "knockwise" | 223 |
 | `backend/cli/sync_questions.py` | "Intervue 题目同步 CLI" | "KnockWise 题目同步 CLI" | 28 |
-| `.claude/skills/intervue-dev/SKILL.md` | "Intervue (CodeMock)" 6 处 | "KnockWise" | 3, 6, 10, 23, 58, 138 |
+| `.claude/skills/intervue-dev/SKILL.md` | "Intervue (KnockWise)" 6 处 | "KnockWise" | 3, 6, 10, 23, 58, 138 |
 | `docs/api/README.md` | Intervue 标题 | KnockWise | 1 |
 | `CLAUDE.md` | Intervue 项目名（路径不动） | KnockWise（项目名）| 多 |
 
@@ -561,7 +561,7 @@ const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("cod
 
 | 类别 | 数量 | 详细 |
 |---|---|---|
-| **后端 logger 改名** | ~40 | 12 个 api/*.py + 20 个 services/*.py + 5 个 voice/*.py + core/*.py = ~40 logger `codemock.*` → `knockwise.*` |
+| **后端 logger 改名** | ~40 | 12 个 api/*.py + 20 个 services/*.py + 5 个 voice/*.py + core/*.py = ~40 logger `knockwise.*` → `knockwise.*` |
 | **后端注释/docstring** | 4 | test_core.py:1 / test_agent.py:20 / agents/followup_agent.py:1 / models/__init__.py:1 |
 
 ### 6.4 🔴 不改（冻结）
@@ -569,24 +569,24 @@ const raw = localStorage.getItem("knockwise_setup") || localStorage.getItem("cod
 | 不改 | 原因 |
 |---|---|
 | 项目根目录 `/Users/wangtianyu/IdeaProjects/Intervue/` | git mv 风险大 + 用户没要求 |
-| 真实 MySQL `codemock` 数据库 | CLAUDE.md §二冻结 + 数据迁移风险 |
-| `backend/core/config.py` 的 codemock DB user/pass（连接本地 DB）| 改了连不上现有真 DB |
+| 真实 MySQL `knockwise` 数据库 | CLAUDE.md §二冻结 + 数据迁移风险 |
+| `backend/core/config.py` 的 knockwise DB user/pass（连接本地 DB）| 改了连不上现有真 DB |
 | `livekit.yaml` | 冻结 |
 
 ### 6.5 30 个测试断言同步（P4c）
 
-> 后端 40 logger 改名连带：现有测试里有 `assert svc.log.name == "codemock.xxx"` 类断言，需要同步改成 `"knockwise.xxx"`。
+> 后端 40 logger 改名连带：现有测试里有 `assert svc.log.name == "knockwise.xxx"` 类断言，需要同步改成 `"knockwise.xxx"`。
 > 涉及测试文件（已知）：
 
 | 测试文件 | 断言示例 | 行号（估） |
 |---|---|---|
-| `backend/tests/test_summary_service.py` | `assert svc.log.name == "codemock.summary"` | 48 |
-| `backend/tests/test_profile_settlement_service.py` | `assert svc.log.name == "codemock.profile_settlement"` | 55 |
-| `backend/tests/test_obsidian_sediment_service.py` | `assert svc.log.name == "codemock.obsidian_sediment"` | 42 |
-| `backend/tests/test_question_quality_service.py` | `caplog.at_level(... logger="codemock.question_quality")` | 114, 132 |
-| **其余** | grep 全仓 `codemock\\.[a-z_]+` 在测试中 | 估 ~20 处 |
+| `backend/tests/test_summary_service.py` | `assert svc.log.name == "knockwise.summary"` | 48 |
+| `backend/tests/test_profile_settlement_service.py` | `assert svc.log.name == "knockwise.profile_settlement"` | 55 |
+| `backend/tests/test_obsidian_sediment_service.py` | `assert svc.log.name == "knockwise.obsidian_sediment"` | 42 |
+| `backend/tests/test_question_quality_service.py` | `caplog.at_level(... logger="knockwise.question_quality")` | 114, 132 |
+| **其余** | grep 全仓 `knockwise\\.[a-z_]+` 在测试中 | 估 ~20 处 |
 
-**改法**：正则替换 `codemock\\.(\\w+)` → `knockwise.\\1` + 跑 `pytest -q` 验证。
+**改法**：正则替换 `knockwise\\.(\\w+)` → `knockwise.\\1` + 跑 `pytest -q` 验证。
 
 ---
 
@@ -705,7 +705,7 @@ export async function apiGet(url: string): Promise<any> {
 | **P1 Sidebar** | ✅ 老前端无 Sidebar，正常用 | ✅ 新前端注入 Sidebar，老后端无影响 | ✅ 完全兼容 |
 | **P2 Dashboard 重写** | ✅ 老前端调 `/api/dashboard`，接口不变 | ⚠️ 新前端 HeroCard 调 `/api/interviews/recent`，老后端无此端点 → 404 → HeroCard 显示 EmptyState | 🟡 EmptyState fallback OK |
 | **P3 5 路由 + 后端 /recent** | ✅ 老前端无新路由，访问不到 | ⚠️ 新前端 Sidebar 加了新路由，老后端无对应 → 404 | 🟡 EmptyState fallback OK |
-| **P4a KnockWise 必改** | ⚠️ 老前端 `codemock_token` 仍能读（双 key fallback）| ✅ 新前端双 key fallback 兼容老 key | ✅ 完全兼容 |
+| **P4a KnockWise 必改** | ⚠️ 老前端 `knockwise_token` 仍能读（双 key fallback）| ✅ 新前端双 key fallback 兼容老 key | ✅ 完全兼容 |
 | **P4b KnockWise 应改**（scripts） | 🟡 老前端无影响，但老 PID 文件残留 → stop.sh 新版读不到老 PID 需手动清理 | ✅ | 🟡 需要文档说明 |
 | **P4c KnockWise 可改**（logger） | ✅ 无影响（运维日志）| ✅ | ✅ |
 | **P5 playwright** | ✅ 无影响（测试基础设施）| ✅ | ✅ |

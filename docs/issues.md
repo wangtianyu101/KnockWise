@@ -106,7 +106,7 @@
 ### 议题 F — 可观测性：零 trace / metrics / structured log
 
 **现状**：
-- 所有日志走 `logging.getLogger("codemock.xxx")` + print
+- 所有日志走 `logging.getLogger("knockwise.xxx")` + print
 - 没有 trace 关联（一次 request 跨多服务/agent 怎么串起来）
 - 没有 metrics（LLM 调用次数、token 消耗、STT 延迟、报告生成耗时）
 - 没有 error 聚合（Sentry / GlitchTip 都没接）

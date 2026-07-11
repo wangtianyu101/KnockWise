@@ -71,7 +71,7 @@ related:
 
 | 时刻 | 重构前视觉 | 重构后视觉 |
 |---|---|---|
-| **打开 dashboard** | 顶部 7 tab 横条 + "DevBrain" logo + 4 模块卡 | 左 Sidebar 5 分组 + 顶部"KnockWise" + Hero 卡 + 雷达 |
+| **打开 dashboard** | 顶部 7 tab 横条 + "KnockWise" logo + 4 模块卡 | 左 Sidebar 5 分组 + 顶部"KnockWise" + Hero 卡 + 雷达 |
 | **找 AI 推送** | ❌ 找不到 | ✅ Sidebar "AI 推送" 分组 · 今日推荐 + 推送历史 |
 | **找题库管理** | ❌ 找不到 | ✅ Sidebar 底部 "ADMIN" 分组 · 题库管理 + 手动同步 |
 | **首次加载 dashboard** | 看到空白 0.5s | ✅ HeroCardSkeleton + StatsBarSkeleton + RadarMiniSkeleton pulse |
@@ -269,7 +269,7 @@ padding: 48px;
 | 元素 | V1 | V3.8 |
 |---|---|---|
 | 横向 tab | 7 个（仪表盘/面试/学/复习/计划🆕/知识库/信息流）| ❌ 全部移到 Sidebar |
-| Logo | "DevBrain" / "CodeMock" | **"KnockWise" + 敲门图标 SVG** |
+| Logo | "KnockWise" / "KnockWise" | **"KnockWise" + 敲门图标 SVG** |
 | 中间区 | 无 | **breadcrumb**（当前 page 名）|
 | 右侧 | 用户头像 + 退出 | 用户头像 + 用户名（退出移 Sidebar）|
 | 移动端 | 7 tab 挤一行 | **汉堡按钮**（唤出 Sidebar drawer）|
@@ -498,20 +498,20 @@ padding: 48px;
 
 | 元素 | V1/V3 旧品牌 | V3.8 新品牌 |
 |---|---|---|
-| 登录页标题 | "CodeMock" | "KnockWise" |
-| Dashboard 顶部 logo | "DevBrain" | "KnockWise" |
-| Profile 顶部 logo | "DevBrain" | "KnockWise" |
-| interview top bar | "CodeMock" | "KnockWise" |
+| 登录页标题 | "KnockWise" | "KnockWise" |
+| Dashboard 顶部 logo | "KnockWise" | "KnockWise" |
+| Profile 顶部 logo | "KnockWise" | "KnockWise" |
+| interview top bar | "KnockWise" | "KnockWise" |
 | mockup.html 全部 logo | "Intervue" × 3 | "KnockWise" × 3 |
-| README.md H1 | "# CodeMock" | "# KnockWise" |
-| package.json `name` | "codemock-frontend" | "knockwise-frontend" |
-| localStorage key | `codemock_token` / `codemock_setup` | `knockwise_token` / `knockwise_setup`（+ 双 key fallback） |
-| 后端 logger 名字 | `codemock.*` (40 处) | `knockwise.*` |
-| 后端 FastAPI title | "CodeMock" | "KnockWise" |
-| docker-compose DB | codemock | knockwise（新部署生效） |
+| README.md H1 | "# KnockWise" | "# KnockWise" |
+| package.json `name` | "knockwise-frontend" | "knockwise-frontend" |
+| localStorage key | `knockwise_token` / `knockwise_setup` | `knockwise_token` / `knockwise_setup`（+ 双 key fallback） |
+| 后端 logger 名字 | `knockwise.*` (40 处) | `knockwise.*` |
+| 后端 FastAPI title | "KnockWise" | "KnockWise" |
+| docker-compose DB | knockwise | knockwise（新部署生效） |
 | scripts PID/log 文件 | `/tmp/intervue-*` | `/tmp/knockwise-*` |
 | CLAUDE.md 项目名 | "Intervue" | "KnockWise"（路径不动）|
-| Skill 文档 | "Intervue (CodeMock)" | "KnockWise" |
+| Skill 文档 | "Intervue (KnockWise)" | "KnockWise" |
 
 **完整 70+ 处清单**见 [spec.md §6](spec.md)。
 

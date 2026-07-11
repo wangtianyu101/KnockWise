@@ -170,12 +170,12 @@ P5 playwright 装 + 25 截图测试 + 真起 next dev 比对 mockup      3h
 
 | # | 任务 | 文件 | 工时 |
 |---|---|---|---|
-| 4a.1 | 改 dashboard.tsx DevBrain → KnockWise | `frontend/pages/dashboard.tsx:57` | 0.05h |
-| 4a.2 | 改 profile.tsx DevBrain → KnockWise | `frontend/pages/profile.tsx:156` | 0.05h |
-| 4a.3 | 改 index.tsx CodeMock → KnockWise + SVG 文案 | `frontend/pages/index.tsx:79` | 0.1h |
-| 4a.4 | 改 interview.tsx CodeMock → KnockWise | `frontend/pages/interview.tsx:215` | 0.05h |
-| 4a.5 | 改 package.json + package-lock.json codemock-frontend → knockwise-frontend | 2 文件 | 0.1h |
-| 4a.6 | 改 README.md # CodeMock → # KnockWise | `README.md:1` | 0.05h |
+| 4a.1 | 改 dashboard.tsx KnockWise → KnockWise | `frontend/pages/dashboard.tsx:57` | 0.05h |
+| 4a.2 | 改 profile.tsx KnockWise → KnockWise | `frontend/pages/profile.tsx:156` | 0.05h |
+| 4a.3 | 改 index.tsx KnockWise → KnockWise + SVG 文案 | `frontend/pages/index.tsx:79` | 0.1h |
+| 4a.4 | 改 interview.tsx KnockWise → KnockWise | `frontend/pages/interview.tsx:215` | 0.05h |
+| 4a.5 | 改 package.json + package-lock.json knockwise-frontend → knockwise-frontend | 2 文件 | 0.1h |
+| 4a.6 | 改 README.md # KnockWise → # KnockWise | `README.md:1` | 0.05h |
 | 4a.7 | 改 mockup.html 3 处 Intervue → KnockWise | `v3-mockup.html` 714,743,948 | 0.1h |
 | 4a.8 | 改 lib/api.ts localStorage token 双 key fallback | `frontend/lib/api.ts:57,64,102` | 0.15h |
 | 4a.9 | 改 VoiceRoom.tsx + lib/livekit.ts localStorage 双 key fallback | 2 文件 | 0.1h |
@@ -204,7 +204,7 @@ P5 playwright 装 + 25 截图测试 + 真起 next dev 比对 mockup      3h
 
 | # | 任务 | 文件 | 工时 |
 |---|---|---|---|
-| 4c.1 | 改 backend/main.py logger "codemock" → "knockwise" | 1 文件 | 0.05h |
+| 4c.1 | 改 backend/main.py logger "knockwise" → "knockwise" | 1 文件 | 0.05h |
 | 4c.2 | 改 backend/core/{database,cache,dependencies}.py logger | 3 文件 | 0.1h |
 | 4c.3 | 改 backend/api/{auth,interview,admin,learn,profile,analytics,v2_settlement,voice_ws}.py logger | 8 文件 | 0.25h |
 | 4c.4 | 改 backend/services/*.py logger (20 文件) | 20 文件 | 0.5h |
@@ -274,7 +274,7 @@ P1 (Sidebar) ──→ P2 (Dashboard 重写) ──→ P3 (5 路由 + /recent)
 | **Sidebar 全局注入破坏 8 page 布局** | 🔴 高 | P1 阶段先用 `position: fixed` 不推 main-content；逐 page 截图对比 mockup；用 `data-testid` 锚定测试内容 |
 | **HeroCard /recent API 超 200ms** | 🟡 中 | 走 `idx_user_status` 索引 + mock 测试；若仍慢加 Redis 缓存 60s |
 | **KnockWise localStorage 改名用户掉登录** | 🔴 高 | 双 key fallback + 监控 `/api/auth` 失败率；> 5% 自动告警 |
-| **后端 40 logger 改名 + 30 测试同步** | 🟡 中 | 写脚本批量改 `codemock\.` → `knockwise.` + grep 验证；pytest 跑通 |
+| **后端 40 logger 改名 + 30 测试同步** | 🟡 中 | 写脚本批量改 `knockwise\.` → `knockwise.` + grep 验证；pytest 跑通 |
 | **scripts 改名后老 PID 文件残留** | 🟢 低 | 保留 30 天兼容期：stop.sh 同时读老 `/tmp/intervue-pids.txt` |
 | **playwright baseline 误报** | 🟡 中 | 首次 baseline 用户手动确认 25 张截图；后续阈值 0.1% |
 | **5 路由壳 EmptyState 误导** | 🟢 低 | spec.md §7.3 + design-spec.md §3.8.2 已明确文案 + CTA "返回 Dashboard" |
@@ -302,7 +302,7 @@ P1 (Sidebar) ──→ P2 (Dashboard 重写) ──→ P3 (5 路由 + /recent)
 | Dashboard HeroCard 5 状态 | 浏览器手动切换 + playwright | 5 状态视觉区分明显 |
 | StatsBar 5 列 | 浏览器 | 数字对齐 + 等宽 |
 | RadarMini 3 色 | 浏览器 | 粉/紫/蓝梯度正确 |
-| KnockWise 品牌统一 | grep `DevBrain\|CodeMock\|Intervue` | 0 处用户可见（注释除外）|
+| KnockWise 品牌统一 | grep `KnockWise\|KnockWise\|Intervue` | 0 处用户可见（注释除外）|
 | localStorage 迁移 | 浏览器 + 单元测试 | 双 key fallback 正常 |
 | 5 路由壳 EmptyState | 浏览器 + playwright | 占位文案 + CTA 正确 |
 | 后端 /recent | curl + pytest | 9 测试全过 |

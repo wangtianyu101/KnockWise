@@ -68,19 +68,19 @@ related:
 
 | 场景 | 重构前 | 重构后 |
 |---|---|---|
-| **打开应用第一眼** | 顶部 7 个横向 tab + 混乱品牌（DevBrain / CodeMock / Intervue） | 左侧 Sidebar 5 大分组 + 顶部极简 + 统一 KnockWise |
+| **打开应用第一眼** | 顶部 7 个横向 tab + 混乱品牌（KnockWise / KnockWise / Intervue） | 左侧 Sidebar 5 大分组 + 顶部极简 + 统一 KnockWise |
 | **找 AI 推送历史** | ❌ 找不到（无入口） | ✅ Sidebar "AI 推送 → 推送历史" |
 | **找题库管理** | ❌ 找不到（admin 无入口） | ✅ Sidebar 底部 "Admin → 题库管理" |
 | **找设置** | ❌ 找不到（无入口） | ✅ Sidebar "我的 → 设置" |
 | **看仪表盘"最近 3 次面试"** | 只能去"面试历史"翻列表 | ✅ Dashboard Hero 卡直接显示 3 个迷你雷达 |
-| **登录页品牌** | CodeMock 标题 + CodeMock logo | KnockWise 标题 + KnockWise logo |
+| **登录页品牌** | KnockWise 标题 + KnockWise logo | KnockWise 标题 + KnockWise logo |
 | **退出登录** | 顶部右侧小红字"退出" | Sidebar 底部用户菜单 → 退出 |
 
 ### 1.3 用户感知不到的变化（技术性，不进 product-doc）
 
 > 这些是实现细节，不写进 product-doc.md（按 CLAUDE.md §1.6 产品 vs 技术分文件规则）。
-> - localStorage key 从 `codemock_token` → `knockwise_token`（双 key fallback，用户无感）
-> - 后端 logger 从 `codemock.xxx` → `knockwise.xxx`（运维日志，技术细节）
+> - localStorage key 从 `knockwise_token` → `knockwise_token`（双 key fallback，用户无感）
+> - 后端 logger 从 `knockwise.xxx` → `knockwise.xxx`（运维日志，技术细节）
 > - 5 个新页面用 EmptyState 占位（用户看到的是"建设中"提示，不进 product-doc 解释 EmptyState 实现）
 
 ---
@@ -91,7 +91,7 @@ related:
 
 ```
 1. 用户在 / 登录页输入邮箱密码
-   → 看到品牌名 "KnockWise"（之前是 CodeMock）
+   → 看到品牌名 "KnockWise"（之前是 KnockWise）
    → 看到 SVG logo 已更新
 2. 登录成功跳 /dashboard
 3. 用户看到新 Dashboard：
@@ -142,9 +142,9 @@ related:
 ### 场景 4：老用户升级（KnockWise 改名迁移）
 
 ```
-1. 老用户浏览器 localStorage 有 `codemock_token`（旧版登录留下的）
+1. 老用户浏览器 localStorage 有 `knockwise_token`（旧版登录留下的）
 2. 重构部署后，用户刷新页面
-3. 前端代码检测到 `codemock_token` 存在 → 自动迁移到 `knockwise_token`（双 key fallback）
+3. 前端代码检测到 `knockwise_token` 存在 → 自动迁移到 `knockwise_token`（双 key fallback）
 4. 用户不掉登录，感知 0
 5. 第二次刷新：旧 key 已清，只剩新 key
 ```
@@ -186,8 +186,8 @@ related:
 
 | 争议点 | 用户拍板 | 产品边界影响 |
 |---|---|---|
-| 后端 logger 改名（40 处）| 三档全改 | 不影响产品功能，但日志关键字变了（运维搜日志要改 `grep codemock → grep knockwise`）|
-| docker-compose DB 名（codemock → knockwise）| 三档全改但**不动真 DB** | docker-compose 改了，新部署用新 DB 名；老部署继续用旧 DB（不影响）|
+| 后端 logger 改名（40 处）| 三档全改 | 不影响产品功能，但日志关键字变了（运维搜日志要改 `grep knockwise → grep knockwise`）|
+| docker-compose DB 名（knockwise → knockwise）| 三档全改但**不动真 DB** | docker-compose 改了，新部署用新 DB 名；老部署继续用旧 DB（不影响）|
 | 路径 /Users/.../Intervue/ | 不改 | 项目根目录路径保留 Intervue，但 CLAUDE.md 文档里写"项目叫 KnockWise" |
 
 ### 3.4 权限模型（Sidebar Admin 分组可见性规则）
@@ -358,7 +358,7 @@ const isAdmin = useMemo(() => {
 |---|---|
 | 业务功能新增（如 AI 推送真有"历史"，admin 真接 sync-history）| CLAUDE.md §1.7 重构不改业务行为 |
 | 项目根目录 git mv（/Intervue/ → /KnockWise/）| 用户没拍板 git mv；且风险大 |
-| 真实 MySQL 数据迁移（codemock DB → knockwise DB）| CLAUDE.md §二冻结 + 用户没要求 |
+| 真实 MySQL 数据迁移（knockwise DB → knockwise DB）| CLAUDE.md §二冻结 + 用户没要求 |
 | V3.7 DailyChallengeCard（mockup 有，V3 暂缓）| plan.md V3.2 已暂缓 |
 | 模块快捷链接 5 入口（mockup 有 V3.4 重构）| plan.md V3.4 未拍 |
 | learn/review/qa 详情页 TagFilter | V3.x 已拍延后 |
@@ -377,7 +377,7 @@ const isAdmin = useMemo(() => {
 - [ ] Dashboard Hero 卡是粉紫渐变 + "开始 Mock 面试" 大按钮
 - [ ] Dashboard 显示 3 个迷你雷达（字节/阿里/腾讯）
 - [ ] Dashboard 5 列横条统计（答题/命中率/复习/打卡/进度）
-- [ ] 全部 logo/标题/文档/SVG logo 文案统一为 KnockWise（无 DevBrain/CodeMock/Intervue 残留）
+- [ ] 全部 logo/标题/文档/SVG logo 文案统一为 KnockWise（无 KnockWise/KnockWise/Intervue 残留）
 - [ ] Sidebar 底部有 "题库管理 / 手动同步" admin 入口
 - [ ] 移动端 <1024px Sidebar 默认隐藏 + 汉堡按钮可唤出
 

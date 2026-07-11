@@ -14,7 +14,7 @@ related:
 
 > **核心结论**：**本次重构不改 DB schema、不加表、不加字段、不加索引、不做迁移**。
 >
-> **唯一例外**：docker-compose.yml 中 `MYSQL_DATABASE` 改名（`codemock` → `knockwise`），但仅新部署生效，不影响真实运行中的 MySQL 数据（CLAUDE.md §二冻结）。
+> **唯一例外**：docker-compose.yml 中 `MYSQL_DATABASE` 改名（`knockwise` → `knockwise`），但仅新部署生效，不影响真实运行中的 MySQL 数据（CLAUDE.md §二冻结）。
 
 ---
 
@@ -33,9 +33,9 @@ related:
 │  现有 _MIGRATIONS 自动 ALTER ────→ 不增加任何新 ALTER                 │
 │                                                                       │
 │  docker-compose.yml:                                                   │
-│    MYSQL_DATABASE: codemock ──→ knockwise（仅新部署）                 │
-│    MYSQL_USER: codemock      ──→ knockwise（仅新部署）                 │
-│    MYSQL_PASSWORD: codemock  ──→ knockwise（仅新部署）                 │
+│    MYSQL_DATABASE: knockwise ──→ knockwise（仅新部署）                 │
+│    MYSQL_USER: knockwise      ──→ knockwise（仅新部署）                 │
+│    MYSQL_PASSWORD: knockwise  ──→ knockwise（仅新部署）                 │
 │                                                                       │
 │  ⚠️ 真实运行的 MySQL 数据库不变（CLAUDE.md §二冻结）                  │
 └──────────────────────────────────────────────────────────────────────┘
@@ -87,25 +87,25 @@ CREATE INDEX idx_user_status ON interviews(user_id, status, deleted_at);
 
 | 项 | 现状 | 改后 | 影响 |
 |---|---|---|---|
-| `MYSQL_DATABASE` | `codemock` | `knockwise` | 仅新部署生效 |
-| `MYSQL_USER` | `codemock` | `knockwise` | 仅新部署生效 |
-| `MYSQL_PASSWORD` | `codemock` | `knockwise` | 仅新部署生效 |
-| `DATABASE_URL` | `mysql+aiomysql://codemock:codemock@mysql:3306/codemock` | `mysql+aiomysql://knockwise:knockwise@mysql:3306/knockwise` | 仅新部署生效 |
+| `MYSQL_DATABASE` | `knockwise` | `knockwise` | 仅新部署生效 |
+| `MYSQL_USER` | `knockwise` | `knockwise` | 仅新部署生效 |
+| `MYSQL_PASSWORD` | `knockwise` | `knockwise` | 仅新部署生效 |
+| `DATABASE_URL` | `mysql+aiomysql://knockwise:knockwise@mysql:3306/knockwise` | `mysql+aiomysql://knockwise:knockwise@mysql:3306/knockwise` | 仅新部署生效 |
 
 **重要约束（CLAUDE.md §二冻结）**：
-- **真实 MySQL 数据库保持 codemock** —— 现有数据不能动
+- **真实 MySQL 数据库保持 knockwise** —— 现有数据不能动
 - **本次 P4b 阶段不重建 DB** —— 仅改 docker-compose.yml 文件
-- **未来新部署**才用 knockwise DB 名，老部署继续用 codemock
+- **未来新部署**才用 knockwise DB 名，老部署继续用 knockwise
 - **详见 plan.md § P4b** —— 这是文案改名，不是 schema 改动
 
 ### 2.2 backend/core/config.py（不改）
 
 ```python
 # backend/core/config.py:6
-database_url: str = "mysql+aiomysql://codemock:codemock@localhost:3306/codemock"
+database_url: str = "mysql+aiomysql://knockwise:knockwise@localhost:3306/knockwise"
 ```
 
-**不改**：本地连接 URL 的 codemock 用户名/密码保持，**否则连不上现有真实 DB**。
+**不改**：本地连接 URL 的 knockwise 用户名/密码保持，**否则连不上现有真实 DB**。
 
 > CLAUDE.md §二"绝对不能动：MySQL 真实数据"—— config.py 的 URL 是连接现有真实 DB 的凭证，不能改。
 
@@ -209,7 +209,7 @@ CREATE INDEX idx_user_completed ON interviews(user_id, status, started_at DESC);
 
 ### 6.3 docker-compose 改动不涉及数据迁移
 
-`docker-compose.yml` 改名 `codemock → knockwise` 仅影响**未来新部署**用新 DB 名启动容器，**现有数据完全不动**。
+`docker-compose.yml` 改名 `knockwise → knockwise` 仅影响**未来新部署**用新 DB 名启动容器，**现有数据完全不动**。
 
 ---
 
