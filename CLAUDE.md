@@ -312,6 +312,29 @@ docs/
 >   - 顶部总览：PR 6 → ✅ 已做
 > - 跳过此规则 = 任务追踪不更新 = 用户无法从 tasks.md 看真实进度
 
+### 6.6 verify 后自动写 retro（2026-07-11 新增 · 用户加规则）
+
+> **规则**：`verify.md` 完成并 commit 后，**立即写 `retro.md`**（CLAUDE.md § 一.三阶段 6 = 复盘），不要等用户催。
+>
+> **retro.md 必须包含**：
+> 1. **做对了什么**（哪些决策/执行效果好 · 可沉淀为下次模板）
+> 2. **踩了什么坑**（bugfix 记录 · 可写 memory 的 feedback 类型）
+> 3. **调研偏差修正**（research 阶段声称但实际不符的 · 例：Interview model 没有 radar_data 字段）
+> 4. **下次该改什么**（流程优化 · 不光指 AI 改 · 也可指流程/规则改进）
+> 5. **memory 更新清单**（列出要写哪些 memory · 不只是说"应该写"）
+>
+> **路径**：`docs/tasks/<task-dir>/retro.md`（与 verify.md 同目录）
+>
+> **触发场景**：
+> - 多阶段实施完成（≥ 3 阶段）· 用户已经"拍 D 收尾" → AI 主动写 retro
+> - 单阶段小改动完成 · 用户明确要求"写 retro" 才写
+>
+> **示例（V3.8 收尾）**：
+> - ✅ 自动写：`docs/tasks/2026-07-11-refactor-v3-mockup-align/retro.md`
+> - 调研偏差：Interview model 没有 radar_data 字段（research §9.7 误称）· _safe_radar 兜底
+> - 流程改进：§6.5 仅覆盖 tasks.md，未覆盖 verify/retro，§6.6 补上
+> - memory 待写：3 条（feedback 类型 · 调研偏差 + Tailwind 4 dev mode bug + Sidebar 折叠状态提升）
+
 ---
 
 ## 七、本地启动（强制）
