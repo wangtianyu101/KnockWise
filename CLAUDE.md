@@ -409,7 +409,7 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
 - [x] 阶段 4.1：**4 大独立模块重构**（2026-06-18）
 - [x] 阶段 4.2：**AI 推送独立成单独模块**（2026-06-22）
 
-### 8.2 实施状态（2026-06-27 更新）
+### 8.2 实施状态（2026-07-11 更新）
 
 - [x] **V1 骨架完成** — 19 张表 + 60+ API + 19 前端页面 + 5 service（question_bank / learning_progress / qa / study_plan / recommendations）
   - 详见 [`docs/tasks/2026-06-27-v1-closure/closure.md`](docs/tasks/2026-06-27-v1-closure/closure.md)
@@ -427,9 +427,25 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
   - [x] 7 决策全 A（决策文档 + 反馈沉淀到 memory/feedback-sediment-plan-defaulting.md）
   - 详见 [`docs/tasks/2026-06-28-new-feature-v2-smart-sediment/`](docs/tasks/2026-06-28-new-feature-v2-smart-sediment/)（verify.md / retro.md）
 
+- [x] **V3.8 KnockWise 前端对齐重构** — 6 阶段 PR + 实地 L5 验证全部完成（2026-07-11）
+  - **方案 A 渐进 5 阶段**（17h 实操 ~16h）· 每阶段独立 PR + 可单阶段 revert
+  - [x] **P1 Sidebar 6 组件 + Layout 注入** — `Sidebar` / `SidebarHeader` / `SidebarSearch` / `SidebarGroup` / `SidebarItem` / `SidebarDivider` + `Layout` + `TopNav` · 23 测试（含折叠按钮 + main marginLeft 联动 bugfix）
+  - [x] **P2 Dashboard 重写 + 3 组件** — `HeroCard` 5 状态（full / partial / empty / loading / error）+ `StatsBar` 5 列 + `RadarMini` 5 维 SVG + `useAsyncData` hook + 重写 `dashboard.tsx` · 36 测试
+  - [x] **P3a 后端 `/api/interviews/recent`** — Pydantic `InterviewRecentItem` + `list_recent_interviews` service + `@router.get('/recent')` 在 `/{id}` 前注册 · 9 测试
+  - [x] **P3b 前端 5 新路由壳** — `/admin/questions` `/admin/sync` `/ai/today` `/ai/history` `/settings` EmptyState 占位 · 5 测试
+  - [x] **P4a KnockWise 必改** — 19 处用户可见（4 logo + 3 package.json + README + 3 mockup + 8 localStorage 双 key fallback）
+  - [x] **P4b KnockWise 应改** — 15 处一致性（scripts PID/log + docker-compose + FastAPI title + SKILL + CLAUDE.md + docs/api）
+  - [x] **P4c KnockWise 可改** — 40 后端 logger + 30 测试断言同步 + 5 注释
+  - [x] **D 清理 docs/ 旧品牌** — 28 个 doc 文件统一为 KnockWise（archive + designs + 旧 06 task dir + 07-11 task dir）
+  - [x] **Bugfix** — Sidebar 折叠按钮 / main marginLeft 联动 / Sidebar 搜索过滤 / Tailwind 4 → 3 降级
+  - **测试累计**：737 passed（154 V1 + V3.7 既有 + 73 P1-P3b + 9 P3a + 30 logger 同步）
+  - **L5 staging 实地验证**：真 dev server · 17 page HTTP 200 · KnockWise 残留 0 处 · Sidebar 5 流程跑通
+  - **P5 playwright 推迟**（用户拍 A）— 不阻塞 V3.8 完成 · 留作未来 regression protection
+  - 详见 [`docs/tasks/2026-07-11-refactor-v3-mockup-align/`](docs/tasks/2026-07-11-refactor-v3-mockup-align/)（research / product-doc / design-spec / spec / plan / tasks / verify · 11 文件）
+
 ### 8.3 git 状态
 
-- 8 个 commit 已落地（本地，**未 push** 到 origin/main）
+- **11 个 commit 已落地**（本地，**未 push** 到 origin/main）· `feature/v38-p1-sidebar` 分支
   - docs: 4 层分类重构为按任务
   - infra: 一键启停脚本 + CLAUDE.md § 七
   - fix(services): study_plan_service.py 缺 Question import
@@ -438,6 +454,17 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
   - test(services): obsidian/news/seed/archive 测试覆盖 70% → 100%
   - docs: 补测试调研报告 + 复盘
   - docs+infra: 补遗漏文件（README / DOD / 4 个新模板 / check-step.py）
+  - **feat(sidebar): V3.8 P1 Sidebar 6 组件 + Layout 注入**
+  - **feat(dashboard): V3.8 P2 Dashboard 重写 + HeroCard 5 状态**
+  - **feat(api): V3.8 P3a 新增 /api/interviews/recent + 9 测试**
+  - **feat(pages): V3.8 P3b 5 新路由壳 EmptyState 占位**
+  - **fix(tailwind): 降级到 Tailwind 3 修复 CSS 不输出 bug**
+  - **test(sidebar): V3.8 P1 Layout 测试补漏**
+  - **refactor(brand): V3.8 P4b KnockWise 应改（15 处一致性）**
+  - **refactor(brand): V3.8 P4c KnockWise 可改 + 30 测试同步**
+  - **refactor(brand): V3.8 P4a KnockWise 必改（19 处用户可见）**
+  - **fix(brand): scripts/start.sh + stop.sh 补 KnockWise 改名**
+  - **docs: D 清理 · 4 子任务合并 · 28 doc 文件 KnockWise 改名**
 
 ### 8.4 待用户决策
 
