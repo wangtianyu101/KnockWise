@@ -119,6 +119,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from api.admin import router as admin_router
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(interview_router)
@@ -128,6 +129,7 @@ app.include_router(analytics_router)
 app.include_router(knowledge_router)
 app.include_router(news_router)
 app.include_router(voice_ws_router)
+app.include_router(admin_router)  # V3.7 · PR 3 手动同步 API
 app.include_router(learn_router)  # Phase 1c
 app.include_router(v2_settlement_router)  # V2.3 智能沉淀层 6 端点
 
@@ -166,10 +168,34 @@ async def on_startup():
     except Exception as e:
         logger.warning(f"STT pre-warm skipped: {e}")
 
+    # V3.1-PR2-T10: 预填精选题单（5 官方题单 + 关联题目）
+    try:
+        from core.database import SessionLocal
+        from services.collection_service import seed_collections_system
+        async with SessionLocal() as db:
+            cnt = await seed_collections_system(db)
+            logger.info(f"V3.1 seeded {cnt} system collections")
+    except Exception as e:
+        logger.warning(f"V3.1 collection seed skipped: {e}")
+
+    # V3.7 · PR 3 定时任务调度器启动（混合拉取 · 每 6h 跑一次）
+    try:
+        from services.scheduler import init_question_sync_task
+        init_question_sync_task()
+    except Exception as e:
+        logger.warning(f"V3.7 question sync scheduler skipped: {e}")
+
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    """Phase 1a · 关 Redis 连接池 + 取消 archive task."""
+    """Phase 1a · 关 Redis 连接池 + 取消 archive task + V3.7 取消 question_sync task."""
+    # V3.7 · PR 3 取消定时任务
+    try:
+        from services.scheduler import cancel_question_sync_task
+        cancel_question_sync_task()
+    except Exception as e:
+        logger.warning(f"V3.7 question sync cancel skipped: {e}")
+
     # 取消 archive task
     task = globals().get("_archive_task")
     if task is not None and not task.done():

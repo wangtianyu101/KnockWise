@@ -53,6 +53,7 @@ from schemas.learn import (
     UserNoteOut,
 )
 from services import (
+    collection_service,
     learning_progress_service,
     qa_service,
     question_bank_service,
@@ -508,3 +509,60 @@ async def get_learn_stats(
     user: User = Depends(get_current_user),
 ):
     return await learning_progress_service.get_learn_stats(db, user.id)
+
+
+# ════════════════════════════════════════════════════════════
+# V3.1 · 精选题单端点（PR 2 · 4 端点）
+# ════════════════════════════════════════════════════════════
+
+
+@router.get("/collections")
+async def list_collections(
+    subscribed_only: bool = Query(default=False),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """题单列表（V3.1）"""
+    items = await collection_service.list_collections(
+        db, user_id=user.id, subscribed_only=subscribed_only
+    )
+    return {"items": items, "total": len(items)}
+
+
+@router.get("/collections/{collection_id}")
+async def get_collection(
+    collection_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """题单详情（V3.1）"""
+    data = await collection_service.get_collection(db, collection_id, user_id=user.id)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"题单 {collection_id} 不存在")
+    return data
+
+
+@router.post("/collections/{collection_id}/subscribe")
+async def subscribe_collection(
+    collection_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """订阅题单（V3.1 · 幂等）"""
+    result = await collection_service.subscribe_collection(db, user.id, collection_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"题单 {collection_id} 不存在")
+    return result
+
+
+@router.delete("/collections/{collection_id}/subscribe")
+async def unsubscribe_collection(
+    collection_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """取消订阅（V3.1）"""
+    ok = await collection_service.unsubscribe_collection(db, user.id, collection_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"未订阅题单 {collection_id}")
+    return {"collection_id": collection_id, "deleted": True}

@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intervue V3 Mockup · 2026-07-09 · 重构版</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ════════════════════════════════════════════════════════════
+       视觉 token · Vercel Analytics / Stripe Dashboard 风格
+       ════════════════════════════════════════════════════════════ */
+    :root {
+      /* 主题色：保留 indigo + 增强辅助色 */
+      --color-primary: #6366f1;
+      --color-primary-hover: #4f46e5;
+      --color-cyan: #06b6d4;
+      --color-emerald: #10b981;
+      --color-amber: #f59e0b;
+      --color-violet: #a78bfa;
+      --color-pink: #ec4899;
+
+      /* 背景：深蓝黑 + radial 光晕 */
+      --color-bg-page: #050914;
+      --color-bg-card: rgba(15, 20, 40, 0.7);
+      --color-bg-card-hover: rgba(20, 26, 50, 0.85);
+
+      /* 文字层级（更精细） */
+      --color-text-primary: #f8fafc;
+      --color-text-secondary: #94a3b8;
+      --color-text-tertiary: #64748b;
+      --color-text-disabled: #475569;
+
+      /* 状态色 */
+      --color-success: #34d399;
+      --color-warning: #fbbf24;
+      --color-error: #f87171;
+      --color-info: #60a5fa;
+
+      /* 边框 */
+      --color-border: rgba(148, 163, 184, 0.08);
+      --color-border-hover: rgba(99, 102, 241, 0.25);
+
+      /* V3 渐变（更细腻） */
+      --grad-page: radial-gradient(at 20% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                   radial-gradient(at 80% 100%, rgba(167, 139, 250, 0.05) 0%, transparent 50%);
+      --grad-summary: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
+      --grad-plan: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.12) 100%);
+      --grad-collection: linear-gradient(135deg, rgba(59, 130, 246, 0.10) 0%, rgba(168, 85, 247, 0.10) 100%);
+      --grad-daily: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(249, 115, 22, 0.12) 100%);
+
+      /* 阴影（更精致） */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+      --shadow-glow-primary: 0 0 0 1px rgba(99, 102, 241, 0.15), 0 4px 16px rgba(99, 102, 241, 0.2);
+      --shadow-glow-emerald: 0 0 0 1px rgba(16, 185, 129, 0.15), 0 4px 16px rgba(16, 185, 129, 0.2);
+      --shadow-glow-amber: 0 0 0 1px rgba(245, 158, 11, 0.15), 0 4px 16px rgba(245, 158, 11, 0.2);
+
+      /* 动效曲线（spring 感） */
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* 全局 */
+    html, body {
+      background: var(--color-bg-page);
+      background-image: var(--grad-page);
+      color: var(--color-text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      min-height: 100vh;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11"; /* 数字等宽 */
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.011em; /* 紧凑字距 · SaaS 感 */
+    }
+
+    h1, h2, h3, h4 { letter-spacing: -0.025em; }
+
+    /* ─── 玻璃拟态卡片 ─── */
+    .glass-card {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: all 0.25s var(--ease-out);
+      position: relative;
+      overflow: hidden;
+    }
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .glass-card:hover {
+      background: var(--color-bg-card-hover);
+      border-color: var(--color-border-hover);
+      box-shadow: var(--shadow-glow-primary);
+    }
+    .glass-card-static {
+      background: var(--color-bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+
+    /* ─── 渐变背景类 ─── */
+    .bg-grad-plan { background: var(--grad-plan); }
+    .bg-grad-collection { background: var(--grad-collection); }
+    .bg-grad-daily { background: var(--grad-daily); }
+    .bg-grad-summary { background: var(--grad-summary); }
+
+    /* ─── 按钮（更精致） ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s var(--ease-out);
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--color-primary);
+      color: white;
+      box-shadow: 0 1px 2px rgba(99, 102, 241, 0.3);
+    }
+    .btn-primary:hover {
+      background: var(--color-primary-hover);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--color-border-hover);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-text-secondary);
+      padding: 8px 12px;
+    }
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--color-text-primary);
+    }
+    .btn-danger {
+      background: rgba(248, 113, 113, 0.1);
+      color: var(--color-error);
+      border: 1px solid rgba(248, 113, 113, 0.2);
+    }
+    .btn-danger:hover { background: rgba(248, 113, 113, 0.15); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── 进度条（线性 · 用 SVG stroke-dashoffset 动画） ─── */
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(148, 163, 184, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--color-emerald) 0%, var(--color-cyan) 100%);
+      transition: width 0.8s var(--ease-out);
+      position: relative;
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ─── 环形进度（用 SVG） ─── */
+    .ring-progress {
+      transform: rotate(-90deg);
+    }
+    .ring-progress-bg {
+      stroke: rgba(148, 163, 184, 0.08);
+      fill: none;
+    }
+    .ring-progress-fg {
+      fill: none;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.8s var(--ease-out);
+    }
+
+    /* ─── 标签（更精致 · 多状态） ─── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s var(--ease-out);
+      white-space: nowrap;
+    }
+    .tag-default {
+      background: rgba(148, 163, 184, 0.06);
+      color: var(--color-text-secondary);
+      border-color: rgba(148, 163, 184, 0.12);
+    }
+    .tag-default:hover { background: rgba(148, 163, 184, 0.12); }
+    .tag-direction {
+      background: rgba(96, 165, 250, 0.12);
+      color: #93c5fd;
+      border-color: rgba(96, 165, 250, 0.25);
+    }
+    .tag-stack {
+      background: rgba(167, 139, 250, 0.12);
+      color: #c4b5fd;
+      border-color: rgba(167, 139, 250, 0.25);
+    }
+    .tag-company {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.25);
+    }
+    .tag-active {
+      background: rgba(99, 102, 241, 0.18);
+      color: white;
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+    .tag-info {
+      background: rgba(148, 163, 184, 0.06);
+      color: var(--color-text-secondary);
+      border-color: rgba(148, 163, 184, 0.08);
+      cursor: default;
+    }
+    .tag-topic {
+      background: rgba(167, 139, 250, 0.10);
+      color: #c4b5fd;
+      border-color: rgba(167, 139, 250, 0.20);
+      cursor: default;
+    }
+    .tag-difficulty-low { background: rgba(52, 211, 153, 0.12); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.25); cursor: default; }
+    .tag-difficulty-mid { background: rgba(251, 191, 36, 0.12); color: #fcd34d; border-color: rgba(251, 191, 36, 0.25); cursor: default; }
+    .tag-difficulty-high { background: rgba(248, 113, 113, 0.12); color: #fca5a5; border-color: rgba(248, 113, 113, 0.25); cursor: default; }
+    .tag-streak {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.35);
+      cursor: default;
+    }
+
+    /* ─── 顶部 nav（更精致 · 毛玻璃） ─── */
+    .app-nav {
+      background: rgba(5, 9, 20, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--color-border);
+      padding: 14px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-tab {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all 0.15s var(--ease-out);
+      background: transparent;
+      border: none;
+    }
+    .nav-tab:hover {
+      color: var(--color-text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .nav-tab.active {
+      color: white;
+      background: rgba(99, 102, 241, 0.15);
+      box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.3);
+    }
+
+    /* ─── Skeleton（pulse 风格） ─── */
+    .skeleton {
+      background: linear-gradient(90deg,
+        rgba(148, 163, 184, 0.04) 0%,
+        rgba(148, 163, 184, 0.08) 50%,
+        rgba(148, 163, 184, 0.04) 100%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 1.8s ease-in-out infinite;
+      border-radius: 6px;
+    }
+    @keyframes skeleton-pulse {
+      0%, 100% { background-position: 200% 0; opacity: 1; }
+      50% { background-position: -200% 0; opacity: 0.6; }
+    }
+
+    /* ─── 模态框（更精致） ─── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      animation: fadeIn 0.2s var(--ease-out);
+    }
+    .modal-content {
+      background: rgba(15, 20, 40, 0.95);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--color-border-hover);
+      border-radius: 16px;
+      padding: 32px;
+      width: 600px;
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s var(--ease-spring);
+      box-shadow: var(--shadow-lg);
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ─── Toast（Vercel 风格 · 顶部居中） ─── */
+    .toast {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(15, 20, 40, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--color-success);
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 300;
+      opacity: 0;
+      transition: all 0.3s var(--ease-spring);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.error { border-color: var(--color-error); }
+    .toast.warning { border-color: var(--color-warning); }
+
+    /* ─── Stat 数字（等宽 · 仪表盘风） ─── */
+    .stat-num {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      letter-spacing: -0.04em;
+    }
+
+    /* ─── 列表项 ─── */
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 14px;
+      transition: background 0.15s ease;
+    }
+    .list-item:hover { background: rgba(255, 255, 255, 0.02); }
+    .list-item:last-child { border-bottom: none; }
+
+    /* ─── AI 推荐条目（V3.7） ─── */
+    .recommendation-item {
+      display: block;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+      font-family: inherit;
+      color: inherit;
+      text-align: left;
+    }
+    .recommendation-item:hover {
+      background: rgba(99, 102, 241, 0.06);
+      border-color: rgba(99, 102, 241, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+    .recommendation-item:active {
+      transform: translateY(0);
+    }
+
+    /* ─── 模块快捷链接（侧边栏紧凑模式 · V3.4 重构） ─── */
+    .module-quick-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      color: var(--color-text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out);
+    }
+    .module-quick-link:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--color-border-hover);
+      color: var(--color-text-primary);
+      transform: translateY(-1px);
+    }
+
+    /* ─── 左侧 Sidebar（V3.6 重构 · 方案 C） ─── */
+    .sidebar {
+      position: fixed;
+      top: 56px;  /* 紧贴 top nav 下方 */
+      left: 0;
+      bottom: 0;
+      width: 240px;
+      background: rgba(8, 12, 24, 0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-right: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 12px;
+      z-index: 50;
+      transition: width 0.3s var(--ease-out);
+    }
+    .sidebar.collapsed {
+      width: 64px;
+    }
+    .sidebar.collapsed .sidebar-logo,
+    .sidebar.collapsed .sidebar-search,
+    .sidebar.collapsed .sidebar-group-title span,
+    .sidebar.collapsed .sidebar-item span,
+    .sidebar.collapsed .sidebar-badge,
+    .sidebar.collapsed .sidebar-footer {
+      display: none;
+    }
+    .sidebar.collapsed .sidebar-item {
+      justify-content: center;
+      padding: 10px;
+    }
+    .sidebar.collapsed .sidebar-group-title {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 8px 12px;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 12px;
+    }
+    .sidebar-logo {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--color-text-primary);
+      letter-spacing: -0.02em;
+    }
+    .sidebar-toggle {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+    .sidebar-toggle:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--color-text-primary);
+    }
+
+    .sidebar-search {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0 10px;
+      margin-bottom: 12px;
+      color: var(--color-text-secondary);
+    }
+    .sidebar-search:focus-within {
+      border-color: var(--color-primary);
+      background: rgba(99, 102, 241, 0.04);
+    }
+    .sidebar-search input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 7px 8px;
+      color: var(--color-text-primary);
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .sidebar-search input::placeholder { color: var(--color-text-tertiary); }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 4px;
+    }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+
+    .sidebar-group {
+      margin-bottom: 16px;
+    }
+    .sidebar-group-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-tertiary);
+    }
+    .sidebar-divider {
+      height: 1px;
+      background: var(--color-border);
+      margin: 8px 4px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s var(--ease-out);
+      text-align: left;
+      font-family: inherit;
+      position: relative;
+    }
+    .sidebar-item svg {
+      flex-shrink: 0;
+      opacity: 0.8;
+      transition: opacity 0.15s ease;
+    }
+    .sidebar-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--color-text-primary);
+    }
+    .sidebar-item:hover svg { opacity: 1; }
+    .sidebar-item.active {
+      background: rgba(99, 102, 241, 0.12);
+      color: white;
+      box-shadow: inset 2px 0 0 var(--color-primary);
+    }
+    .sidebar-item.active svg { opacity: 1; }
+
+    .sidebar-badge {
+      margin-left: auto;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(99, 102, 241, 0.2);
+      color: #c7d2fe;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .sidebar-footer {
+      padding: 12px 8px 0;
+      border-top: 1px solid var(--color-border);
+      margin-top: 8px;
+    }
+
+    /* ─── 主内容区域（让位给 sidebar） ─── */
+    .main-content {
+      margin-left: 240px;
+      padding: 24px 32px 64px;
+      min-height: calc(100vh - 56px);
+      transition: margin-left 0.3s var(--ease-out);
+    }
+    .sidebar.collapsed ~ .main-content,
+    body.sidebar-collapsed .main-content {
+      margin-left: 64px;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+    }
+
+    /* ─── 输入框 ─── */
+    .input {
+      width: 100%;
+      background: rgba(148, 163, 184, 0.04);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--color-text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .input:focus {
+      border-color: var(--color-primary);
+      background: rgba(99, 102, 241, 0.04);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    .input::placeholder { color: var(--color-text-tertiary); }
+
+    /* ─── Sparkline / 数据 viz 容器 ─── */
+    .viz-container {
+      position: relative;
+      width: 100%;
+      height: 60px;
+    }
+
+    /* ─── 热力图方格 ─── */
+    .heatmap-cell {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: rgba(148, 163, 184, 0.06);
+      transition: all 0.2s ease;
+    }
+    .heatmap-cell[data-level="1"] { background: rgba(99, 102, 241, 0.25); }
+    .heatmap-cell[data-level="2"] { background: rgba(99, 102, 241, 0.5); }
+    .heatmap-cell[data-level="3"] { background: rgba(99, 102, 241, 0.75); }
+    .heatmap-cell[data-level="4"] { background: rgba(99, 102, 241, 1); }
+
+    /* ─── 隐藏 ─── */
+    .hidden { display: none !important; }
+
+    /* ─── 工具：滚动条美化 ─── */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.3); }
+  </style>
+</head>
+<body>
+  <!-- ════════════════════════════════════════════════════════════
+       顶部 nav · 毛玻璃
+       ════════════════════════════════════════════════════════════ -->
+  <nav class="app-nav flex items-center gap-1">
+    <div class="flex items-center gap-3 mr-8">
+      <!-- Logo SVG -->
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect x="2" y="2" width="24" height="24" rx="7" fill="url(#logo-grad)"/>
+        <path d="M9 19L13 14L17 17L20 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="20" cy="13" r="1.5" fill="white"/>
+        <defs>
+          <linearGradient id="logo-grad" x1="2" y1="2" x2="26" y2="26">
+            <stop stop-color="#6366f1"/>
+            <stop offset="1" stop-color="#a78bfa"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="font-bold text-lg">Intervue</span>
+      <span class="tag tag-info">V3 mockup</span>
+    </div>
+    <span class="text-base font-semibold text-white ml-6" id="breadcrumb">今日概览</span>
+    <span class="ml-auto flex items-center gap-4">
+      <span class="text-xs text-gray-500">📅 2026-07-09</span>
+      <span class="text-xs text-gray-600">仅设计 mockup · 无后端</span>
+      <button class="btn btn-ghost text-sm flex items-center gap-2" onclick="showToast('用户菜单')">
+        <div class="w-7 h-7 rounded-full" style="background: linear-gradient(135deg, #6366f1, #ec4899);"></div>
+        <span class="text-sm text-gray-200">开发者</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M3 5L6 8L9 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </span>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════════════
+       左侧 Sidebar · 5 大分组多级菜单（V3.6 重构 · 方案 C）
+       ════════════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <!-- Sidebar Header（logo + 折叠按钮） -->
+    <div class="sidebar-header">
+      <div class="flex items-center gap-2">
+        <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+          <rect x="2" y="2" width="24" height="24" rx="7" fill="url(#logo-grad)"/>
+          <path d="M9 19L13 14L17 17L20 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="13" r="1.5" fill="white"/>
+        </svg>
+        <span class="sidebar-logo">Intervue</span>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="折叠/展开">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M10 4L6 8L10 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Sidebar 搜索框 -->
+    <div class="sidebar-search">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M9 9L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <input type="text" placeholder="搜索页面..." id="sidebar-search" oninput="filterSidebar(this.value)" />
+    </div>
+
+    <!-- Sidebar 主菜单（5 大分组） -->
+    <nav class="sidebar-nav">
+      <!-- 组 1：概览（dashboard 精简） -->
+      <div class="sidebar-group" data-group="overview">
+        <div class="sidebar-group-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 4L6 2L10 4V9L6 11L2 9V4Z" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          概览
+        </div>
+        <button class="sidebar-item active" data-page="dashboard" onclick="showPage('dashboard')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <span>今日概览</span>
+        </button>
+      </div>
+
+      <!-- 组 2：面试（V1 第 1 核心） -->
+      <div class="sidebar-group" data-group="interview">
+        <div class="sidebar-group-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M4 4.5L8 4.5M4 7L7 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          面试
+        </div>
+        <button class="sidebar-item" data-page="interview-today" onclick="showPage('interview-today')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M8 4V8L10.5 9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span>今日面试</span>
+          <span class="sidebar-badge">新</span>
+        </button>
+        <button class="sidebar-item" data-page="interview-history" onclick="showPage('interview-history')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8a6 6 0 1 0 1.76-4.24" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M2 4V8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>历史报告</span>
+        </button>
+        <button class="sidebar-item" data-page="interview-setup" onclick="showPage('interview-setup')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M8 1V3M8 13V15M1 8H3M13 8H15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span>面试配置</span>
+        </button>
+      </div>
+
+      <!-- 组 3：学习复习（V1 第 2 核心 · V3 扩展） -->
+      <div class="sidebar-group" data-group="learn">
+        <div class="sidebar-group-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 3C2 2.45 2.45 2 3 2H5L6.5 3.5H9C9.55 3.5 10 3.95 10 4.5V9.5C10 10.05 9.55 10.5 9 10.5H3C2.45 10.5 2 10.05 2 9.5V3Z" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          学习复习
+        </div>
+        <button class="sidebar-item" data-page="learn" onclick="showPage('learn')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4C2 3.45 2.45 3 3 3H13C13.55 3 14 3.45 14 4V13L8 11L2 13V4Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="rgba(96,165,250,0.1)"/>
+          </svg>
+          <span>题目浏览</span>
+        </button>
+        <button class="sidebar-item" data-page="review" onclick="showPage('review')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8a6 6 0 1 0 1.76-4.24" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M2 4V8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>复习中心</span>
+        </button>
+        <button class="sidebar-item" data-page="plan" onclick="showPage('plan')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M5 1.5L10 3.5L5 5.5V1.5Z" fill="currentColor"/>
+            <path d="M10 3.5V8.5L5 11V5.5L10 3.5Z" stroke="currentColor" stroke-width="1.3" fill="rgba(16,185,129,0.2)"/>
+          </svg>
+          <span>学习计划</span>
+          <span class="sidebar-badge">V3</span>
+        </button>
+        <button class="sidebar-item" data-page="collections" onclick="showPage('collections')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 3.5L8 1.5L14 3.5L8 5.5L2 3.5Z" stroke="currentColor" stroke-width="1.3" fill="rgba(96,165,250,0.2)" stroke-linejoin="round"/>
+            <path d="M2 7.5L8 9.5L14 7.5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            <path d="M2 11.5L8 13.5L14 11.5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          </svg>
+          <span>精选题单</span>
+          <span class="sidebar-badge">V3</span>
+        </button>
+      </div>
+
+      <!-- 组 4：知识库（V1 第 3 核心） -->
+      <div class="sidebar-group" data-group="knowledge">
+        <div class="sidebar-group-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 2C2 1.45 2.45 1 3 1H5L6.5 2.5H9C9.55 2.5 10 2.95 10 3.5V9.5C10 10.05 9.55 10.5 9 10.5H3C2.45 10.5 2 10.05 2 9.5V2Z" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+          知识库
+        </div>
+        <button class="sidebar-item" data-page="knowledge" onclick="showPage('knowledge')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 2C2 1.45 2.45 1 3 1H5L6.5 2.5H9C9.55 2.5 10 2.95 10 3.5V9.5C10 10.05 9.55 10.5 9 10.5H3C2.45 10.5 2 10.05 2 9.5V2Z" stroke="currentColor" stroke-width="1.3" fill="rgba(52,211,153,0.1)"/>
+          </svg>
+          <span>笔记浏览</span>
+        </button>
+        <button class="sidebar-item" data-page="qa" onclick="showPage('qa')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4C2 2.9 2.9 2 4 2H12C13.1 2 14 2.9 14 4V10C14 11.1 13.1 12 12 12H6L3 14.5V12H4C2.9 12 2 11.1 2 10V4Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          </svg>
+          <span>问答社区</span>
+        </button>
+        <button class="sidebar-item" data-page="report" onclick="showPage('report')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 13V7M7 13V3M11 13V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>报告中心</span>
+        </button>
+      </div>
+
+      <!-- 组 5：AI 推送（V3 新增 · 用户 2026-07-10 拍 A 极简） -->
+      <div class="sidebar-group" data-group="ai-push">
+        <div class="sidebar-group-title">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 1L6.6 4L9 4.5L6.6 5L6 8L5.4 5L3 4.5L5.4 4L6 1Z" fill="currentColor"/>
+            <path d="M9.5 7L9.8 8L10.7 8.3L9.8 8.6L9.5 9.5L9.2 8.6L8.3 8.3L9.2 8L9.5 7Z" fill="currentColor"/>
+            <path d="M2.5 7.5L2.8 8.3L3.5 8.5L2.8 8.7L2.5 9.5L2.2 8.7L1.5 8.5L2.2 8.3L2.5 7.5Z" fill="currentColor"/>
+          </svg>
+          AI 推送
+        </div>
+        <button class="sidebar-item" data-page="ai-today" onclick="showPage('ai-today')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 1L6.6 4L9 4.5L6.6 5L6 8L5.4 5L3 4.5L5.4 4L6 1Z" fill="currentColor"/>
+            <path d="M9.5 7L9.8 8L10.7 8.3L9.8 8.6L9.5 9.5L9.2 8.6L8.3 8.3L9.2 8L9.5 7Z" fill="currentColor"/>
+          </svg>
+          <span>今日推荐</span>
+          <span class="sidebar-badge">V3</span>
+        </button>
+        <button class="sidebar-item" data-page="ai-history" onclick="showPage('ai-history')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4H14M2 8H14M2 12H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>推送历史</span>
+        </button>
+      </div>
+
+      <!-- 分隔线 + 我的（profile） -->
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-group" data-group="me">
+        <button class="sidebar-item" data-page="profile" onclick="showPage('profile')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="6" r="2.5" stroke="currentColor" stroke-width="1.3" fill="rgba(236,72,153,0.1)"/>
+            <path d="M3 14C3 11 5 9 8 9C11 9 13 11 13 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span>我的画像</span>
+        </button>
+        <button class="sidebar-item" data-page="settings" onclick="showPage('settings')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M8 1V3M8 13V15M1 8H3M13 8H15M2.93 2.93L4.34 4.34M11.66 11.66L13.07 13.07M2.93 13.07L4.34 11.66M11.66 4.34L13.07 2.93" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span>设置</span>
+        </button>
+        <!-- V3.7 · PR 5 admin 后台（题库管理 + 手动同步） -->
+        <div class="sidebar-divider"></div>
+        <p class="text-xs text-gray-500 uppercase tracking-wider px-3 mb-2">Admin</p>
+        <button class="sidebar-item" data-page="admin-questions" onclick="showPage('admin-questions')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="12" height="12" rx="2" stroke="#f59e0b" stroke-width="1.3"/>
+            <path d="M5 6H11M5 8H11M5 10H9" stroke="#f59e0b" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span>题库管理</span>
+          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">🆕</span>
+        </button>
+        <button class="sidebar-item" data-page="admin-sync" onclick="showPage('admin-sync')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M11.5 7a4.5 4.5 0 1 1-1.32-3.18M11.5 2V4.5H9" stroke="#a78bfa" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span>手动同步</span>
+          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300">🆕</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Sidebar Footer（V3 状态） -->
+    <div class="sidebar-footer">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">V3 沉淀层</span>
+        <span class="text-xs text-emerald-400">● 启用</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content pb-16">
+
+    <!-- ════════════════════════════════════════════════════════════
+         页面 1: /dashboard（精简版 · 3 个核心卡 · 信息密度 B + 视觉层次 ④）
+         ════════════════════════════════════════════════════════════ -->
+    <section id="page-dashboard">
+      <!-- 页面 header · 大字号 + 大留白 -->
+      <header class="mb-12 mt-14">
+        <div class="flex items-end justify-between">
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-widest font-medium mb-3">2026 年 7 月 9 日 · 周四</p>
+            <h1 class="text-5xl font-bold mb-4" style="line-height: 1.1; letter-spacing: -0.03em;">下午好，<span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-violet-400 to-pink-400">开发者</span></h1>
+            <p class="text-base text-gray-400" style="line-height: 1.6;">继续坚持，距离<span class="text-white font-medium">「算法入门 50 题」</span>完成还有 <span class="text-emerald-400 font-semibold stat-num">25</span> 题。</p>
+          </div>
+          <div class="text-right hidden md:block">
+            <p class="text-xs text-gray-500 mb-1">数据洞察已移至</p>
+            <button class="btn btn-ghost text-sm" onclick="showToast('跳 /profile（V2 沉淀层）')">📊 我的画像 →</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ============================================================
+           🔥 Hero 卡：面试（V1 第 1 核心模块 · 用户 2026-07-10 反馈"面试太小"专项修复）
+           设计：占据顶部 60% 视觉权重，含主任务 + 雷达数据 + 上次成绩 + 主按钮
+           ============================================================ -->
+      <div class="glass-card mb-12" style="background: linear-gradient(135deg, rgba(244,114,182,0.15) 0%, rgba(236,72,153,0.12) 50%, rgba(168,85,247,0.15) 100%); border-color: rgba(244,114,182,0.4); box-shadow: 0 0 0 1px rgba(244,114,182,0.15), 0 16px 48px rgba(244,114,182,0.3); padding: 48px;">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-8 items-center">
+          <!-- 左 3 列：主任务 + 上次成绩 -->
+          <div class="md:col-span-3">
+            <!-- 标签 + 标题 -->
+            <div class="flex items-center gap-3 mb-5">
+              <span class="tag" style="background: rgba(244,114,182,0.2); color: #fbcfe8; border-color: rgba(244,114,182,0.4); padding: 6px 14px; font-size: 13px; font-weight: 600;">🎤 今日主任务</span>
+              <span class="tag tag-info">未完成</span>
+            </div>
+            <h2 class="text-4xl font-bold mb-5" style="line-height: 1.1; letter-spacing: -0.025em;">
+              开始一场 <span class="bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-violet-400 to-indigo-400">Mock 面试</span>
+            </h2>
+            <p class="text-base text-gray-300 mb-8" style="line-height: 1.7; max-width: 560px;">
+              系统会根据你的薄弱点（缓存一致性 · 分布式系统）智能选题 · 30 分钟掌握一轮 · 自动生成雷达报告与知识沉淀。
+            </p>
+
+            <!-- 上次成绩横条 -->
+            <div class="grid grid-cols-3 gap-4 mb-8">
+              <div class="stat-card-mini">
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1.5">上次面试</p>
+                <p class="text-2xl font-bold stat-num text-pink-400">78<span class="text-sm text-gray-400">/100</span></p>
+                <p class="text-xs text-gray-500 mt-1">字节·后端</p>
+              </div>
+              <div class="stat-card-mini">
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1.5">已面试</p>
+                <p class="text-2xl font-bold stat-num text-white">12<span class="text-sm text-gray-400">次</span></p>
+                <p class="text-xs text-gray-500 mt-1">近 30 天</p>
+              </div>
+              <div class="stat-card-mini">
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1.5">平均分</p>
+                <p class="text-2xl font-bold stat-num text-emerald-400">72<span class="text-sm text-gray-400">/100</span></p>
+                <p class="text-xs text-emerald-400 mt-1">+6 ↑</p>
+              </div>
+            </div>
+
+            <!-- 主操作按钮 -->
+            <div class="flex items-center gap-3">
+              <button class="btn btn-primary" onclick="showToast('跳 /interview/setup · 选题准备')" style="padding: 14px 32px; font-size: 16px; font-weight: 600; box-shadow: 0 8px 24px rgba(99,102,241,0.4);">
+                开始面试 →
+              </button>
+              <button class="btn btn-secondary" onclick="showToast('查看面试历史 /interview/history')" style="padding: 14px 22px; font-size: 15px;">
+                查看历史
+              </button>
+              <button class="btn btn-ghost" onclick="showToast('跳 /interview/setup · 配置选题')" style="font-size: 14px;">
+                配置面试偏好 ⚙
+              </button>
+            </div>
+          </div>
+
+          <!-- 右 2 列：最近雷达数据 -->
+          <div class="md:col-span-2">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 text-center">最近 3 次雷达</p>
+            <div class="grid grid-cols-3 gap-2">
+              <!-- 雷达 1：最近 -->
+              <div class="text-center">
+                <svg viewBox="0 0 80 80" style="width: 100%; height: auto;">
+                  <polygon points="40,8 70,28 60,68 20,68 10,28" fill="none" stroke="rgba(244,114,182,0.15)" stroke-width="1"/>
+                  <polygon points="40,12 64,30 56,62 22,64 14,32" fill="rgba(244,114,182,0.25)" stroke="#f472b6" stroke-width="1.5"/>
+                </svg>
+                <p class="text-xs text-gray-400 mt-1 stat-num">78</p>
+                <p class="text-xs text-gray-500">字节</p>
+              </div>
+              <!-- 雷达 2 -->
+              <div class="text-center">
+                <svg viewBox="0 0 80 80" style="width: 100%; height: auto;">
+                  <polygon points="40,8 70,28 60,68 20,68 10,28" fill="none" stroke="rgba(167,139,250,0.15)" stroke-width="1"/>
+                  <polygon points="40,15 60,32 50,60 25,60 18,35" fill="rgba(167,139,250,0.25)" stroke="#a78bfa" stroke-width="1.5"/>
+                </svg>
+                <p class="text-xs text-gray-400 mt-1 stat-num">68</p>
+                <p class="text-xs text-gray-500">阿里</p>
+              </div>
+              <!-- 雷达 3 -->
+              <div class="text-center">
+                <svg viewBox="0 0 80 80" style="width: 100%; height: auto;">
+                  <polygon points="40,8 70,28 60,68 20,68 10,28" fill="none" stroke="rgba(96,165,250,0.15)" stroke-width="1"/>
+                  <polygon points="40,18 56,34 46,58 30,58 22,40" fill="rgba(96,165,250,0.25)" stroke="#60a5fa" stroke-width="1.5"/>
+                </svg>
+                <p class="text-xs text-gray-400 mt-1 stat-num">62</p>
+                <p class="text-xs text-gray-500">腾讯</p>
+              </div>
+            </div>
+            <button class="btn btn-ghost w-full mt-3 text-xs" onclick="showToast('跳 /interview/history 查看全部')">查看全部 12 场面试 →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 横条统计（5 列 · 缩小视觉权重，作为辅助信息） -->
+      <div class="glass-card-static mb-10" style="background: linear-gradient(135deg, rgba(99,102,241,0.04) 0%, rgba(168,85,247,0.04) 100%); padding: 18px 24px;">
+        <div class="flex items-center justify-between divide-x divide-white/5">
+          <div class="flex-1 px-5 first:pl-0">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">本周答题</p>
+            <p class="text-2xl font-bold stat-num text-white">28</p>
+            <p class="text-xs text-emerald-400 mt-0.5">+12%</p>
+          </div>
+          <div class="flex-1 px-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">命中率</p>
+            <p class="text-2xl font-bold stat-num text-white">82<span class="text-base text-gray-400">%</span></p>
+            <p class="text-xs text-emerald-400 mt-0.5">+5pp</p>
+          </div>
+          <div class="flex-1 px-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">待复习</p>
+            <p class="text-2xl font-bold stat-num text-white">14</p>
+            <p class="text-xs text-amber-400 mt-0.5">3 题紧急</p>
+          </div>
+          <div class="flex-1 px-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">连续打卡</p>
+            <p class="text-2xl font-bold stat-num text-amber-400">7<span class="text-base text-gray-400">天</span></p>
+            <p class="text-xs text-gray-400 mt-0.5">个人最佳</p>
+          </div>
+          <div class="flex-1 px-5 last:pr-0">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">已完成</p>
+            <p class="text-2xl font-bold stat-num text-white">56<span class="text-base text-gray-400">/200</span></p>
+            <p class="text-xs text-gray-400 mt-0.5">28% · 详情 →</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 个核心卡（AI 推荐 / 每日一题 / 当前计划）· 3 列 grid · 缩小视觉权重 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+
+      <!-- AIRecommendationCard（V3.7 · 🔥 核心卡 #1 · 大字号 + 强渐变 + glow） -->
+      <div class="glass-card mb-10" style="background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.12) 100%); border-color: rgba(99,102,241,0.3); box-shadow: 0 0 0 1px rgba(99,102,241,0.15), 0 12px 40px rgba(99,102,241,0.25); padding: 36px;">
+        <div class="flex items-center justify-between mb-7">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center" style="background: linear-gradient(135deg, #6366f1, #a78bfa); box-shadow: 0 8px 24px rgba(99,102,241,0.4);">
+              <svg width="28" height="28" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2L11 6L15 7L11 8L10 12L9 8L5 7L9 6L10 2Z" fill="white"/>
+                <path d="M16 12L16.5 13.5L18 14L16.5 14.5L16 16L15.5 14.5L14 14L15.5 13.5L16 12Z" fill="white"/>
+                <path d="M4 13L4.5 14L5.5 14.5L4.5 15L4 16L3.5 15L2.5 14.5L3.5 14L4 13Z" fill="white"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold mb-1.5" style="letter-spacing: -0.025em;">今日 AI 推荐</h2>
+              <p class="text-sm text-gray-400" style="line-height: 1.5;">基于你的薄弱点 · 来自 V1 recommendations_service</p>
+            </div>
+          </div>
+          <button class="btn btn-ghost text-sm" onclick="showToast('查看全部 AI 推荐')">查看全部 →</button>
+        </div>
+
+        <!-- 推荐网格 · 2 列 · 4 条 · 加大行距和内边距 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button class="recommendation-item text-left" onclick="clickRecommendation(this)" data-type="补" style="padding: 18px 20px;">
+            <div class="flex items-center gap-2.5 mb-3">
+              <span class="tag" style="background: rgba(248,113,113,0.18); color: #fca5a5; border-color: rgba(248,113,113,0.35); padding: 4px 12px; font-size: 13px; font-weight: 600;">[补]</span>
+              <span class="text-sm text-gray-500 stat-num">优先级 5</span>
+            </div>
+            <p class="text-base text-gray-50 font-semibold mb-2" style="line-height: 1.4;">系统设计 · 缓存一致性</p>
+            <p class="text-sm text-gray-400" style="line-height: 1.6;">你的面试显示分布式缓存是一致性盲点。建议先读理论再刷相关题。</p>
+            <div class="flex items-center gap-1.5 mt-4 text-sm text-indigo-400">
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="font-medium">查看笔记 →</span>
+            </div>
+          </button>
+
+          <button class="recommendation-item text-left" onclick="clickRecommendation(this)" data-type="练" style="padding: 18px 20px;">
+            <div class="flex items-center gap-2.5 mb-3">
+              <span class="tag" style="background: rgba(96,165,250,0.18); color: #93c5fd; border-color: rgba(96,165,250,0.35); padding: 4px 12px; font-size: 13px; font-weight: 600;">[练]</span>
+              <span class="text-sm text-gray-500 stat-num">优先级 4</span>
+            </div>
+            <p class="text-base text-gray-50 font-semibold mb-2" style="line-height: 1.4;">LRU 缓存实现</p>
+            <p class="text-sm text-gray-400" style="line-height: 1.6;">基于你的算法薄弱点 · 平均命中率 60%，建议刷 5 道 LRU 变体题。</p>
+            <div class="flex items-center gap-1.5 mt-4 text-sm text-blue-400">
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="font-medium">立即练习 →</span>
+            </div>
+          </button>
+
+          <button class="recommendation-item text-left" onclick="clickRecommendation(this)" data-type="读" style="padding: 18px 20px;">
+            <div class="flex items-center gap-2.5 mb-3">
+              <span class="tag" style="background: rgba(167,139,250,0.18); color: #c4b5fd; border-color: rgba(167,139,250,0.35); padding: 4px 12px; font-size: 13px; font-weight: 600;">[读]</span>
+              <span class="text-sm text-gray-500 stat-num">优先级 3</span>
+            </div>
+            <p class="text-base text-gray-50 font-semibold mb-2" style="line-height: 1.4;">字节面试经验总结</p>
+            <p class="text-sm text-gray-400" style="line-height: 1.6;">你最近 3 次面试都提到字节。这份笔记总结了 12 道字节常考题。</p>
+            <div class="flex items-center gap-1.5 mt-4 text-sm text-violet-400">
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="font-medium">阅读笔记 →</span>
+            </div>
+          </button>
+
+          <button class="recommendation-item text-left" onclick="clickRecommendation(this)" data-type="盘" style="padding: 18px 20px;">
+            <div class="flex items-center gap-2.5 mb-3">
+              <span class="tag" style="background: rgba(245,158,11,0.18); color: #fcd34d; border-color: rgba(245,158,11,0.35); padding: 4px 12px; font-size: 13px; font-weight: 600;">[盘]</span>
+              <span class="text-sm text-gray-500 stat-num">优先级 2</span>
+            </div>
+            <p class="text-base text-gray-50 font-semibold mb-2" style="line-height: 1.4;">上周错题复盘</p>
+            <p class="text-sm text-gray-400" style="line-height: 1.6;">你上周答错 8 道算法题，主要集中在动态规划和图论。建议周末复盘。</p>
+            <div class="flex items-center gap-1.5 mt-4 text-sm text-amber-400">
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="font-medium">查看错题 →</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Footer · 引导用户产生更多数据 -->
+        <p class="text-sm text-gray-500 mt-6 text-center" style="line-height: 1.6;">
+          💡 完成更多面试 + 答题后，AI 推荐会越来越精准
+        </p>
+      </div>
+
+      <!-- DailyChallengeCard（V3.2 · 核心卡 #2 · 3 列压缩版） -->
+      <div class="glass-card mb-0" style="background: linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(249,115,22,0.10) 100%); border-color: rgba(245, 158, 11, 0.25); padding: 24px;">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #f59e0b, #f97316); box-shadow: 0 4px 12px rgba(245,158,11,0.4);">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 2C8.5 4 9 6 10 7C11 8 11.5 10 10 11C8.5 12 9 14 10 16C11 14 11.5 12 10 11M10 2C10 4 9 6 10 7M10 2L10 16M10 16C8 15 7 13 8 11C9 9 10 7 10 7" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold mb-0.5" style="letter-spacing: -0.025em;">今日挑战</h2>
+            <p class="text-xs text-gray-400">每日 1 题 · 5 分钟</p>
+          </div>
+          <span class="ml-auto tag" style="background: rgba(245,158,11,0.18); color: #fcd34d; border-color: rgba(245,158,11,0.35); padding: 4px 10px; font-size: 12px;">🔥 7 天</span>
+        </div>
+
+        <div class="flex items-center gap-1.5 mb-3">
+          <span class="tag tag-topic" style="padding: 2px 8px; font-size: 11px;">algorithms</span>
+          <span class="tag tag-difficulty-mid" style="padding: 2px 8px; font-size: 11px;">难度 3</span>
+        </div>
+
+        <p class="text-sm leading-relaxed text-gray-100 mb-4" style="line-height: 1.6;">
+          请描述 LRU 缓存的实现思路与时间空间复杂度...
+        </p>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1">
+            <div class="heatmap-cell" data-level="4" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+            <div class="heatmap-cell" data-level="3" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+            <div class="heatmap-cell" data-level="4" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+            <div class="heatmap-cell" data-level="2" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+            <div class="heatmap-cell" data-level="4" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+            <div class="heatmap-cell" data-level="4" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+            <div class="heatmap-cell" data-level="1" style="width: 12px; height: 12px; border-radius: 2px;"></div>
+          </div>
+          <div id="daily-buttons">
+            <button class="btn btn-primary" onclick="completeChallenge()" style="padding: 8px 16px; font-size: 13px;">
+              开始答 →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 当前活跃计划卡（V3.0 · 核心卡 #3 · 3 列压缩版） -->
+      <div class="glass-card mb-0" style="background: linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(6,182,212,0.10) 100%); border-color: rgba(16,185,129,0.25); padding: 24px;">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #10b981, #06b6d4); box-shadow: 0 4px 12px rgba(16,185,129,0.4);">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M6 2L13 5L6 8L6 2Z" fill="white"/>
+              <path d="M13 5L13 11L6 14L6 8L13 5Z" stroke="white" stroke-width="1.8" fill="rgba(255,255,255,0.2)"/>
+              <path d="M14 11L18 13L14 15L14 11Z" fill="white"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold mb-0.5" style="letter-spacing: -0.025em;">当前计划</h2>
+            <p class="text-xs text-emerald-400 font-medium">"2 周算法冲刺"</p>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="flex justify-between mb-1.5">
+            <span class="text-xs text-gray-400">总体进度</span>
+            <span class="text-sm font-semibold text-emerald-400 stat-num">5 / 10</span>
+          </div>
+          <div class="progress-track" style="height: 6px;"><div class="progress-fill" style="width: 50%;"></div></div>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-3">
+          📅 2026-07-23 截止 · 目标 algorithms 50%
+        </p>
+
+        <button class="btn btn-primary w-full" onclick="showToast('跳 /plan/[id]')" style="padding: 8px 16px; font-size: 13px;">
+          查看详情 →
+        </button>
+      </div>
+      </div><!-- /3 列 grid 关闭 -->
+
+      <!-- 4 模块入口（V3 重构 · 侧边栏紧凑横向模式 · 6 列布局） -->
+      <div class="glass-card-static mb-8" style="padding: 20px 24px;">
+        <div class="flex items-center gap-1.5 mb-3">
+          <span class="text-xs text-gray-500 uppercase tracking-wider">快速跳转</span>
+          <span class="text-xs text-gray-600 ml-auto">V1 4 大模块</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <button class="module-quick-link" onclick="showPage('learn')">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M3 5C3 3.9 3.9 3 5 3H15C16.1 3 17 3.9 17 5V17L10 14L3 17V5Z" stroke="#60a5fa" stroke-width="1.5" stroke-linejoin="round" fill="rgba(96,165,250,0.1)"/>
+            </svg>
+            <span>学习</span>
+          </button>
+          <button class="module-quick-link" onclick="showToast('跳 /review')">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M3 10C3 6.13 6.13 3 10 3C13.87 3 17 6.13 17 10" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M17 7V10H14" stroke="#a78bfa" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M10 7V10L12 12" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>复习</span>
+          </button>
+          <button class="module-quick-link" onclick="showPage('plan')">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M6 2L13 5L6 8L6 2Z" fill="#10b981"/>
+              <path d="M13 5L13 11L6 14L6 8L13 5Z" stroke="#10b981" stroke-width="1.5" fill="rgba(16,185,129,0.2)"/>
+            </svg>
+            <span class="text-emerald-400">计划🆕</span>
+          </button>
+          <button class="module-quick-link" onclick="showToast('跳 /profile（V2 沉淀层）')">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="8" r="3" stroke="#ec4899" stroke-width="1.5" fill="rgba(236,72,153,0.1)"/>
+              <path d="M4 17C4 13.5 6.5 11 10 11C13.5 11 16 13.5 16 17" stroke="#ec4899" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>画像</span>
+          </button>
+          <button class="module-quick-link" onclick="showPage('collections')">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M3 5L11 2L19 5L11 8L3 5Z" stroke="#60a5fa" stroke-width="1.5" fill="rgba(96,165,250,0.2)" stroke-linejoin="round"/>
+              <path d="M3 11L11 14L19 11" stroke="#60a5fa" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M3 17L11 20L19 17" stroke="#60a5fa" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <span class="text-blue-400">题单🆕</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- V3 nav 入口提示 -->
+      <div class="glass-card-static" style="background: rgba(99, 102, 241, 0.04); border-style: dashed;">
+        <div class="flex items-center gap-2 mb-3">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6.5" stroke="#6366f1" stroke-width="1.2"/>
+            <path d="M8 5V8.5L10.5 10" stroke="#6366f1" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          <h3 class="text-sm font-semibold">V3.0 + V3.1 新增入口</h3>
+        </div>
+        <p class="text-xs text-gray-400">顶部 nav 现在：仪表盘 · 面试 · 学 · 复习 · <span class="text-emerald-400 font-medium">计划🆕</span> · 画像 · <span class="text-blue-400 font-medium">题单🆕</span> · 知识库 · 信息流</p>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════
+         页面 2: /plan（V3.0 · 用户已点痛点）
+         ════════════════════════════════════════════════════════════ -->
+    <section id="page-plan" class="hidden">
+      <header class="mb-8 mt-10">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="tag tag-info">🔴 用户已点痛点</span>
+          <span class="tag tag-info">V3.0</span>
+        </div>
+        <h1 class="text-3xl font-bold mb-2">学习计划</h1>
+        <p class="text-sm text-gray-400">按节奏刷题，让成长可视化。</p>
+      </header>
+
+      <!-- 当前活跃计划卡（重复 /dashboard 的版本 · 加 mastery radar） -->
+      <div class="glass-card bg-grad-plan mb-6" style="border-color: rgba(16, 185, 129, 0.2);">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8L12 2Z" stroke="#10b981" stroke-width="1.5" fill="rgba(16,185,129,0.2)"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold mb-1">"2 周算法冲刺"</h2>
+              <p class="text-sm text-gray-400">📅 2026-07-09 ~ 2026-07-23  ·  目标：掌握 algorithms 50%</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary" onclick="showToast('编辑')">编辑</button>
+            <button class="btn btn-danger" onclick="showToast('确认结束计划？', 'warning')">结束</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+          <!-- 左：进度 + 详情 -->
+          <div class="col-span-2">
+            <div class="mb-4">
+              <div class="flex justify-between mb-2">
+                <span class="text-sm text-gray-300">总体进度</span>
+                <span class="text-sm font-semibold text-emerald-400 stat-num">5 / 10  ·  50%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width: 50%;"></div></div>
+            </div>
+            <div class="mb-4">
+              <div class="flex justify-between mb-2">
+                <span class="text-sm text-gray-400">周 1 进度</span>
+                <span class="text-sm text-gray-400 stat-num">5 / 10</span>
+              </div>
+              <div class="progress-track" style="height: 4px;"><div class="progress-fill" style="width: 50%;"></div></div>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-300">
+              <span>弱项剩余：</span>
+              <span class="text-emerald-400 font-medium">[]  ✓</span>
+            </div>
+            <div class="mt-4">
+              <button class="btn btn-primary" onclick="simulateRefresh(this)">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="refresh-icon">
+                  <path d="M11.5 7a4.5 4.5 0 1 1-1.32-3.18M11.5 2V4.5H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                刷新进度
+              </button>
+            </div>
+          </div>
+          <!-- 右：mastery radar -->
+          <div>
+            <p class="text-xs text-gray-500 mb-2">掌握度雷达</p>
+            <svg viewBox="0 0 200 160" style="width: 100%; height: auto;">
+              <!-- 5 维雷达：算法 / 系统设计 / 网络 / 前端 / AI -->
+              <defs>
+                <linearGradient id="radar-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.05"/>
+                </linearGradient>
+              </defs>
+              <!-- 网格 -->
+              <polygon points="100,10 180,55 150,140 50,140 20,55" fill="none" stroke="rgba(148,163,184,0.1)" stroke-width="1"/>
+              <polygon points="100,30 160,60 138,125 62,125 40,60" fill="none" stroke="rgba(148,163,184,0.08)" stroke-width="1"/>
+              <polygon points="100,50 140,65 125,110 75,110 60,65" fill="none" stroke="rgba(148,163,184,0.06)" stroke-width="1"/>
+              <!-- 数据多边形（不规则表示各方向掌握度） -->
+              <polygon points="100,15 165,58 130,135 55,138 30,60" fill="url(#radar-grad)" stroke="#10b981" stroke-width="1.5"/>
+              <!-- 顶点 -->
+              <circle cx="100" cy="15" r="3" fill="#10b981"/>
+              <circle cx="165" cy="58" r="3" fill="#10b981"/>
+              <circle cx="130" cy="135" r="3" fill="#10b981"/>
+              <circle cx="55" cy="138" r="3" fill="#10b981"/>
+              <circle cx="30" cy="60" r="3" fill="#10b981"/>
+              <!-- 标签 -->
+              <text x="100" y="6" text-anchor="middle" fill="#94a3b8" font-size="10">算法</text>
+              <text x="188" y="58" text-anchor="start" fill="#94a3b8" font-size="10">系统</text>
+              <text x="158" y="148" text-anchor="start" fill="#94a3b8" font-size="10">前端</text>
+              <text x="42" y="148" text-anchor="end" fill="#94a3b8" font-size="10">AI</text>
+              <text x="12" y="58" text-anchor="end" fill="#94a3b8" font-size="10">网络</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 历史计划 -->
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold mb-4">历史计划</h2>
+        <div class="glass-card-static">
+          <div class="list-item">
+            <div class="flex items-center gap-3">
+              <span class="tag tag-info">已结束</span>
+              <span>"30 天前端"</span>
+              <span class="text-xs text-gray-500">2026-05-01 ~ 2026-05-30</span>
+            </div>
+            <span class="text-emerald-400 stat-num">✅ 28 / 30</span>
+          </div>
+          <div class="list-item">
+            <div class="flex items-center gap-3">
+              <span class="tag tag-info">已结束</span>
+              <span>"面试突击 7 天"</span>
+              <span class="text-xs text-gray-500">2026-04-10 ~ 2026-04-17</span>
+            </div>
+            <span class="text-emerald-400 stat-num">✅ 35 / 35</span>
+          </div>
+          <div class="list-item">
+            <div class="flex items-center gap-3">
+              <span class="tag tag-info" style="background: rgba(148, 163, 184, 0.1);">已暂停</span>
+              <span>"3 月刷题打卡"</span>
+              <span class="text-xs text-gray-500">2026-03-01 ~ 2026-03-31</span>
+            </div>
+            <span class="text-gray-400 stat-num">⏸ 12 / 30</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 创建按钮 -->
+      <button class="btn btn-primary fixed bottom-10 right-10" style="height: 52px; padding: 0 22px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);" onclick="openCreateModal()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        创建新计划
+      </button>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════
+         页面 3: /collections（V3.1 · LeetCode 风格 · 含环形进度）
+         ════════════════════════════════════════════════════════════ -->
+    <section id="page-collections" class="hidden">
+      <header class="mb-8 mt-10">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="tag tag-info">⭐ LeetCode 风格</span>
+          <span class="tag tag-info">V3.1</span>
+        </div>
+        <h1 class="text-3xl font-bold mb-2">精选题单</h1>
+        <p class="text-sm text-gray-400">官方精选题单，跟着系统化刷题。</p>
+      </header>
+
+      <!-- 顶部 stat 卡：题单总数 / 已订阅 / 完成度 -->
+      <div class="grid grid-cols-3 gap-5 mb-6">
+        <div class="glass-card-static">
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-2">题单总数</p>
+          <p class="text-3xl font-bold stat-num">5</p>
+          <p class="text-xs text-gray-400 mt-1">2 建设中</p>
+        </div>
+        <div class="glass-card-static">
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-2">已订阅</p>
+          <p class="text-3xl font-bold stat-num text-amber-400">1</p>
+          <p class="text-xs text-gray-400 mt-1">⭐ 算法入门</p>
+        </div>
+        <div class="glass-card-static">
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-2">总进度</p>
+          <p class="text-3xl font-bold stat-num">25 <span class="text-lg text-gray-400">/ 190</span></p>
+          <p class="text-xs text-gray-400 mt-1"><span class="text-emerald-400">13%</span> 已完成</p>
+        </div>
+      </div>
+
+      <!-- 筛选 -->
+      <div class="flex items-center gap-2 mb-6 flex-wrap">
+        <span class="text-xs text-gray-500 mr-2">筛选</span>
+        <span class="tag tag-active" onclick="filterCollections('all', this)">全部</span>
+        <span class="tag tag-default" onclick="filterCollections('subscribed', this)">⭐ 已订阅</span>
+        <span class="tag tag-stack" onclick="filterCollections('algo', this)">算法</span>
+        <span class="tag tag-direction" onclick="filterCollections('sys', this)">系统设计</span>
+        <span class="tag tag-direction" onclick="filterCollections('fe', this)">前端</span>
+        <span class="tag tag-company" onclick="filterCollections('bytedance', this)">字节</span>
+      </div>
+
+      <!-- 题单卡片网格 · 含环形进度 -->
+      <div id="collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- 题单 1 -->
+        <div class="glass-card bg-grad-collection" data-categories="algo,subscribed" style="border-color: rgba(96, 165, 250, 0.2);">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #60a5fa, #818cf8);">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <path d="M5 4C5 3.45 5.45 3 6 3H10L12 5H17C17.55 5 18 5.45 18 6V17C18 17.55 17.55 18 17 18H6C5.45 18 5 17.55 5 17V4Z" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.2)"/>
+                  <path d="M8 11L10 13L14 9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">算法入门 50 题</h3>
+                <p class="text-xs text-gray-400">LeetCode Easy 精选</p>
+              </div>
+            </div>
+            <span class="text-amber-400">⭐</span>
+          </div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="tag tag-difficulty-low">2-3</span>
+            <span class="tag tag-stack">算法</span>
+          </div>
+          <!-- 环形进度 -->
+          <div class="flex items-center justify-between mb-5">
+            <div class="relative" style="width: 56px; height: 56px;">
+              <svg class="ring-progress" width="56" height="56" viewBox="0 0 56 56">
+                <circle class="ring-progress-bg" cx="28" cy="28" r="24" stroke-width="4"/>
+                <circle class="ring-progress-fg" cx="28" cy="28" r="24" stroke="#60a5fa" stroke-width="4"
+                        stroke-dasharray="150.8" stroke-dashoffset="75.4" style="filter: drop-shadow(0 0 6px rgba(96,165,250,0.5));"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-sm font-bold stat-num">50%</span>
+            </div>
+            <div class="flex-1 ml-4">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">已完成</span>
+                <span class="text-blue-400 font-semibold stat-num">25 / 50</span>
+              </div>
+              <div class="text-xs text-gray-500">最近：2026-07-08</div>
+            </div>
+          </div>
+          <button class="btn btn-primary w-full" onclick="showToast('跳 /collections/algorithms_50')">
+            继续刷
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M5 3L9 7L5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 题单 2 -->
+        <div class="glass-card" data-categories="sys">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <rect x="3" y="4" width="16" height="3" rx="1" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.2)"/>
+                  <rect x="3" y="10" width="10" height="3" rx="1" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.2)"/>
+                  <rect x="3" y="16" width="13" height="3" rx="1" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.2)"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">系统设计 30 题</h3>
+                <p class="text-xs text-gray-400">大厂面试常考</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="tag tag-difficulty-high">4-5</span>
+            <span class="tag tag-direction">系统</span>
+          </div>
+          <div class="flex items-center justify-between mb-5">
+            <div class="relative" style="width: 56px; height: 56px;">
+              <svg class="ring-progress" width="56" height="56" viewBox="0 0 56 56">
+                <circle class="ring-progress-bg" cx="28" cy="28" r="24" stroke-width="4"/>
+                <circle class="ring-progress-fg" cx="28" cy="28" r="24" stroke="#94a3b8" stroke-width="4"
+                        stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 stat-num">0%</span>
+            </div>
+            <div class="flex-1 ml-4">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">已完成</span>
+                <span class="text-gray-400 stat-num">0 / 30</span>
+              </div>
+              <div class="text-xs text-gray-500">未开始</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary w-full" onclick="subscribeCollection(this, 'sys_30')">
+            + 订阅题单
+          </button>
+        </div>
+
+        <!-- 题单 3 -->
+        <div class="glass-card" data-categories="fe">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #f472b6, #a78bfa);">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <path d="M3 5L11 2L19 5L11 8L3 5Z" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.2)" stroke-linejoin="round"/>
+                  <path d="M3 11L11 14L19 11" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+                  <path d="M3 17L11 20L19 17" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">前端进阶 40 题</h3>
+                <p class="text-xs text-gray-400">React + Vue + 性能</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="tag tag-difficulty-mid">3-4</span>
+            <span class="tag tag-direction">前端</span>
+          </div>
+          <div class="flex items-center justify-between mb-5">
+            <div class="relative" style="width: 56px; height: 56px;">
+              <svg class="ring-progress" width="56" height="56" viewBox="0 0 56 56">
+                <circle class="ring-progress-bg" cx="28" cy="28" r="24" stroke-width="4"/>
+                <circle class="ring-progress-fg" cx="28" cy="28" r="24" stroke="#94a3b8" stroke-width="4"
+                        stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 stat-num">0%</span>
+            </div>
+            <div class="flex-1 ml-4">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">已完成</span>
+                <span class="text-gray-400 stat-num">0 / 40</span>
+              </div>
+              <div class="text-xs text-gray-500">未开始</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary w-full" onclick="subscribeCollection(this, 'fe_40')">
+            + 订阅题单
+          </button>
+        </div>
+
+        <!-- 题单 4 -->
+        <div class="glass-card" data-categories="fe,bytedance">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #f59e0b, #f87171);">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <path d="M11 2L13 8L19 8L14 12L16 18L11 14L6 18L8 12L3 8L9 8L11 2Z" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.25)" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">字节前端 50 题</h3>
+                <p class="text-xs text-gray-400">字节真题精选</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="tag tag-difficulty-mid">3-4</span>
+            <span class="tag tag-direction">前端</span>
+            <span class="tag tag-company">字节</span>
+          </div>
+          <div class="flex items-center justify-between mb-5">
+            <div class="relative" style="width: 56px; height: 56px;">
+              <svg class="ring-progress" width="56" height="56" viewBox="0 0 56 56">
+                <circle class="ring-progress-bg" cx="28" cy="28" r="24" stroke-width="4"/>
+                <circle class="ring-progress-fg" cx="28" cy="28" r="24" stroke="#94a3b8" stroke-width="4"
+                        stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 stat-num">0%</span>
+            </div>
+            <div class="flex-1 ml-4">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">已完成</span>
+                <span class="text-gray-400 stat-num">0 / 50</span>
+              </div>
+              <div class="text-xs text-gray-500">未开始</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary w-full" onclick="subscribeCollection(this, 'bytedance_fe_50')">
+            + 订阅题单
+          </button>
+        </div>
+
+        <!-- 题单 5 -->
+        <div class="glass-card" data-categories="algo">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #a78bfa, #ec4899);">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <circle cx="11" cy="11" r="7" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.15)"/>
+                  <path d="M11 4V11L15 14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">RAG 进阶 20 题</h3>
+                <p class="text-xs text-gray-400">AI 工程师专项</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="tag tag-difficulty-high">4-5</span>
+            <span class="tag tag-stack">算法</span>
+          </div>
+          <div class="flex items-center justify-between mb-5">
+            <div class="relative" style="width: 56px; height: 56px;">
+              <svg class="ring-progress" width="56" height="56" viewBox="0 0 56 56">
+                <circle class="ring-progress-bg" cx="28" cy="28" r="24" stroke-width="4"/>
+                <circle class="ring-progress-fg" cx="28" cy="28" r="24" stroke="#94a3b8" stroke-width="4"
+                        stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-500 stat-num">0%</span>
+            </div>
+            <div class="flex-1 ml-4">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-gray-400">已完成</span>
+                <span class="text-gray-400 stat-num">0 / 20</span>
+              </div>
+              <div class="text-xs text-gray-500">未开始</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary w-full" onclick="subscribeCollection(this, 'rag_20')">
+            + 订阅题单
+          </button>
+        </div>
+
+        <!-- 题单 6: 建设中 -->
+        <div class="glass-card opacity-60" data-categories="bytedance">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background: rgba(148, 163, 184, 0.1); border: 1px dashed rgba(148, 163, 184, 0.3);">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <circle cx="11" cy="11" r="8" stroke="#64748b" stroke-width="1.2" stroke-dasharray="2 2"/>
+                  <path d="M11 7V11M11 14V14.01" stroke="#64748b" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-gray-400">字节考过 100 题</h3>
+                <p class="text-xs text-gray-500">🚧 建设中</p>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-secondary w-full" disabled>敬请期待</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════
+         页面 4: /learn（V3.x · TagFilter 多维筛选 + 命中数）
+         ════════════════════════════════════════════════════════════ -->
+    <section id="page-learn" class="hidden">
+      <header class="mb-8 mt-10">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="tag tag-info">🔥 Tag 多选筛选</span>
+          <span class="tag tag-info">V3.x</span>
+        </div>
+        <h1 class="text-3xl font-bold mb-2">题库浏览</h1>
+        <p class="text-sm text-gray-400">200 题 · 5 维度筛选 · 实时匹配</p>
+      </header>
+
+      <!-- 顶部 4 stat（数据洞察） -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="glass-card-static text-center" style="padding: 18px;">
+          <p class="text-xs text-gray-500 mb-1">命中率</p>
+          <p class="text-2xl font-bold stat-num text-emerald-400">82%</p>
+        </div>
+        <div class="glass-card-static text-center" style="padding: 18px;">
+          <p class="text-xs text-gray-500 mb-1">已掌握</p>
+          <p class="text-2xl font-bold stat-num">56</p>
+        </div>
+        <div class="glass-card-static text-center" style="padding: 18px;">
+          <p class="text-xs text-gray-500 mb-1">待复习</p>
+          <p class="text-2xl font-bold stat-num text-amber-400">14</p>
+        </div>
+        <div class="glass-card-static text-center" style="padding: 18px;">
+          <p class="text-xs text-gray-500 mb-1">收藏</p>
+          <p class="text-2xl font-bold stat-num text-violet-400">23</p>
+        </div>
+      </div>
+
+      <!-- 筛选区 -->
+      <div class="glass-card-static mb-4">
+        <div class="flex flex-wrap items-start gap-4">
+          <div>
+            <label class="text-xs text-gray-500 block mb-1.5 font-medium">Topic</label>
+            <select class="input" style="width: 150px;">
+              <option>全部</option>
+              <option>algorithms</option>
+              <option>system_design</option>
+              <option>network</option>
+              <option>frontend</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 block mb-1.5 font-medium">难度</label>
+            <select class="input" style="width: 110px;">
+              <option>全部</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+            </select>
+          </div>
+          <div class="flex-1" style="min-width: 380px;">
+            <label class="text-xs text-gray-500 block mb-2 font-medium">🏷️ 标签（多选 · 任一命中）</label>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="text-xs text-gray-500 mr-1">A</span>
+              <span class="tag tag-default" data-id="tag-algorithm" onclick="toggleTag(this)">算法</span>
+              <span class="tag tag-default" data-id="tag-system" onclick="toggleTag(this)">系统设计</span>
+              <span class="tag tag-default" data-id="tag-network" onclick="toggleTag(this)">网络</span>
+              <span class="tag tag-default" data-id="tag-frontend" onclick="toggleTag(this)">前端</span>
+              <span class="text-xs text-gray-500 mr-1 ml-2">B</span>
+              <span class="tag tag-default" data-id="tag-python" onclick="toggleTag(this)">Python</span>
+              <span class="tag tag-default" data-id="tag-redis" onclick="toggleTag(this)">Redis</span>
+              <span class="tag tag-default" data-id="tag-kafka" onclick="toggleTag(this)">Kafka</span>
+              <span class="tag tag-default" data-id="tag-react" onclick="toggleTag(this)">React</span>
+              <span class="text-xs text-gray-500 mr-1 ml-2">C</span>
+              <span class="tag tag-default" data-id="tag-bytedance-r2" onclick="toggleTag(this)">字节-二面</span>
+              <span class="tag tag-default" data-id="tag-ali-r3" onclick="toggleTag(this)">阿里-三面</span>
+            </div>
+          </div>
+          <div class="flex-1" style="min-width: 180px;">
+            <label class="text-xs text-gray-500 block mb-1.5 font-medium">搜索</label>
+            <input type="text" class="input" placeholder="关键词…" id="search-input" oninput="filterQuestions()" />
+          </div>
+          <div class="flex items-center mt-6">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="bookmark-only" onchange="filterQuestions()" class="accent-indigo-500"/>
+              <span class="text-sm">只看收藏</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 命中状态条 -->
+      <div class="flex items-center justify-between mb-4 px-2">
+        <p class="text-sm text-gray-400">
+          <span id="selected-tags-display" class="text-gray-300">未选标签</span>
+        </p>
+        <p class="text-sm">
+          命中 <span id="hit-count" class="text-2xl font-bold text-white stat-num">8</span> <span class="text-gray-400">题</span>
+        </p>
+      </div>
+
+      <!-- 题目列表 -->
+      <div id="question-list" class="space-y-3">
+        <div class="glass-card" data-tags="tag-algorithm,tag-python,tag-bytedance-r2" data-bookmarked="false">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">algorithms</span>
+            <span class="tag tag-info">lru_cache</span>
+            <span class="tag tag-difficulty-mid">难度 3</span>
+            <span class="tag tag-stack">sys_algorithm</span>
+            <span class="tag tag-stack">sys_python</span>
+            <span class="tag tag-company">sys_bytedance_r2</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">请描述 LRU 缓存的实现思路，并说明时间空间复杂度。</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: algo_005</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/algo_005')">开始答 →</button>
+          </div>
+        </div>
+
+        <div class="glass-card" data-tags="tag-algorithm,tag-redis" data-bookmarked="true">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">algorithms</span>
+            <span class="tag tag-info">redis_perf</span>
+            <span class="tag tag-difficulty-high">难度 4</span>
+            <span class="tag tag-stack">sys_algorithm</span>
+            <span class="tag tag-stack">sys_redis</span>
+            <span class="text-amber-400 text-sm">⭐</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">Redis 的 sorted set 用什么数据结构实现？时间复杂度是多少？</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: algo_012 · ⭐ 已收藏</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/algo_012')">开始答 →</button>
+          </div>
+        </div>
+
+        <div class="glass-card" data-tags="tag-system,tag-kafka,tag-ali-r3" data-bookmarked="false">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">system_design</span>
+            <span class="tag tag-info">message_queue</span>
+            <span class="tag tag-difficulty-high">难度 4</span>
+            <span class="tag tag-direction">sys_system</span>
+            <span class="tag tag-stack">sys_kafka</span>
+            <span class="tag tag-company">sys_ali_r3</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">如何设计一个支持亿级消息的消息队列系统？</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: sys_008</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/sys_008')">开始答 →</button>
+          </div>
+        </div>
+
+        <div class="glass-card" data-tags="tag-frontend,tag-react" data-bookmarked="false">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">frontend</span>
+            <span class="tag tag-info">react_hooks</span>
+            <span class="tag tag-difficulty-mid">难度 3</span>
+            <span class="tag tag-direction">sys_frontend</span>
+            <span class="tag tag-stack">sys_react</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">useEffect 的依赖数组是怎么工作的？什么时候需要手动传依赖？</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: fe_003</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/fe_003')">开始答 →</button>
+          </div>
+        </div>
+
+        <div class="glass-card" data-tags="tag-network,tag-python" data-bookmarked="false">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">network</span>
+            <span class="tag tag-info">tcp_handshake</span>
+            <span class="tag tag-difficulty-mid">难度 3</span>
+            <span class="tag tag-direction">sys_network</span>
+            <span class="tag tag-stack">sys_python</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">TCP 三次握手中第二次握手丢失会怎样？</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: net_007</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/net_007')">开始答 →</button>
+          </div>
+        </div>
+
+        <div class="glass-card" data-tags="tag-system,tag-redis" data-bookmarked="true">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">system_design</span>
+            <span class="tag tag-info">cache_design</span>
+            <span class="tag tag-difficulty-high">难度 5</span>
+            <span class="tag tag-direction">sys_system</span>
+            <span class="tag tag-stack">sys_redis</span>
+            <span class="text-amber-400 text-sm">⭐</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">设计一个分布式缓存系统，需要考虑哪些一致性问题？</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: sys_015 · ⭐ 已收藏</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/sys_015')">开始答 →</button>
+          </div>
+        </div>
+
+        <div class="glass-card" data-tags="tag-algorithm,tag-python" data-bookmarked="false">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">algorithms</span>
+            <span class="tag tag-info">dynamic_programming</span>
+            <span class="tag tag-difficulty-high">难度 4</span>
+            <span class="tag tag-stack">sys_algorithm</span>
+            <span class="tag tag-stack">sys_python</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">动态规划的核心思想是什么？举一个你熟悉的例子说明状态转移方程。</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: algo_018</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/algo_018')">开始答 →</button>
+          </div>
+        </div>
+
+        <div class="glass-card" data-tags="tag-frontend,tag-bytedance-r2" data-bookmarked="false">
+          <div class="flex items-center gap-1.5 mb-3">
+            <span class="tag tag-topic">frontend</span>
+            <span class="tag tag-info">browser_render</span>
+            <span class="tag tag-difficulty-high">难度 4</span>
+            <span class="tag tag-direction">sys_frontend</span>
+            <span class="tag tag-company">sys_bytedance_r2</span>
+          </div>
+          <p class="text-base text-gray-100 mb-4" style="line-height: 1.7;">浏览器从输入 URL 到页面渲染完成，经历了哪些步骤？</p>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-gray-500 stat-num">id: fe_011</span>
+            <button class="btn btn-primary" onclick="showToast('跳 /learn/fe_011')">开始答 →</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="empty-state" class="glass-card-static text-center hidden" style="padding: 80px 24px;">
+        <div class="text-5xl mb-4">📭</div>
+        <p class="text-gray-400 mb-2">无匹配题目</p>
+        <p class="text-xs text-gray-500">试试其他标签组合</p>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════
+         占位 Pages（V3.6 Sidebar 重构 · 11 个新 page · 待后续实施）
+         ════════════════════════════════════════════════════════════ -->
+    <section id="page-interview-today" class="hidden">
+      <header class="mb-12 mt-14">
+        <p class="text-xs text-gray-500 uppercase tracking-widest font-medium mb-3">V1 第 1 核心模块</p>
+        <h1 class="text-4xl font-bold mb-3" style="line-height: 1.15;">🎤 今日面试</h1>
+        <p class="text-base text-gray-400">Mock Interview · 30 分钟掌握一轮 · 实时雷达反馈</p>
+      </header>
+      <div class="glass-card mb-8" style="padding: 48px;">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background: linear-gradient(135deg, #f472b6, #a78bfa); box-shadow: 0 8px 24px rgba(244,114,182,0.4);">
+            <svg width="32" height="32" viewBox="0 0 20 20" fill="none">
+              <rect x="3" y="3" width="14" height="14" rx="3" stroke="white" stroke-width="1.8"/>
+              <path d="M7 8L13 8M7 11L11 11" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold mb-2">开启今日 Mock Interview</h2>
+            <p class="text-sm text-gray-400">系统根据你的薄弱点智能选题 · 自动生成雷达报告</p>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="padding: 16px 36px; font-size: 17px; font-weight: 600;">
+          开始面试 →
+        </button>
+        <p class="text-xs text-gray-500 mt-4">📅 待定 · 建议每天固定时间 · 30 分钟</p>
+      </div>
+    </section>
+
+    <section id="page-interview-history" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">📋 历史报告</h1>
+        <p class="text-base text-gray-400">查看你过去的面试记录 + 雷达数据 + 改进建议</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · V3.7 实施</p>
+        <p class="text-xs text-gray-500">调用 <code>GET /api/interviews?status=completed</code></p>
+      </div>
+    </section>
+
+    <section id="page-interview-setup" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">⚙ 面试配置</h1>
+        <p class="text-base text-gray-400">配置面试偏好：公司 · 轮次 · 难度 · 时长</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · V3.7 实施</p>
+      </div>
+    </section>
+
+    <section id="page-review" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">🔁 复习中心</h1>
+        <p class="text-base text-gray-400">SM-2 间隔重复 · 到期题自动入队</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · 调用 <code>GET /api/learn/review_queue</code></p>
+      </div>
+    </section>
+
+    <section id="page-knowledge" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">📖 笔记浏览</h1>
+        <p class="text-base text-gray-400">Obsidian 联动 · 标签 + 全文搜索 + 反向链接</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · 调用 <code>GET /api/knowledge/notes</code></p>
+      </div>
+    </section>
+
+    <section id="page-qa" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">💬 问答社区</h1>
+        <p class="text-base text-gray-400">题目讨论 · 社区问答</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · V4+ 实施（议題 D 范围）</p>
+      </div>
+    </section>
+
+    <section id="page-report" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">📊 报告中心</h1>
+        <p class="text-base text-gray-400">学习报告 + 面试报告 + 月度复盘</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · V1 已实装 backend</p>
+      </div>
+    </section>
+
+    <section id="page-ai-today" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">✨ 今日 AI 推荐</h1>
+        <p class="text-base text-gray-400">基于你的薄弱点 · 来自 V1 recommendations_service</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · 调用 <code>GET /api/analytics/recommendations</code></p>
+      </div>
+    </section>
+
+    <section id="page-ai-history" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">📜 AI 推送历史</h1>
+        <p class="text-base text-gray-400">历史推荐 + 命中率 + 反馈</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · V3.5 实施</p>
+      </div>
+    </section>
+
+    <section id="page-profile" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">👤 我的画像</h1>
+        <p class="text-base text-gray-400">V2 沉淀层已实装 · 4 区块 · 趋势 + 雷达 + 弱项</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · 调 <code>GET /api/v2/dashboard/summary</code> + <code>/profile</code></p>
+        <p class="text-xs text-gray-500">V2 沉淀层已实装 · 4 区块 + AI 推荐卡</p>
+      </div>
+    </section>
+
+    <section id="page-settings" class="hidden">
+      <header class="mb-12 mt-14">
+        <h1 class="text-4xl font-bold mb-3">⚙ 设置</h1>
+        <p class="text-base text-gray-400">用户偏好 · 通知 · 主题 · 数据导出</p>
+      </header>
+      <div class="glass-card-static" style="padding: 60px 24px; text-align: center;">
+        <p class="text-gray-400 mb-4">页面占位 · V3.7 实施</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         V3.7 · PR 5 admin 题库管理（/admin/questions）
+         ============================================================ -->
+    <section id="page-admin-questions" class="hidden">
+      <header class="mb-8 mt-14">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-300">V3.7 · PR 5</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300">admin</span>
+        </div>
+        <h1 class="text-3xl font-bold mb-2" style="letter-spacing: -0.025em;">题库管理</h1>
+        <p class="text-sm text-gray-400">手动调整题目 topic / sub_topic / difficulty / round · 接 PATCH /api/admin/questions/{id}</p>
+      </header>
+
+      <main class="max-w-7xl mx-auto px-6 pb-16 space-y-6">
+        <!-- 过滤栏 -->
+        <div class="glass-card-static flex items-center gap-3 flex-wrap" style="padding: 16px 20px;">
+          <div>
+            <label class="text-xs text-gray-500 block mb-1.5">Topic</label>
+            <select class="input" style="width: 160px;">
+              <option>全部</option>
+              <option>agent_architecture</option>
+              <option>system_design</option>
+              <option>rag</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 block mb-1.5">难度</label>
+            <select class="input" style="width: 100px;">
+              <option>全部</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+            </select>
+          </div>
+          <div class="flex-1 min-w-[200px]">
+            <label class="text-xs text-gray-500 block mb-1.5">关键词搜索</label>
+            <input class="input" placeholder="按 question_text 搜索…" />
+          </div>
+          <button class="btn btn-secondary mt-5">重置</button>
+          <button class="btn btn-primary mt-5">搜索</button>
+        </div>
+
+        <!-- 题目列表表格 -->
+        <div class="glass-card-static" style="padding: 0; overflow: hidden;">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/5">
+                <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">ID</th>
+                <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium">题目</th>
+                <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium w-32">Topic</th>
+                <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium w-28">Sub-topic</th>
+                <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium w-20">难度</th>
+                <th class="text-left px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium w-24">Round</th>
+                <th class="text-right px-4 py-3 text-xs text-gray-500 uppercase tracking-wider font-medium w-24">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-3 text-xs text-gray-500 stat-num">agent_001</td>
+                <td class="px-4 py-3 text-sm text-gray-100">什么是 ReAct 框架？</td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px;">
+                    <option>agent_architecture</option>
+                    <option>rag</option>
+                    <option>system_design</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-400">react_agent</td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px; width: 60px;">
+                    <option>3</option><option>2</option><option>4</option><option>5</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px;">
+                    <option>round1</option><option>round2</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="showToast('✓ 已保存 agent_001')">保存</button>
+                </td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-3 text-xs text-gray-500 stat-num">agent_002</td>
+                <td class="px-4 py-3 text-sm text-gray-100">Plan-and-Execute 的核心思想？</td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px;">
+                    <option selected>agent_architecture</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-400">plan_execute</td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px; width: 60px;">
+                    <option>2</option><option>3</option><option selected>4</option><option>5</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px;">
+                    <option>round1</option><option selected>round2</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="showToast('✓ 已保存 agent_002')">保存</button>
+                </td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-3 text-xs text-gray-500 stat-num">agent_003</td>
+                <td class="px-4 py-3 text-sm text-gray-100">多 agent 通信模式有哪些？</td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px;">
+                    <option selected>agent_architecture</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-400">multi_agent</td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px; width: 60px;">
+                    <option>2</option><option>3</option><option>4</option><option selected>5</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3">
+                  <select class="input text-xs" style="padding: 4px 8px; height: 28px;">
+                    <option>round1</option><option selected>round2</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="showToast('✓ 已保存 agent_003')">保存</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="flex items-center justify-between text-sm text-gray-500">
+          <span>共 3 条（mockup 示例）</span>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" disabled>上一页</button>
+            <span class="text-gray-300">1 / 1</span>
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" disabled>下一页</button>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============================================================
+         V3.7 · PR 3 admin 手动同步（/admin/sync）
+         ============================================================ -->
+    <section id="page-admin-sync" class="hidden">
+      <header class="mb-8 mt-14">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="text-xs px-2 py-0.5 rounded bg-violet-500/15 text-violet-300">V3.7 · PR 3</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300">admin</span>
+        </div>
+        <h1 class="text-3xl font-bold mb-2" style="letter-spacing: -0.025em;">手动同步</h1>
+        <p class="text-sm text-gray-400">调 POST /api/admin/sync-questions · 拉取外部题库（混合源：Local + GitHub + HTTP）</p>
+      </header>
+
+      <main class="max-w-7xl mx-auto px-6 pb-16 space-y-6">
+        <!-- 当前数据源配置 -->
+        <div class="glass-card-static" style="padding: 24px;">
+          <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#6366f1" stroke-width="1.3"/><path d="M8 5V8L10 10" stroke="#6366f1" stroke-width="1.3" stroke-linecap="round"/></svg>
+            数据源配置
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="rounded-lg p-3" style="background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25);">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span class="text-sm font-medium">Local</span>
+                <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">启用</span>
+              </div>
+              <p class="text-xs text-gray-400">/data 目录读 JSON</p>
+            </div>
+            <div class="rounded-lg p-3" style="background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.15); opacity: 0.6;">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                <span class="text-sm font-medium">GitHub</span>
+                <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400">未配置</span>
+              </div>
+              <p class="text-xs text-gray-400">QUESTION_SYNC_GITHUB_REPO</p>
+            </div>
+            <div class="rounded-lg p-3" style="background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.15); opacity: 0.6;">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                <span class="text-sm font-medium">HTTP API</span>
+                <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400">未配置</span>
+              </div>
+              <p class="text-xs text-gray-400">QUESTION_SYNC_HTTP_API</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 触发同步 -->
+        <div class="glass-card-static" style="background: linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(99,102,241,0.08) 100%); padding: 28px;">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold mb-2">手动触发同步</h2>
+              <p class="text-sm text-gray-400">调 POST /api/admin/sync-questions（dry_run=false）· 拉取 1 题单 agent_foundation 关联</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn btn-secondary" onclick="simulateSync(true)">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/></svg>
+                试跑（dry_run）
+              </button>
+              <button class="btn btn-primary" style="padding: 11px 22px; font-size: 14px;" onclick="simulateSync(false)">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.5 7a4.5 4.5 0 1 1-1.32-3.18M11.5 2V4.5H9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                立即同步
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 同步历史 -->
+        <div class="glass-card-static" style="padding: 0; overflow: hidden;">
+          <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+            <h2 class="text-base font-semibold">同步历史 · 最近 5 条</h2>
+            <span class="text-xs text-gray-500">PR 4 · V3.7</span>
+          </div>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/5">
+                <th class="text-left px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-20">#</th>
+                <th class="text-left px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-32">时间</th>
+                <th class="text-left px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-24">数据源</th>
+                <th class="text-right px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-16">拉取</th>
+                <th class="text-right px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-16">新建</th>
+                <th class="text-right px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-16">跳过</th>
+                <th class="text-right px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-16">错误</th>
+                <th class="text-right px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-20">耗时</th>
+                <th class="text-center px-4 py-2.5 text-xs text-gray-500 uppercase tracking-wider font-medium w-20">状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-2.5 text-xs text-gray-500 stat-num">5</td>
+                <td class="px-4 py-2.5 text-xs text-gray-400 stat-num">07-10 09:42</td>
+                <td class="px-4 py-2.5 text-xs text-emerald-300">local</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-100">3</td>
+                <td class="px-4 py-2.5 text-right stat-num text-emerald-400 font-semibold">3</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0.4s</td>
+                <td class="px-4 py-2.5 text-center"><span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">success</span></td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-2.5 text-xs text-gray-500 stat-num">4</td>
+                <td class="px-4 py-2.5 text-xs text-gray-400 stat-num">07-10 09:00</td>
+                <td class="px-4 py-2.5 text-xs text-emerald-300">local</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-100">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-red-400">3</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0.1s</td>
+                <td class="px-4 py-2.5 text-center"><span class="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-300">failed</span></td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-2.5 text-xs text-gray-500 stat-num">3</td>
+                <td class="px-4 py-2.5 text-xs text-gray-400 stat-num">07-10 08:30</td>
+                <td class="px-4 py-2.5 text-xs text-emerald-300">local</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-100">5</td>
+                <td class="px-4 py-2.5 text-right stat-num text-emerald-400 font-semibold">2</td>
+                <td class="px-4 py-2.5 text-right stat-num text-amber-400">3</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0.5s</td>
+                <td class="px-4 py-2.5 text-center"><span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">partial</span></td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-2.5 text-xs text-gray-500 stat-num">2</td>
+                <td class="px-4 py-2.5 text-xs text-gray-400 stat-num">07-10 07:30</td>
+                <td class="px-4 py-2.5 text-xs text-emerald-300">local</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-100">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-red-400">3</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0.1s</td>
+                <td class="px-4 py-2.5 text-center"><span class="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-300">failed</span></td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                <td class="px-4 py-2.5 text-xs text-gray-500 stat-num">1</td>
+                <td class="px-4 py-2.5 text-xs text-gray-400 stat-num">07-10 06:00</td>
+                <td class="px-4 py-2.5 text-xs text-emerald-300">local</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-100">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0</td>
+                <td class="px-4 py-2.5 text-right stat-num text-red-400">3</td>
+                <td class="px-4 py-2.5 text-right stat-num text-gray-500">0.1s</td>
+                <td class="px-4 py-2.5 text-center"><span class="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-300">failed</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-center text-amber-400 -mt-2">
+          ⚠️ 连续 3 次同步失败 · 检查数据源配置
+        </p>
+      </main>
+    </section>
+  </main>
+
+  <!-- ════════════════════════════════════════════════════════════
+       创建计划 Modal
+       ════════════════════════════════════════════════════════════ -->
+  <div id="create-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h2 class="text-xl font-bold mb-1">创建学习计划</h2>
+      <p class="text-sm text-gray-400 mb-6">为接下来的学习旅程设定目标</p>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-gray-300 block mb-1.5 font-medium">计划名称 <span class="text-red-400">*</span></label>
+          <input type="text" class="input" placeholder="如：2 周算法冲刺" maxlength="50" />
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 block mb-1.5 font-medium">日期范围 <span class="text-red-400">*</span></label>
+          <div class="flex gap-2">
+            <input type="date" class="input" value="2026-07-09" />
+            <span class="self-center text-gray-500">~</span>
+            <input type="date" class="input" value="2026-07-23" />
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 block mb-1.5 font-medium">目标</label>
+          <textarea class="input" rows="2" maxlength="200" placeholder="如：掌握 algorithms 50%"></textarea>
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 block mb-1.5 font-medium">周目标（JSON）</label>
+          <textarea class="input" rows="3" placeholder='[{"week_idx":1,"target_count":10,"target_topics":["algorithms"]}]'></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button class="btn btn-secondary" onclick="closeCreateModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitCreatePlan()">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" id="toast-icon">
+      <circle cx="8" cy="8" r="7" fill="currentColor" opacity="0.15"/>
+      <path d="M5 8L7 10L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span id="toast-text">操作成功</span>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       JS 交互
+       ════════════════════════════════════════════════════════════ -->
+  <script>
+    /* ─── Page 切换（V3.6 Sidebar 重构 · 14 个 page） ─── */
+    const ALL_PAGES = [
+      'dashboard',
+      'interview-today', 'interview-history', 'interview-setup',
+      'learn', 'review', 'plan', 'collections',
+      'knowledge', 'qa', 'report',
+      'ai-today', 'ai-history',
+      'profile', 'settings'
+    ];
+
+    function showPage(name) {
+      ALL_PAGES.forEach(p => {
+        const el = document.getElementById(`page-${p}`);
+        if (el) el.classList.toggle('hidden', p !== name);
+      });
+
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.page === name);
+      });
+
+      const titles = {
+        'dashboard': '今日概览',
+        'interview-today': '今日面试',
+        'interview-history': '历史报告',
+        'interview-setup': '面试配置',
+        'learn': '题目浏览',
+        'review': '复习中心',
+        'plan': '学习计划',
+        'collections': '精选题单',
+        'knowledge': '笔记浏览',
+        'qa': '问答社区',
+        'report': '报告中心',
+        'ai-today': '今日 AI 推荐',
+        'ai-history': 'AI 推送历史',
+        'profile': '我的画像',
+        'settings': '设置'
+      };
+      const breadcrumb = document.getElementById('breadcrumb');
+      if (breadcrumb) breadcrumb.textContent = titles[name] || '';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      sidebar.classList.toggle('collapsed');
+      document.body.classList.toggle('sidebar-collapsed');
+      try { localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed')); } catch (e) {}
+    }
+
+    (function restoreSidebar() {
+      try {
+        if (localStorage.getItem('sidebar-collapsed') === 'true') {
+          document.querySelector('.sidebar').classList.add('collapsed');
+          document.body.classList.add('sidebar-collapsed');
+        }
+      } catch (e) {}
+    })();
+
+    function filterSidebar(query) {
+      const q = query.toLowerCase().trim();
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = (q === '' || text.includes(q)) ? '' : 'none';
+      });
+      document.querySelectorAll('.sidebar-group').forEach(group => {
+        const visibleItems = Array.from(group.querySelectorAll('.sidebar-item')).filter(i => i.style.display !== 'none');
+        const visibleTitle = q === '' || (group.querySelector('.sidebar-group-title')?.textContent.toLowerCase().includes(q) ?? false);
+        group.style.display = (visibleItems.length > 0 || visibleTitle) ? '' : 'none';
+      });
+    }
+
+    /* ─── Toast ─── */
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-text');
+      text.textContent = msg;
+      toast.classList.remove('error', 'warning');
+      if (type === 'error') toast.classList.add('error');
+      if (type === 'warning') toast.classList.add('warning');
+      toast.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    /* ─── 创建计划 Modal ─── */
+    function openCreateModal() {
+      document.getElementById('create-modal').classList.remove('hidden');
+    }
+    function closeCreateModal() {
+      document.getElementById('create-modal').classList.add('hidden');
+    }
+    function submitCreatePlan() {
+      closeCreateModal();
+      showToast('✓ 计划创建成功（mockup 无后端）');
+    }
+
+    /* ─── /plan 刷新进度 ─── */
+    function simulateRefresh(btn) {
+      const icon = btn.querySelector('.refresh-icon');
+      if (icon) {
+        icon.style.animation = 'spin 0.6s var(--ease-out)';
+        setTimeout(() => icon.style.animation = '', 600);
+      }
+      showToast('✓ 进度已刷新');
+    }
+
+    /* ─── /collections 订阅 ─── */
+    function subscribeCollection(btn, collectionId) {
+      btn.textContent = '已订阅 · 继续刷';
+      btn.classList.remove('btn-secondary');
+      btn.classList.add('btn-primary');
+      const card = btn.closest('.glass-card');
+      if (!card.querySelector('.text-amber-400')) {
+        const star = document.createElement('span');
+        star.className = 'text-amber-400 text-xl';
+        star.textContent = '⭐';
+        card.querySelector('.flex.items-start.justify-between').appendChild(star);
+      }
+      card.dataset.categories = (card.dataset.categories || '') + ',subscribed';
+      showToast(`✓ 已订阅 ${collectionId}`);
+    }
+
+    /* ─── /collections 筛选 ─── */
+    function filterCollections(category, el) {
+      el.parentElement.querySelectorAll('.tag').forEach(t => {
+        t.classList.remove('tag-active');
+        if (t.classList.contains('tag-direction') || t.classList.contains('tag-stack') || t.classList.contains('tag-company')) {
+          t.classList.remove('tag-direction', 'tag-stack', 'tag-company');
+          t.classList.add('tag-default');
+        }
+      });
+      el.classList.add('tag-active');
+      el.classList.remove('tag-default');
+
+      document.querySelectorAll('#collections-grid > .glass-card').forEach(card => {
+        const cats = (card.dataset.categories || '').split(',');
+        const show = category === 'all' || cats.includes(category);
+        card.style.display = show ? '' : 'none';
+      });
+    }
+
+    /* ─── AI 推荐点击（V3.7）── */
+    function clickRecommendation(el) {
+
+    /* ─── admin 手动同步（V3.7 · PR 3） ─── */
+    let syncRunning = false;
+    async function simulateSync(dryRun = false) {
+      if (syncRunning) {
+        showToast('⚠️ 同步正在进行中...', 'warning');
+        return;
+      }
+      syncRunning = true;
+      const mode = dryRun ? '试跑（dry_run）' : '正式同步';
+      showToast(`🔄 同步中（${mode}）...`, 'info');
+      // 模拟 API 调用
+      await new Promise((r) => setTimeout(r, 1200));
+      // 模拟结果（mockup）
+      const result = {
+        fetched: 5,
+        created: dryRun ? 0 : 3,
+        skipped: dryRun ? 5 : 2,
+        errors: 0,
+        duration: (0.4 + Math.random() * 0.3).toFixed(2) + 's',
+      };
+      syncRunning = false;
+      if (result.errors > 0) {
+        showToast(`✗ 同步失败 · ${result.errors} 个错误`, 'error');
+      } else {
+        showToast(`✓ ${mode}完成 · 拉取 ${result.fetched} · 新建 ${result.created} · 跳过 ${result.skipped} · 耗时 ${result.duration}`);
+      }
+      // 真实实现应：fetch('/api/admin/sync-questions', { method: 'POST', body: { dry_run: dryRun, collection_id: 'agent_foundation' }})
+    }
+      const type = el.dataset.type;
+      const title = el.querySelector('p.font-medium')?.textContent || '推荐';
+      const actionMap = { '补': '查看笔记', '练': '立即练习', '读': '阅读笔记', '盘': '查看错题' };
+      const action = actionMap[type] || '查看';
+      showToast(`✓ [${type}] ${action}: ${title}`);
+      // 埋点（mockup 模拟）
+      console.log('[analytics] click_recommend', { type, title, timestamp: Date.now() });
+    }
+
+    /* ─── 完成每日一题 ─── */
+    function completeChallenge() {
+      document.getElementById('daily-buttons').innerHTML = `
+        <div class="flex items-center gap-2 px-4 py-2 rounded-lg" style="background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.3);">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" fill="rgba(52,211,153,0.3)" stroke="#34d399" stroke-width="1.5"/>
+            <path d="M5 8L7 10L11 6" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="text-sm font-semibold text-emerald-400">今日完成</span>
+          <span class="text-xs text-emerald-300">· 连续 8 天 🔥</span>
+        </div>
+      `;
+      showToast('✓ 今日一题完成 · streak +1');
+    }
+
+    /* ─── /learn Tag 多选筛选 ─── */
+    let selectedTags = new Set();
+    const tagDimensionMap = {
+      'tag-algorithm': 'tag-stack',
+      'tag-system': 'tag-direction',
+      'tag-network': 'tag-direction',
+      'tag-frontend': 'tag-direction',
+      'tag-python': 'tag-stack',
+      'tag-redis': 'tag-stack',
+      'tag-kafka': 'tag-stack',
+      'tag-react': 'tag-stack',
+      'tag-bytedance-r2': 'tag-company',
+      'tag-ali-r3': 'tag-company'
+    };
+    function toggleTag(el) {
+      const id = el.dataset.id;
+      if (selectedTags.has(id)) {
+        selectedTags.delete(id);
+        el.classList.remove('tag-active', 'tag-direction', 'tag-stack', 'tag-company');
+        el.classList.add('tag-default');
+      } else {
+        selectedTags.add(id);
+        el.classList.remove('tag-default');
+        el.classList.add(tagDimensionMap[id]);
+      }
+      filterQuestions();
+    }
+    function filterQuestions() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const bookmarkOnly = document.getElementById('bookmark-only').checked;
+      const questions = document.querySelectorAll('#question-list .glass-card');
+      let hit = 0;
+      questions.forEach(q => {
+        const tags = (q.dataset.tags || '').split(',');
+        const isBookmarked = q.dataset.bookmarked === 'true';
+        const tagMatch = selectedTags.size === 0 || Array.from(selectedTags).some(t => tags.includes(t));
+        const bookmarkMatch = !bookmarkOnly || isBookmarked;
+        const queryMatch = !query || q.textContent.toLowerCase().includes(query);
+        const show = tagMatch && bookmarkMatch && queryMatch;
+        q.style.display = show ? '' : 'none';
+        if (show) hit++;
+      });
+      document.getElementById('hit-count').textContent = hit;
+      document.getElementById('empty-state').classList.toggle('hidden', hit > 0);
+      const display = selectedTags.size === 0
+        ? '未选标签'
+        : `已选 ${selectedTags.size} 个标签`;
+      document.getElementById('selected-tags-display').textContent = display;
+    }
+
+    /* ─── spin animation ─── */
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+    document.head.appendChild(styleSheet);
+  </script>
+</body>
+</html>

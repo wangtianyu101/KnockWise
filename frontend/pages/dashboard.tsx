@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { getProfile, getToken, clearToken } from "@/lib/api";
 import DailySummaryCard from "@/components/v2-settlement/DailySummaryCard";
+import { CurrentPlanCard } from "@/components/v3/PlanCard/PlanCard";
+import { AIRecommendationCard } from "@/components/v3/AIRecommendationCard/AIRecommendationCard";
+import type { StudyPlan } from "@/types/v3-plan";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -10,6 +13,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [dashData, setDashData] = useState<any>({});
   const [learnStats, setLearnStats] = useState<any>(null);
+  const [activePlan, setActivePlan] = useState<StudyPlan | null>(null);
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
@@ -20,6 +24,14 @@ export default function Dashboard() {
     // Phase 2-4: 拉取学习复习统计
     fetch(`${API}/api/learn/stats`, { headers: { Authorization: `Bearer ${getToken()}` } })
       .then(r => r.json()).then(setLearnStats).catch(() => {});
+    // V3.0-PR1-T3: 拉取当前活跃学习计划
+    fetch(`${API}/api/learn/plans`, { headers: { Authorization: `Bearer ${getToken()}` } })
+      .then(r => r.json())
+      .then((d: any) => {
+        const active = (d.items || []).find((p: StudyPlan) => p.status === 'active');
+        setActivePlan(active || null);
+      })
+      .catch(() => {});
   }, []);
 
   const iv = dashData?.interview || {};
@@ -49,6 +61,7 @@ export default function Dashboard() {
               { label: "面试", href: "/interview/profile" },
               { label: "学", href: "/learn" },
               { label: "复习", href: "/review" },
+              { label: "计划🆕", href: "/plan" },
               { label: "知识库", href: "/knowledge" },
               { label: "信息流", href: "/news" },
             ].map(t => (
@@ -72,7 +85,34 @@ export default function Dashboard() {
         </div>
 
         {/* V2.3-T23: 今日学习总结卡（V2_ENABLED feature flag 控制） */}
+        {/* V3.7 · PR 6 AI 推荐卡（最顶部 · 与题解耦） */}
+        <AIRecommendationCard />
+
         <DailySummaryCard />
+
+        {/* V3.0-PR1-T3: 当前学习计划进度卡（仅在有 active 计划时显示） */}
+        {activePlan && (
+          <div className="mb-10">
+            <CurrentPlanCard
+              plan={activePlan}
+              onViewDetail={() => router.push('/plan')}
+              onRefresh={async (id) => {
+                const r = await fetch(`${API}/api/learn/plans`, { headers: { Authorization: `Bearer ${getToken()}` } });
+                const d = await r.json();
+                const a = (d.items || []).find((p: StudyPlan) => p.status === 'active');
+                setActivePlan(a || null);
+              }}
+              onEnd={async (id) => {
+                if (!window.confirm('确认结束计划？')) return;
+                await fetch(`${API}/api/learn/plans/${id}`, {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${getToken()}` },
+                });
+                setActivePlan(null);
+              }}
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           {[

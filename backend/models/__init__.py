@@ -479,3 +479,65 @@ class QASession(Base):
         Index("idx_qas_user_question", "user_id", "question_id"),
         Index("idx_qas_user_created", "user_id", "created_at"),
     )
+
+
+# ════════════════════════════════════════════════════════════
+# V3.1 · 精选题单 Collections（PR 2 · 系统题单）
+# ════════════════════════════════════════════════════════════
+
+
+class QuestionCollection(Base):
+    """精选题单（系统题单 / 官方精选）。"""
+
+    __tablename__ = "question_collections"
+
+    id = Column(String(64), primary_key=True)  # 'algorithms_50' / 'system_design_30'
+    name = Column(String(100), nullable=False)
+    description = Column(String(500), nullable=True)
+    cover_color = Column(String(16), default="#6366f1", nullable=False)
+    icon_emoji = Column(String(16), default="📘", nullable=False)
+    is_system = Column(Boolean, default=True, nullable=False)  # V3 仅系统题单
+    question_count = Column(Integer, default=0, nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("idx_qc_system_order", "is_system", "sort_order"),
+    )
+
+
+class QuestionCollectionMap(Base):
+    """题单 ↔ 题目 多对多关联。"""
+
+    __tablename__ = "question_collection_maps"
+
+    collection_id = Column(String(64), primary_key=True)
+    question_id = Column(String(64), primary_key=True)
+    position = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("idx_qcm_collection_pos", "collection_id", "position"),
+        Index("idx_qcm_question", "question_id"),
+    )
+
+
+class CollectionSubscribe(Base):
+    """用户题单订阅 + 进度。"""
+
+    __tablename__ = "collection_subscribes"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    collection_id = Column(String(64), ForeignKey("question_collections.id", ondelete="CASCADE"), nullable=False)
+    progress_json = Column(JSON, default=dict, nullable=False)  # {done_count, total_count, completion_rate, last_question_id}
+    subscribed_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    last_active_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "collection_id", name="uniq_cs_user_collection"),
+        Index("idx_cs_user_active", "user_id", "last_active_at"),
+        Index("idx_cs_collection", "collection_id"),
+    )
