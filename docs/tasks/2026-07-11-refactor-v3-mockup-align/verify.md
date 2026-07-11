@@ -32,9 +32,7 @@ related:
 | **L2 单元测试** | ✅ 通过 | 737 | ~3s | 209 frontend + 528 backend |
 | **L3 集成测试** | ✅ 通过 | N/A | < 1s | 9 个 /recent 端点 + V1 既有 |
 | **L4 性能验证** | ✅ 通过 | N/A | < 1s | P95 < 50ms /recent · Sidebar 折叠 0.3s |
-| **L5 staging** | ✅ 通过 | N/A | ~1h | **真 dev server 实地验证**（替换 V3 mockup 自查）|
-
-**5/5 gate 全过 · V3.8 实施完成 · 6 阶段 PR 全部 commit**
+| **L5 staging** | ✅ 通过 | 23 | ~1.5m | **P5 playwright 真浏览器截图 + baseline 比对**（替换 V3 mockup 自查 + 实地 curl）|
 
 ---
 
