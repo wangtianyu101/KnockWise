@@ -26,7 +26,7 @@ from agents.followup_agent import followup_engine
 from agents.evaluate_agent import evaluate_agent
 from agents.interview_graph import build_interview_graph
 
-logger = logging.getLogger("codemock")
+logger = logging.getLogger("knockwise")
 
 
 # V3.8 P3a 新增 · 用于 /api/interviews/recent

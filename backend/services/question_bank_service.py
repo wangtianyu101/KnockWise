@@ -35,7 +35,7 @@ from models import (
     UserQuestionNote,
 )
 
-log = logging.getLogger("codemock.question_bank")
+log = logging.getLogger("knockwise.question_bank")
 
 QUESTION_LIST_TTL = 300  # 5 min
 

@@ -38,7 +38,7 @@ from core.dependencies import decode_token
 from models import Interview
 from services.asr_tts import get_asr_tts_service
 
-logger = logging.getLogger("codemock.voice_ws")
+logger = logging.getLogger("knockwise.voice_ws")
 
 router = APIRouter()
 

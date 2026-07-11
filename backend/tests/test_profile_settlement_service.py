@@ -50,9 +50,9 @@ class TestSettlementServiceSkeleton:
         assert callable(svc.ProfileSettlementService.manual_refresh)
 
     def test_logger_initialized(self):
-        """T1: 模块级 logger 用 codemock.profile_settlement 命名（V1 风格）。"""
+        """T1: 模块级 logger 用 knockwise.profile_settlement 命名（V1 风格）。"""
         assert hasattr(svc, "log")
-        assert svc.log.name == "codemock.profile_settlement"
+        assert svc.log.name == "knockwise.profile_settlement"
 
 
 # ─── T1 后续补充：schema 导入（spec.md §4 数据契约）────────

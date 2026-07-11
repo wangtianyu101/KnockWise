@@ -36,7 +36,7 @@ from models import (
     UserQuestion,
 )
 
-log = logging.getLogger("codemock.learning_progress")
+log = logging.getLogger("knockwise.learning_progress")
 
 REVIEW_QUEUE_TTL = 300  # 5 min
 REVIEW_QUEUE_BATCH = 50

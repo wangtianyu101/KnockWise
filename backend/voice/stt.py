@@ -15,7 +15,7 @@ from pathlib import Path
 
 from core.config import settings
 
-logger = logging.getLogger("codemock.stt")
+logger = logging.getLogger("knockwise.stt")
 
 # HuggingFace mirror for China
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")

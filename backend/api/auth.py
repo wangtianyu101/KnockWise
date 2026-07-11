@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 from core.config import settings
 
-logger = logging.getLogger("codemock")
+logger = logging.getLogger("knockwise")
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 

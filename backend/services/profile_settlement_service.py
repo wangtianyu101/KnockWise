@@ -21,7 +21,7 @@
 - T7: 改 interview.py:complete 触发 + 拆 interview_settlement.py
 - T8: test_profile_settlement_service.py ≥ 80% 覆盖
 
-参考：V1 services/learning_progress_service.py 风格（module docstring + codemock logger + section dividers）
+参考：V1 services/learning_progress_service.py 风格（module docstring + knockwise logger + section dividers）
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.cache import cache
 
-log = logging.getLogger("codemock.profile_settlement")
+log = logging.getLogger("knockwise.profile_settlement")
 
 
 # ════════════════════════════════════════════════════════════

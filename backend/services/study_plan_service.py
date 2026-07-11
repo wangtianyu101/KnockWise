@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Question, QuestionProgress, StudyPlan
 
-log = logging.getLogger("codemock.study_plan")
+log = logging.getLogger("knockwise.study_plan")
 
 
 async def list_plans(db: AsyncSession, user_id: str) -> dict:

@@ -39,7 +39,7 @@ class TestObsidianSedimentServiceSkeleton:
 
     def test_logger_initialized(self):
         assert hasattr(svc, "log")
-        assert svc.log.name == "codemock.obsidian_sediment"
+        assert svc.log.name == "knockwise.obsidian_sediment"
 
     def test_vault_root_default(self):
         assert svc.VAULT_ROOT == Path.home() / "Obsidian" / "coding"

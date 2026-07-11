@@ -31,7 +31,7 @@ from typing import Any, Optional
 
 from core.config import settings
 
-log = logging.getLogger("codemock.cache")
+log = logging.getLogger("knockwise.cache")
 
 
 class RedisCache:

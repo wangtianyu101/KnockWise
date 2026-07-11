@@ -27,7 +27,7 @@ from models import (
     UserQuestion,
 )
 
-log = logging.getLogger("codemock.collection")
+log = logging.getLogger("knockwise.collection")
 
 
 # V3.1 官方题单（用户 2026-07-10 拍 agent 方向 + 数据解耦 · 只建 1 个 agent 题单）

@@ -17,7 +17,7 @@ from agents.report_agent import report_agent
 
 async def test_agent_engine():
     print("=" * 60)
-    print("CodeMock Agent Engine Test")
+    print("KnockWise Agent Engine Test")
     print("=" * 60)
 
     # 1. Test question selection

@@ -111,7 +111,7 @@ def test_sync_history_consecutive_failure_alerts(caplog):
     reset_sync_history()
 
     # 连续 3 次失败
-    with caplog.at_level(logging.ERROR, logger="codemock.question_quality"):
+    with caplog.at_level(logging.ERROR, logger="knockwise.question_quality"):
         record_sync_history(source="x", fetched=0, created=0, skipped=0, errors=1, status="failed")
         record_sync_history(source="x", fetched=0, created=0, skipped=0, errors=1, status="failed")
         record_sync_history(source="x", fetched=0, created=0, skipped=0, errors=1, status="failed")
@@ -129,7 +129,7 @@ def test_sync_history_no_alert_with_success_interruption(caplog):
 
     reset_sync_history()
 
-    with caplog.at_level(logging.ERROR, logger="codemock.question_quality"):
+    with caplog.at_level(logging.ERROR, logger="knockwise.question_quality"):
         record_sync_history(source="x", fetched=0, created=0, skipped=0, errors=1, status="failed")
         record_sync_history(source="x", fetched=10, created=5, skipped=0, errors=0, status="success")  # 中断
         record_sync_history(source="x", fetched=0, created=0, skipped=0, errors=1, status="failed")

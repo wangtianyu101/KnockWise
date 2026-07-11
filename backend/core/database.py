@@ -70,7 +70,7 @@ async def _run_migrations():
     "duplicate column" error — every dialect surfaces that as a clear message.
     """
     import logging
-    log = logging.getLogger("codemock.migration")
+    log = logging.getLogger("knockwise.migration")
     for _table, _col, ddl in _MIGRATIONS:
         try:
             async with engine.begin() as conn:
@@ -129,7 +129,7 @@ async def _run_phase1a_optimizations():
       - 已存在则跳过
     """
     import logging
-    log = logging.getLogger("codemock.migration")
+    log = logging.getLogger("knockwise.migration")
 
     # 1) 分区
     if await _is_partitioned("question_progress"):

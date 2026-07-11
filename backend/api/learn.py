@@ -60,7 +60,7 @@ from services import (
     study_plan_service,
 )
 
-log = logging.getLogger("codemock.api.learn")
+log = logging.getLogger("knockwise.api.learn")
 router = APIRouter(prefix="/api/learn", tags=["learn"])
 
 

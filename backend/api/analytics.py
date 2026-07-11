@@ -9,7 +9,7 @@ from core.database import get_db
 from core.dependencies import get_current_user
 from models import User, Interview, QuestionRecord
 
-logger = logging.getLogger("codemock")
+logger = logging.getLogger("knockwise")
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 

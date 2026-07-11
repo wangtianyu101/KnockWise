@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Question
 
-log = logging.getLogger("codemock.question_quality")
+log = logging.getLogger("knockwise.question_quality")
 
 
 # ════════════════════════════════════════════════════════════

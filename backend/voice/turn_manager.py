@@ -11,7 +11,7 @@ import logging
 from enum import Enum
 from typing import Optional, Callable, Awaitable
 
-logger = logging.getLogger("codemock-turn")
+logger = logging.getLogger("knockwise-turn")
 
 class TurnState(Enum):
     LISTENING = "listening"

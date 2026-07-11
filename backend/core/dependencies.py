@@ -11,7 +11,7 @@ from core.config import settings
 from core.database import get_db
 from models import User
 
-logger = logging.getLogger("codemock.auth")
+logger = logging.getLogger("knockwise.auth")
 bearer_scheme = HTTPBearer()
 
 

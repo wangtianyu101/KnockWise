@@ -15,7 +15,7 @@ import time
 import logging
 from typing import Optional
 
-logger = logging.getLogger("codemock.agora")
+logger = logging.getLogger("knockwise.agora")
 
 
 class AgoraService:

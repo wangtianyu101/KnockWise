@@ -27,7 +27,7 @@ from agents.evaluate_agent import evaluate_agent
 from services.interview_service import session_manager, list_recent_interviews
 from agents.states import create_initial_state
 
-logger = logging.getLogger("codemock")
+logger = logging.getLogger("knockwise")
 
 router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
@@ -654,7 +654,7 @@ async def submit_answer(
             )
         except Exception as e:
             import logging
-            logging.getLogger("codemock.interview").warning(
+            logging.getLogger("knockwise.interview").warning(
                 f"D5 sync failed for record {record_id}: {e}"
             )
 

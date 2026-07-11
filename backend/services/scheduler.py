@@ -13,7 +13,7 @@ from typing import Optional
 from core.database import async_session
 from services.question_sync_service import sync_questions, build_default_sources
 
-log = logging.getLogger("codemock.scheduler")
+log = logging.getLogger("knockwise.scheduler")
 
 # 默认每 6 小时跑一次（可通过 env 覆盖）
 DEFAULT_INTERVAL_SEC = 6 * 3600  # 6h

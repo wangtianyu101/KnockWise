@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for CodeMock.
+"""SQLAlchemy ORM models for KnockWise.
 
 All primary keys are String(36) to match the existing UUID-as-string pattern
 used throughout the API layer (str(uuid4()), str(interview.id), etc.).

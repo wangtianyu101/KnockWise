@@ -26,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Question
 
-log = logging.getLogger("codemock.question_sync")
+log = logging.getLogger("knockwise.question_sync")
 
 
 # ════════════════════════════════════════════════════════════
