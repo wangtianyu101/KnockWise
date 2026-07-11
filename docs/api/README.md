@@ -1,4 +1,4 @@
-# DevBrain — 接口文档
+# KnockWise — 接口文档
 
 > Base URL: `http://localhost:8000` | Auth: `Bearer <JWT>` | Content-Type: `application/json`
 
@@ -330,7 +330,7 @@ AI 练习推荐。
 健康检查。
 
 ```json
-{ "status": "ok", "service": "codemock" }
+{ "status": "ok", "service": "knockwise" }
 ```
 
 ### 认证方式

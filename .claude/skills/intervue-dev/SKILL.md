@@ -1,13 +1,13 @@
 ---
 name: intervue-dev
-description: Intervue (CodeMock) project development — AI mock interview platform with LangGraph + FastAPI + Next.js + WebRTC voice. Use when modifying the Intervue codebase, adding features, fixing bugs, or understanding the multi-agent architecture.
+description: KnockWise project development — AI mock interview platform with LangGraph + FastAPI + Next.js + WebRTC voice. Use when modifying the KnockWise codebase, adding features, fixing bugs, or understanding the multi-agent architecture.
 ---
 
-# Intervue (CodeMock) 开发
+# KnockWise 开发
 
 ## 项目概览
 
-CodeMock 是一个 AI 模拟面试平台，核心差异化是**追问引擎**——不是静态题库，而是根据用户回答动态追问的 AI 面试官。
+KnockWise 是一个 AI 模拟面试平台，核心差异化是**追问引擎**——不是静态题库，而是根据用户回答动态追问的 AI 面试官。
 
 | 层级 | 技术栈 |
 |------|--------|
@@ -20,7 +20,7 @@ CodeMock 是一个 AI 模拟面试平台，核心差异化是**追问引擎**—
 ## 关键文件路径
 
 ```
-Intervue/
+KnockWise/
 ├── docs/CODE-MOCK.md              ← 完整架构文档（含 P0 实现状态）
 ├── backend/
 │   ├── models/__init__.py          ← 6 个 SQLAlchemy ORM 模型（P0 完成）
@@ -55,7 +55,7 @@ Intervue/
 ## When to Use This Skill
 
 - 修改或新增后端 API / Agent / 模型
-- 理解 Intervue 项目架构和数据流
+- 理解 KnockWise 项目架构和数据流
 - 添加新题库或种子数据
 - 调试语音管线（STT/TTS/LiveKit）
 - 前端面试页面改动
@@ -135,7 +135,7 @@ Session 丢失时的恢复链：内存 → `restore_from_db()` → 重建新 ses
 ## 快速命令
 
 ```bash
-cd Intervue
+cd KnockWise
 
 # 启动全部服务
 docker-compose up -d

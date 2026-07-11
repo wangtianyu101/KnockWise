@@ -20,10 +20,10 @@ from api.voice_ws import router as voice_ws_router
 from api.learn import router as learn_router  # Phase 1c
 from api.v2_settlement import router as v2_settlement_router  # V2.3 智能沉淀层 6 端点
 
-logger = logging.getLogger("codemock")
+logger = logging.getLogger("knockwise")
 
 # V2.3 限流（L4 review 改进项 · spec §3.2 表格）
-app = FastAPI(title="CodeMock", version="0.1.0")
+app = FastAPI(title="KnockWise", version="0.1.0")
 app.state.limiter = limiter
 app.add_exception_handler(
     RateLimitExceeded,
@@ -220,4 +220,4 @@ def _warm_stt():
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "codemock"}
+    return {"status": "ok", "service": "knockwise"}

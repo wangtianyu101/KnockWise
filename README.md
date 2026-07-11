@@ -1,4 +1,4 @@
-# CodeMock
+# KnockWise
 
 一个真正会「追问」的 AI Agent 工程师语音面试 Agent。
 

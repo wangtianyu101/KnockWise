@@ -353,8 +353,8 @@ docs/
 **特性**：
 - 幂等：端口被占就记录已有 PID，不重复起
 - 优雅关闭：SIGTERM → 等 5s → 还在就 SIGKILL
-- PID 文件：`/tmp/intervue-pids.txt`
-- 日志：`/tmp/intervue-{livekit,backend,frontend}.log`
+- PID 文件：`/tmp/knockwise-pids.txt`
+- 日志：`/tmp/knockwise-{livekit,backend,frontend}.log`
 
 ### 8.4 已知坑（避雷）
 

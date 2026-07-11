@@ -3,9 +3,9 @@ services:
     image: mysql:8.4
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: codemock
-      MYSQL_USER: codemock
-      MYSQL_PASSWORD: codemock
+      MYSQL_DATABASE: knockwise
+      MYSQL_USER: knockwise
+      MYSQL_PASSWORD: knockwise
     ports:
       - "3306:3306"
     volumes:
@@ -46,7 +46,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: mysql+aiomysql://codemock:codemock@mysql:3306/codemock
+      DATABASE_URL: mysql+aiomysql://knockwise:knockwise@mysql:3306/knockwise
       REDIS_URL: redis://redis:6379/0
       WHISPER_LIVE_URL: ws://whisper-live:9090
       LIVEKIT_URL: ws://livekit:7880
