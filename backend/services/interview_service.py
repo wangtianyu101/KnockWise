@@ -15,7 +15,7 @@ import logging
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Interview
@@ -27,6 +27,65 @@ from agents.evaluate_agent import evaluate_agent
 from agents.interview_graph import build_interview_graph
 
 logger = logging.getLogger("codemock")
+
+
+# V3.8 P3a 新增 · 用于 /api/interviews/recent
+async def list_recent_interviews(db, user_id: str, limit: int = 3) -> list[dict]:
+    """返回用户最近 N 条 completed 面试（按 started_at DESC）。
+
+    过滤：
+    - user_id = 当前用户
+    - status = 'completed'（避免 in_progress 半成品）
+    - deleted_at IS NULL
+    - overall_score IS NOT NULL（避免没打分的）
+
+    排序：started_at DESC
+    Limit：1-10
+
+    性能：走 idx_user_status 索引（V1 closure 已加）· O(log N + limit)
+    """
+    stmt = (
+        select(Interview)
+        .where(
+            and_(
+                Interview.user_id == user_id,
+                Interview.status == "completed",
+                Interview.deleted_at.is_(None),
+                Interview.overall_score.is_not(None),
+            )
+        )
+        .order_by(Interview.started_at.desc())
+        .limit(limit)
+    )
+
+    result = await db.execute(stmt)
+    interviews = result.scalars().all()
+
+    return [
+        {
+            "id": iv.id,
+            "round": iv.round,
+            "style": iv.style,
+            "status": iv.status,
+            "total_questions": iv.total_questions,
+            "overall_score": iv.overall_score,
+            # V3.8 调研修正：Interview model 没有 radar_data 字段（V2 research 误称）
+            # QuestionRecord 才有。P3a 阶段先用空 dict + partial 状态占位
+            # TODO(P5+): 加 Interview.radar_data 字段 + 从 QuestionRecord 聚合
+            "radar_data": _safe_radar(iv),
+            "started_at": iv.started_at,
+            "ended_at": iv.ended_at,
+        }
+        for iv in interviews
+    ]
+
+
+def _safe_radar(interview) -> dict:
+    """安全获取 radar_data。Interview 当前没有该字段，返回空 dict → partial 状态占位。"""
+    try:
+        return interview.radar_data or {}
+    except AttributeError:
+        return {}
 
 
 class InterviewSessionManager:
