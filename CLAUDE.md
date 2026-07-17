@@ -98,156 +98,13 @@
 
 ## 三、各阶段交付物清单
 
-### 阶段 1：设计文档
-- 写在 `docs/`，中文文件名
-- 包含：目标、范围、**全局架构图**、模块边界、用户旅程、业务规则
-- **不做**：具体代码、库选型最后一步、页面 mockup、SQL、API 详细
-
-### 阶段 1.5：架构图规则（强制）
-
-**所有设计类 / 技术类文档必须先画全局图**，再写细节。
-
-1. 文档开头（第一节内）必须有 **全局架构图**（ASCII / mermaid），让读者 30 秒内 get 整体
-2. 每个大功能 / 子系统章节开头有 **局部架构图** + **用户流图** / **状态机** / **决策树**
-3. 图要清晰可读（box-drawing 字符 + 标签）
-4. 出现顺序：**全局 → 子模块 → 细节**
-
-> 反例：上来就贴 SQL 表结构 / endpoint 列表 → ❌
-> 正例：先画系统怎么连、用户怎么走 → ✅
-
-### 阶段 1.6：产品 vs 技术分文件（强制）
-
-**设计文档只放产品内容**。技术细节分流到对应文件：
-
-| 内容 | 放哪 |
-|---|---|
-| 功能架构 / 用户旅程 / 业务规则 / 边缘场景 | 设计文档（产品） |
-| 数据库表 / SQL / 索引 / 迁移 | `技术文档.md` 或 `xxx-技术设计.md` |
-| API endpoint / Request/Response | `接口文档.md`（增量加） |
-| Service 方法签名 / 错误码 | `技术文档.md` 或 `xxx-技术设计.md` |
-| UI 草图 / 流程图 / 组件清单 | 阶段 4 单独出 |
-
-**判断标准**：如果一段内容是"程序员看的"（SQL、API、代码签名）→ 移出设计文档。
-
-### 1.7 非新功能分支（必走路径）
-
-| 类型 | 路径 | 关键约束 |
-|---|---|---|
-| **新功能** | 0 → 1 → 2 → 3 → 4 → 5 → 6 | 完整流程 |
-| **Bug 修复** | 登记 `docs/issues.md` → fix commit → 回归测试 | 必须有测试（见第六节） |
-| **重构** | 登记议題 → 引用议題编号 commit → 测试通过 | 不改业务行为 |
-| **议題关闭** | 直接执行调研结论 | commit 标题含议題编号（如 `fix(A)`） |
-| **P0 紧急修复** | 例外：即时修 + 24h 内补登记 | 必须补回归测试 + `docs/issues.md` |
-
-> **关闭例外面口子**：第二节"绝对不能动"原"修复 bug"例外太宽，本节明确化分类。
-
-### 1.8 阶段 4 完成定义（DOD · 实施完毕必过）
-
-> ⚠️ v2 重命名：原"阶段 6 完成定义"在新框架中改为"阶段 4 完成定义"（实施在新框架是步骤 4）。
-
-- [ ] 所有 phase 的设计文档 / 技术文档 / 页面文档都已 commit
-- [ ] `目前缺陷.md` 相关议題状态已更新（📋 → 🚧 → ✅）
-- [ ] pre-commit hook 通过（tsc + pytest 全绿）
-- [ ] **核心 service 测试覆盖率 ≥ 80%**（见下方清单）
-- [ ] 5 验证通过（verify.md L3 整合 + L5 staging 跑通）
-- [ ] 用户口头确认（或明确说"verify 完成"）
-
-**不满足 DOD = 阶段 4 未完成**，不得进入下一个需求。
-
-#### 核心 service 清单（必须 ≥ 80% 覆盖率）
-
-| service | 路径 | 重要性 |
-|---|---|---|
-| `interview_service` | `backend/services/interview_service.py` | 🔥 核心（面试生命周期） |
-| `learning_progress_service` | `backend/services/learning_progress_service.py` | 🔥 核心（SM-2 算法） |
-| `question_bank_service` | `backend/services/question_bank_service.py` | 🔥 核心（题库） |
-| `qa_service` | `backend/services/qa_service.py` | 🔥 核心（问答） |
-| `recommendations_service` | `backend/services/recommendations_service.py` | 🔥 核心（推荐） |
-| `study_plan_service` | `backend/services/study_plan_service.py` | 🔥 核心（学习计划） |
-
-**非核心 service**（不强制 80%）：`obsidian_service` / `news_service` / `resume_parser` / `archive_service` / `seed_service` / `asr_tts` / `agora`
-
-**测量命令**：
-```bash
-cd backend && ./.venv/bin/python -m pytest tests/ \
-  --cov=services --cov-report=term-missing
-```
-
-### 阶段 2：设计文档验证
-- 自查清单（见 `docs/面试题库设计.md` 内的"验证清单"小节）
-- 输出：✅ 通过 / ⚠️ 需修改 / ❌ 推翻
-
-### 阶段 3：设计文档详细化
-- 补：每个 API 的 Request/Response 样例
-- 补：每个数据表的字段类型 + 索引 + 约束
-- 补：每个 service 的方法签名
-- 补：错误码、异常分支
-- 补：数据迁移 SQL
-
-### 阶段 4：页面规划
-- ASCII 草图（每个页面一张）
-- 用户操作流程
-- 组件清单
-- 状态机（如适用）
-- 不写代码
-
-### 阶段 5：统一通过
-- 等我说"通过"
-- 我可能要求改某一步，回到对应阶段重做
-
-### 阶段 6：开始实施
-- 我说"开始实施" 才动
-- 按阶段 3 详细化的设计落地
-- 实施中如发现设计有误，**先停下报我**，再决定改设计还是改代码
+→ 全文见 [`docs/rules/checklist.md`](docs/rules/checklist.md)
 
 ---
 
 ## 四、命名规范（已确认）
 
-- 模块名：**面试题库**
-- 设计文档：`docs/tasks/2026-06-22-new-feature-question-bank/spec.md`
-- 文档目录索引：`docs/README.md`
-- 相关文档（已存在，可引用）：
-  - `docs/tasks/2026-06-22-new-feature-question-bank/` （面试题库全套）
-  - `docs/tasks/2026-06-22-new-feature-ai-push/` （AI 推送全套）
-  - `docs/tasks/2026-06-22-realtime-voice/` （实时语音）
-  - `docs/api/README.md` （全局接口文档）
-  - `docs/issues.md` （议題追踪）
-  - `docs/archive/2026-06-27-docs-old-structure/` （4 层分类的旧结构）
-  - `docs/archive/三层记忆与学习闭环.md`（v1 旧设计，已废弃）
-
-### 4.1 docs/ 目录结构（按任务组织 + 全局汇总）
-
-```
-docs/
-├── README.md                       # 文档地图
-├── issues.md                       # 议題追踪（动态）
-├── tasks/                          # ⭐ 按任务组织
-│   ├── 2026-06-22-new-feature-question-bank/
-│   │   ├── spec.md                 # 1 规格
-│   │   ├── technical-spec.md       # 1 技术设计
-│   │   ├── design-spec.md          # 1 页面规划
-│   │   └── plan.md                 # 实施计划
-│   ├── 2026-06-22-new-feature-ai-push/
-│   │   ├── product-doc.md
-│   │   ├── spec.md
-│   │   └── design-spec.md
-│   └── 2026-06-22-realtime-voice/
-│       ├── plan.md
-│       └── upgrade-plan.md
-├── api/                            # 全局 API 索引
-│   └── README.md
-├── designs/                        # HTML 设计稿
-├── templates/                      # 调研模板（基础设施）
-│   ├── research-new-feature.md
-│   ├── research-bug.md
-│   ├── research-refactor.md
-│   └── research-p0.md
-└── archive/                        # 归档旧文档
-    └── 2026-06-27-docs-old-structure/   # 4 层分类的旧结构
-```
-
-**命名约定**：任务目录 = `YYYY-MM-DD-<类型>-<topic>/`，文件 = 固定英文名。
+→ 全文见 [`docs/rules/naming.md`](docs/rules/naming.md)
 
 ---
 
@@ -265,24 +122,11 @@ docs/
 
 > **所有写代码的 commit 必须配套单测**。这是硬性要求，不是建议。
 
-### 6.1 适用范围
+### 6.1 适用范围 + § 6.2 测试基础设施
 
-| 类型 | 必须测 | 说明 |
-|---|---|---|
-| **新 service 函数** | ✅ | 至少 1 个 happy path + 边界条件 |
-| **新 endpoint** | ✅ | schema 校验 + happy path + 失败路径 |
-| **新 schema (Pydantic)** | ✅ | 必填字段 + Literal 校验 + 边界值 |
-| **新组件 (UI)** | 🟡 推荐 | 测核心交互逻辑（不用 mount 整个页面） |
-| **类型定义 (`types/`)** | 🟡 推荐 | 字段对齐校验（防 schema drift） |
-| **Bug 修复** | ✅ | 加回归测试防止复发 |
-| **配置/常量** | ❌ 不需要 | — |
+→ 详见 [`docs/rules/testing-rules.md`](docs/rules/testing-rules.md)
 
-### 6.2 测试基础设施
-
-| 端 | 框架 | 命令 | 位置 |
-|---|---|---|---|
-| 后端 | **pytest** | `cd backend && ./.venv/bin/python -m pytest tests/ -v` | `backend/tests/test_*.py` |
-| 前端 | **vitest** + RTL + happy-dom | `cd frontend && npm test` | `frontend/**/*.test.{ts,tsx}` |
+---
 
 ### 6.3 自检清单（每个代码 commit 前必须过）
 
@@ -335,159 +179,129 @@ docs/
 > - 流程改进：§6.5 仅覆盖 tasks.md，未覆盖 verify/retro，§6.6 补上
 > - memory 待写：3 条（feedback 类型 · 调研偏差 + Tailwind 4 dev mode bug + Sidebar 折叠状态提升）
 
+### 6.7 实施自校验 Verify-Loop（2026-07-17 新增 · 用户加规则）
+
+> **规则**：实施阶段（步 4）每完成一个单位（默认 **commit 边界**），**主动**开 verifier agent 校验是否对齐"上面的需求计划"。失败则**自我修正**。
+
+**双 agent 模式**（writer → verifier → 修复循环）：
+
+| Agent | 角色 | 触发时机 | 实现 |
+|---|---|---|---|
+| **writer** | 实施代码 / 测试 | 用户说"开始实施"进入步 4 | 现有 read / write / edit / Agent |
+| **verifier** | 独立路径校验 | writer 完成一个 commit 单元 | Claude Code `Agent` tool（`subagent_type=general-purpose`）· 新开 prompt · **不复用 writer 上下文** |
+
+**Verifier 必须做 3 件事**：
+
+1. **对照需求** — 读 `docs/tasks/<task-dir>/plan.md` / `spec.md` / `api-spec.md` 对应 §X 的具体条目
+2. **跑相关测试** — `cd backend && ./.venv/bin/python -m pytest tests/test_xxx.py -v` · `cd frontend && npm test -- --run`
+3. **实测行为** — 端到端 curl / dev server / 浏览器（如后端端点 / 前端页面路由）
+
+**Verifier 输出格式**：`PASS / FAIL + 具体偏差清单（file:line + 期望 vs 实际）`
+
+**失败自我修正回路**：
+
+```
+writer 完成 commit
+  ↓
+verifier (独立 Agent prompt)
+  ↓
+├─ PASS → writer 继续下一个单元
+└─ FAIL → writer 读 FAIL 清单 → 改代码 / 测试
+                    ↓
+              再开 verifier → 循环
+                    ↓
+       连续 2 PASS 或 用户叫停 → 收敛
+                    ↓
+       仍失败 → 报用户列剩余偏差，等决策（不悄悄绕过）
+```
+
+**粒度参考**（可按 step 类型调整）：
+
+| Step 类型 | 验证粒度 | 强制程度 |
+|---|---|---|
+| 单个 service 函数 / API endpoint / 组件 | 函数级 verify（writer 自驱） | 🟡 推荐 |
+| 整 commit 单元（含单测） | **commit 级 verify** | ✅ 必跑（与 § 6.1 单测配套）|
+| 整 phase 结束 | 完整 verify（含 L5 staging）| ✅ 必跑（与 § 一.5 验证阶段对齐）|
+
+**反例**（不要做）：
+
+- ❌ 仅看 `pytest -q` 绿灯就 PASS — 没对照需求计划 = 不算 verify
+- ❌ verifier 复用 writer 上下文 — 失去独立路径意义，必须新开 `Agent` prompt
+- ❌ FAIL 后 writer 反复微调不收敛 — 报用户，不要无止境循环
+- ❌ 跳过 verifier 直接写下一个 commit — § 6.7 没生效
+- ❌ 手开 N 个 `Agent` tool 串成循环 — 上下文爆 / 跳出 loop 率高，升级 `Workflow`（见 § 6.7.1）
+
+**memory**：`feedback-verify-loop-self-correct.md` · 为什么 / 怎么用 / 典型错误全在该文件
+
+### 6.7.1 进阶路径：Workflow tool（≥ 3 verify cycle 或 ≥ 5 phase 时升级 · 2026-07-17 整合）
+
+Claude Code 已实现 **`Workflow` tool**（确定性 orchestration）。与 § 6.7 默认 `Agent` tool 对比：
+
+| 维度 | `Agent` tool（默认） | `Workflow` tool（进阶） |
+|---|---|---|
+| 控制方 | Claude 每轮决策 | **脚本决定**（确定性）|
+| 中间状态 | context window（50 轮后 100K+ tokens）| **脚本变量**（不污染 context）|
+| 可重复 | 弱（重启 turn 即丢）| **强**（`resumeFromRunId` 同会话恢复）|
+| 规模 | 数个 / turn | **数十到数百 agents** |
+| 适用 | 单 commit verify · 偶发 fix | **≥ 3 cycle** · ≥ 5 phase · 对抗式 verify |
+
+**升级阈值**（推荐）：
+
+| 场景 | 工具 |
+|---|---|
+| 1-2 verify cycle · 单 phase | 保持 `Agent` tool（§ 6.7 默认）|
+| **≥ 3 verify cycle** 或 ≥ 5 phase 任务 | 升级 **`Workflow`** |
+| 关键 commit / 涉及安全 / 性能 | **直接 `Workflow` + 对抗式 verify** |
+
+**完整脚本骨架**（含 workflow 主循环 + 对抗式 verify 变体 · 复制改名即可用）：
+
+→ **[`.claude/workflows/verify-loop-example.js`](.claude/workflows/verify-loop-example.js)**
+
+文件含：`meta` 声明 · `WRITER_RESULT_SCHEMA` / `VERIFIER_SCHEMA` · 主循环（writer → verifier → fix）· **对抗式 verify 注释块**（`parallel()` 屏障 + 2/3 共识）
+
+**关键工具速查**：
+
+- `Agent` tool:
+  - `subagent_type: "general-purpose"` — 默认
+  - `subagent_type: "Plan"` — verifier 用于"对照 architecture"
+  - `subagent_type: "Explore"` — verifier 用于"查 reference / 文件搜索"
+  - `isolation: "worktree"` — writer + fixer 同时改文件时避免冲突（贵 ~300ms · 仅高冲突场景）
+  - `run_in_background: true` — verifier 跑时 writer 可继续（仅 verifier 只读不写时用）
+- `Workflow` tool:
+  - `pipeline(items, stage1, stage2, ...)` — 默认 stage 串行无屏障
+  - `parallel(thunks)` — 屏障（等所有完成）· **对抗式 verify 用这个**
+  - `phase(title)` — 进度分组
+  - `agent(prompt, {schema})` — `schema` 强制结构化输出，避免自由格式 FAIL 清单模糊
+  - `resumeFromRunId` — 中断后同会话恢复
+- `ScheduleWakeup` tool — verifier 等外部状态（CI / deploy 完成）时用，**cache-aware 60-3600s**
+- `SendMessage` tool — 队友 agent 间发消息（verifier 给 writer 反馈）· 替代"反复开新 Agent"
+
+**资源**：[Dynamic Workflows 深度解析](https://www.cnblogs.com/ai-old-six/p/20245238) · [Workflow 功能实战教程](https://blog.csdn.net/2601_96073073/article/details/161488327) · [Subagent vs Workflow 对比](https://www.cnblogs.com/softlin/p/20231222)
+
 ---
 
 ## 七、本地启动（强制）
 
-> 2026-06-27 实测确认：Docker 模式**走不通**，必须用本机模式。
-> AI 开工前**必须**先 `./scripts/start.sh` 把基础设施起起来。
+→ 全文见 [`docs/rules/local-dev.md`](docs/rules/local-dev.md)
 
-### 8.1 为什么不用 Docker
-
-| 阻塞 | 详情 |
-|---|---|
-| `registry-1.docker.io`（Docker Hub） | 在国内网络下 timeout / 无法访问 |
-| `ghcr.io` 匿名访问 | 仅 `livekit/*` 等极少数公开仓库可匿名 pull；`collabora/whisperlive` 需 auth |
-| `daocloud.io` mirror | 仅代理 `library/`（Docker 官方镜像），第三方仓库不代理 |
-| `livekit/livekit-server` | 无 macOS 原生二进制（仅 linux/windows），必须 Docker |
-| WhisperLive | **不需要**！代码里 `WhisperLiveClient` 类定义了但**无任何调用**；主路径走 `SimpleSTT`（本地 openai-whisper） |
-
-**结论**：Docker 路径会卡在第一步（pull 镜像），本机模式用 brew 装的 livekit-server + 本地 MySQL/Redis 替代。
-
-### 8.2 本机模式 5 个服务
-
-| 服务 | 端口 | 提供方 | 启动命令 |
-|---|---|---|---|
-| MySQL 8.x | 3306 | brew services | `brew services start mysql` |
-| Redis 7.x | 6379 | brew services | `brew services start redis` |
-| **LiveKit 1.13.1** | 7880/7881/7882 | brew 二进制 | `livekit-server --config ./livekit.yaml --node-ip 127.0.0.1` |
-| FastAPI 后端 | 8000 | .venv/bin/uvicorn | `cd backend && ./.venv/bin/uvicorn main:app --port 8000 --env-file .env.local` |
-| Next.js 前端 | 3000 | npm | `cd frontend && npm run dev` |
-
-### 8.3 一键启停（推荐）
-
-```bash
-./scripts/start.sh           # 幂等起全部（已在跑就跳过）
-./scripts/stop.sh            # 优雅停 livekit + backend + frontend（不动 MySQL/Redis）
-./scripts/stop.sh all        # + 关 MySQL/Redis
-./scripts/start.sh backend   # 单起某个服务
-```
-
-**特性**：
-- 幂等：端口被占就记录已有 PID，不重复起
-- 优雅关闭：SIGTERM → 等 5s → 还在就 SIGKILL
-- PID 文件：`/tmp/knockwise-pids.txt`
-- 日志：`/tmp/knockwise-{livekit,backend,frontend}.log`
-
-### 8.4 已知坑（避雷）
-
-| 坑 | 解决 |
-|---|---|
-| `livekit.yaml` 里 `node_ip: 192.168.1.20` 硬编码 | 启动时加 `--node-ip 127.0.0.1`（脚本已处理） |
-| LiveKit 二进制命令名是 `livekit-server` 不是 `livekit` | `brew install livekit` 后用 `livekit-server` |
-| 后端 init_db/cache 失败**不阻塞**启动 | 是设计如此（不让 DB 挂掉拖死服务），看日志 `Database unavailable` 警告 |
-| 端到端业务（dashboard/dev-login）走 JWT | 拿 token: `curl 'http://localhost:8000/api/auth/dev-login?user_id=1'` |
-
-### 8.5 端到端验证脚本
-
-起完后跑一遍（任选其一）：
-
-```bash
-# A. 浏览器打开
-open http://localhost:3000
-
-# B. Swagger
-open http://localhost:8000/docs
-
-# C. 命令行验证
-curl -s http://localhost:8000/api/health
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/
-
-# D. 真实业务（dev-login + dashboard）
-TOKEN=$(curl -s 'http://localhost:8000/api/auth/dev-login?user_id=1' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
-```
-
-### 8.6 故障排查速查
-
-| 症状 | 排查 |
-|---|---|
-| `Failed to fetch`（前端） | 后端没起？`curl http://localhost:8000/api/health` |
-| `Unknown column 'xxx'` | DB 旧表缺列 → `core/database.py:_MIGRATIONS` 应自动 ALTER，看启动日志 |
-| LiveKit 连不上 | `node_ip` 没改？用 `lsof -i :7880` 看进程是否在 |
-| 知识库空 | `~/Obsidian/coding/` 不存在？改 `services/obsidian_service.py:VAULT_ROOT` |
+**强约束**：开工前**必须**先 `./scripts/start.sh` 把基础设施起起来（不在 CLAUDE.md 详述，见 local-dev.md）。
 
 ---
 
 ## 八、当前状态
 
-### 8.1 阶段追踪（设计流程）
+### 8.1 阶段追踪（设计流程 · 已移至归档）
 
-- [x] 阶段 1：设计文档初版（`docs/tasks/2026-06-22-new-feature-question-bank/spec.md`）
-- [x] 阶段 1.0：docs 目录 4 层分类整理（2026-06-18）
-- [x] 阶段 2：设计文档验证（2026-06-18，⚠️ 通过条件性，3 项 P3 已并入阶段 3）
-- [x] 阶段 3：设计文档详细化（2026-06-18，1535 行 / 14 章节 / 24 API / 5 新表 / 1 改表 / 迁移 SQL / 错误码 / 议题 D 引用）
-- [x] 阶段 3.6：产品/技术拆分 + 架构图重画（2026-06-18）
-- [x] 阶段 4：页面规划（2026-06-18，843 行 / 10 章节 / 4 新页 + 3 改页 / 23 新组件）
-- [x] 阶段 4.1：**4 大独立模块重构**（2026-06-18）
-- [x] 阶段 4.2：**AI 推送独立成单独模块**（2026-06-22）
+原内容已迁移到 [`docs/archive/project-history.md`](docs/archive/project-history.md)。当前进度以 `git log` + 各任务目录 `docs/tasks/<日期>/` 为准。
 
-### 8.2 实施状态（2026-07-11 更新）
+### 8.2 实施状态
 
-- [x] **V1 骨架完成** — 19 张表 + 60+ API + 19 前端页面 + 5 service（question_bank / learning_progress / qa / study_plan / recommendations）
-  - 详见 [`docs/tasks/2026-06-27-v1-closure/closure.md`](docs/tasks/2026-06-27-v1-closure/closure.md)
-  - plan.md 69 项已完成 51%（✅ 35 项 + 🟡 15 项）+ ⚪ 26% 已合理化（设计已变）+ ➖ 1%
-- [x] **测试覆盖** — 367 个测试 / 82% 覆盖 / 核心 6 service 99%（远超 DOD ≥ 80%）
-- [x] **本地启动** — 6/7 服务在线（MySQL / Redis / LiveKit / Backend / Frontend + WhisperLive 证实不需要）
-- [x] **一键脚本** — `scripts/start.sh` / `stop.sh` 幂等 + 优雅关闭
-- [x] **V2 智能沉淀层** — 3 个 service + 6 端点 + 3 前端组件全部完成（2026-07-03）
-  - [x] `ProfileSettlementService`（画像沉淀）— 82% 覆盖，4 方法 + 2 触发点（learning_progress + interview）
-  - [x] `ObsidianSedimentService`（Obsidian 写回）— 100% 覆盖，5 write 方法 + 容错
-  - [x] `SummaryService`（AI 自动摘要）— 81% 覆盖，5 方法 + Redis TTL 1h 缓存 + LLM 降级
-  - [x] 6 个 API 端点（`/api/v2/dashboard/summary` / `profile/weekly/monthly/refresh` / `knowledge/recent-sediments` / `obsidian/sync`）
-  - [x] 3 个前端组件（DailySummaryCard / RecentSedimentsCard / ProfilePage + 画像 nav）
-  - [x] 471 tests pass（V1: 367 + V2 新增: 104）
-  - [x] 7 决策全 A（决策文档 + 反馈沉淀到 memory/feedback-sediment-plan-defaulting.md）
-  - 详见 [`docs/tasks/2026-06-28-new-feature-v2-smart-sediment/`](docs/tasks/2026-06-28-new-feature-v2-smart-sediment/)（verify.md / retro.md）
+→ 全文见 [`docs/rules/milestones.md`](docs/rules/milestones.md)
 
-- [x] **V3.8 KnockWise 前端对齐重构** — 6 阶段 PR + 实地 L5 验证全部完成（2026-07-11）
-  - **方案 A 渐进 5 阶段**（17h 实操 ~16h）· 每阶段独立 PR + 可单阶段 revert
-  - [x] **P1 Sidebar 6 组件 + Layout 注入** — `Sidebar` / `SidebarHeader` / `SidebarSearch` / `SidebarGroup` / `SidebarItem` / `SidebarDivider` + `Layout` + `TopNav` · 23 测试（含折叠按钮 + main marginLeft 联动 bugfix）
-  - [x] **P2 Dashboard 重写 + 3 组件** — `HeroCard` 5 状态（full / partial / empty / loading / error）+ `StatsBar` 5 列 + `RadarMini` 5 维 SVG + `useAsyncData` hook + 重写 `dashboard.tsx` · 36 测试
-  - [x] **P3a 后端 `/api/interviews/recent`** — Pydantic `InterviewRecentItem` + `list_recent_interviews` service + `@router.get('/recent')` 在 `/{id}` 前注册 · 9 测试
-  - [x] **P3b 前端 5 新路由壳** — `/admin/questions` `/admin/sync` `/ai/today` `/ai/history` `/settings` EmptyState 占位 · 5 测试
-  - [x] **P4a KnockWise 必改** — 19 处用户可见（4 logo + 3 package.json + README + 3 mockup + 8 localStorage 双 key fallback）
-  - [x] **P4b KnockWise 应改** — 15 处一致性（scripts PID/log + docker-compose + FastAPI title + SKILL + CLAUDE.md + docs/api）
-  - [x] **P4c KnockWise 可改** — 40 后端 logger + 30 测试断言同步 + 5 注释
-  - [x] **D 清理 docs/ 旧品牌** — 28 个 doc 文件统一为 KnockWise（archive + designs + 旧 06 task dir + 07-11 task dir）
-  - [x] **Bugfix** — Sidebar 折叠按钮 / main marginLeft 联动 / Sidebar 搜索过滤 / Tailwind 4 → 3 降级
-  - **测试累计**：737 passed（154 V1 + V3.7 既有 + 73 P1-P3b + 9 P3a + 30 logger 同步）
-  - **L5 staging 实地验证**：真 dev server · 17 page HTTP 200 · KnockWise 残留 0 处 · Sidebar 5 流程跑通
-  - **P5 playwright 推迟**（用户拍 A）— 不阻塞 V3.8 完成 · 留作未来 regression protection
-  - 详见 [`docs/tasks/2026-07-11-refactor-v3-mockup-align/`](docs/tasks/2026-07-11-refactor-v3-mockup-align/)（research / product-doc / design-spec / spec / plan / tasks / verify · 11 文件）
+### 8.3 git 状态（不在 CLAUDE.md 维护）
 
-### 8.3 git 状态
-
-- **11 个 commit 已落地**（本地，**未 push** 到 origin/main）· `feature/v38-p1-sidebar` 分支
-  - docs: 4 层分类重构为按任务
-  - infra: 一键启停脚本 + CLAUDE.md § 七
-  - fix(services): study_plan_service.py 缺 Question import
-  - test(infra): conftest.py + pytest-asyncio + pre-commit 升级
-  - test(services): 6 核心 service 测试覆盖 12% → 99%
-  - test(services): obsidian/news/seed/archive 测试覆盖 70% → 100%
-  - docs: 补测试调研报告 + 复盘
-  - docs+infra: 补遗漏文件（README / DOD / 4 个新模板 / check-step.py）
-  - **feat(sidebar): V3.8 P1 Sidebar 6 组件 + Layout 注入**
-  - **feat(dashboard): V3.8 P2 Dashboard 重写 + HeroCard 5 状态**
-  - **feat(api): V3.8 P3a 新增 /api/interviews/recent + 9 测试**
-  - **feat(pages): V3.8 P3b 5 新路由壳 EmptyState 占位**
-  - **fix(tailwind): 降级到 Tailwind 3 修复 CSS 不输出 bug**
-  - **test(sidebar): V3.8 P1 Layout 测试补漏**
-  - **refactor(brand): V3.8 P4b KnockWise 应改（15 处一致性）**
-  - **refactor(brand): V3.8 P4c KnockWise 可改 + 30 测试同步**
-  - **refactor(brand): V3.8 P4a KnockWise 必改（19 处用户可见）**
-  - **fix(brand): scripts/start.sh + stop.sh 补 KnockWise 改名**
-  - **docs: D 清理 · 4 子任务合并 · 28 doc 文件 KnockWise 改名**
+- 当前 commit / 分支 / 未 push 数量：`git log --oneline -10` · `git status -sb`
+- 历史完整列表 `git log --oneline`（不在 CLAUDE.md 复制粘贴，会自然 stale）
 
 ### 8.4 待用户决策
 

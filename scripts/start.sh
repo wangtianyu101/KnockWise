@@ -4,6 +4,14 @@
 # 启动顺序（依赖关系）：
 #   MySQL → Redis → LiveKit → Backend → Frontend
 #
+# 5 个服务的端口 + 启动命令：
+#   MySQL    3306  brew services start mysql              (前提：brew install mysql)
+#   Redis    6379  brew services start redis              (前提：brew install redis)
+#   LiveKit  7880  livekit-server --config ./livekit.yaml --node-ip 127.0.0.1
+#                                                          (前提：brew install livekit)
+#   Backend  8000  cd backend && ./.venv/bin/uvicorn main:app --port 8000 --env-file .env.local
+#   Frontend 3000  cd frontend && npm run dev
+#
 # 用法：
 #   ./scripts/start.sh           # 起全部
 #   ./scripts/start.sh livekit   # 只起 livekit

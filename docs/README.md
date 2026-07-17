@@ -20,6 +20,13 @@ docs/
 ├── issues.md                  # ⭐ 议題追踪（动态）
 ├── DOD.md                     # ⭐ 7 步 DOD 完成定义总表（38 条）
 │
+├── rules/                     # ⭐ 项目规则（从 CLAUDE.md 拆出 · 2026-07-17）
+│   ├── checklist.md           # 各阶段交付物清单
+│   ├── naming.md              # 命名规范 + docs/ 结构
+│   ├── testing-rules.md       # 单测规则详情
+│   ├── local-dev.md           # 本地启动
+│   └── milestones.md          # 实施状态流水
+│
 ├── tasks/                     # ⭐ 按任务（主存储）
 │   ├── 2026-06-22-new-feature-question-bank/
 │   │   ├── spec.md            # 1 规格（产品层）
@@ -56,7 +63,8 @@ docs/
 │
 └── archive/                   # 归档
     ├── 2026-06-27-docs-old-structure/   # 4 层分类的旧结构
-    └── 三层记忆与学习闭环.md              # v1 旧设计，已废弃
+    ├── 三层记忆与学习闭环.md              # v1 旧设计，已废弃
+    └── project-history.md              # 阶段追踪归档（CLAUDE.md § 8.1 旧内容）
 ```
 
 ---
@@ -67,6 +75,11 @@ docs/
 |---|---|
 | 看议題列表 / 找要做的活 | [issues.md](issues.md) |
 | 检查某步是否完成 / 找 DOD 模板 | [DOD.md](DOD.md) |
+| **看各阶段交付物** | **[rules/checklist.md](rules/checklist.md)** |
+| **看命名规范 + docs/ 结构** | **[rules/naming.md](rules/naming.md)** |
+| **看单测规则详情** | **[rules/testing-rules.md](rules/testing-rules.md)** |
+| **启动本地服务** | **[rules/local-dev.md](rules/local-dev.md)** |
+| **看实施状态 / 历史里程碑** | **[rules/milestones.md](rules/milestones.md)** |
 | 了解面试题库特性 | [tasks/2026-06-22-new-feature-question-bank/](tasks/2026-06-22-new-feature-question-bank/) |
 | 了解 AI 推送特性 | [tasks/2026-06-22-new-feature-ai-push/](tasks/2026-06-22-new-feature-ai-push/) |
 | 了解实时语音方案 | [tasks/2026-06-22-realtime-voice/](tasks/2026-06-22-realtime-voice/) |
