@@ -22,6 +22,32 @@ import os
 import re
 
 
+# ─── 豁免清单（白名单）───────────────────────────────────────
+# 这些文件不参与 DOD 校验（通常是已归档的旧格式文档或重构专用格式）
+# 维护规则：
+#   - 仅当文件无法/不值得迁移到当前标准格式时加入
+#   - 优先考虑 git mv 到 docs/archive/ 而不是加豁免
+#   - 每次加入要在 commit message 里写明理由
+EXEMPT_SPECS = [
+    # 旧 一/二/三...十 格式（v3.5 之前，已归档）
+    'docs/archive/spec-old-format/2026-06-22-new-feature-ai-push/spec.md',
+    'docs/archive/spec-old-format/2026-06-22-new-feature-question-bank/spec.md',
+    # 重构专用格式（结构与新功能 spec 不同，已归档）
+    'docs/archive/spec-old-format/2026-07-11-refactor-v3-mockup-align/spec.md',
+]
+
+
+def is_exempt(step, filepath):
+    """检查路径是否在豁免清单中"""
+    if step != 'spec':
+        return False
+    # 用 substring 匹配（兼容绝对路径和相对路径）
+    for exempt in EXEMPT_SPECS:
+        if exempt in filepath:
+            return True
+    return False
+
+
 # ─── 0 步 调研 ───────────────────────────────────────────────
 def check_research(content):
     errors = []
@@ -364,6 +390,11 @@ def main():
         print(f'❌ 未知 step: {step}')
         print(f'   取值: {", ".join(CHECKS.keys())}')
         sys.exit(1)
+
+    # 豁免检查（白名单）
+    if is_exempt(step, filepath):
+        print(f'⏭️  豁免（白名单）: {filepath}')
+        sys.exit(0)
 
     if not os.path.exists(filepath):
         print(f'❌ 文件不存在: {filepath}')
