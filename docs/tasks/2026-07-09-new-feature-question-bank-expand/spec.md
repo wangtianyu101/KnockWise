@@ -75,35 +75,43 @@ related:
 
 ---
 
-## 2. 验收标准 / GWT（机器可验证，必填 · 11 条）
+## 2. 验收标准 / Requirement + Scenario（机器可验证，必填 · 11 条）
 
-### 2.1 US-1 题库扩量 + 多维分类
+> 升级说明（2026-07-17）：从纯 GWT 升级为 Requirement (SHALL) + Scenario (GWT) 双层结构。
+
+### Requirement: Question Bank Expand + Multi-Tag Filtering
+The system SHALL expand the question bank from 50 to 200 questions with multi-dimensional tags and provide accurate filter results across multiple tag categories.
 
 - **GWT-1 (happy)**：Given 用户访问 `/learn?tags=sys_algorithm,redis`，When 调 `GET /api/learn/questions?tags=sys_algorithm,redis`，Then 返回的题目**同时**含 `algorithm` topic 或 `redis` 技术栈标签的 200 题（其中 system_design 25 + algorithms 25 + network 20 + frontend 20 + V1 50），并按关联度排序
 - **GWT-2 (edge: 多对多映射)**：Given 一道算法题 `algo_005` 同时打 3 个系统标签（`sys_algorithm` + `sys_python` + `sys_bytedance_r2`），When 该题被 3 个标签筛选，Then **3 次都能命中**（QuestionTagMap 多对多验证）
 - **GWT-3 (failure: 标签名拼错)**：Given 用户传 `tags=sys_algoritm`（少字母 h），When 调筛选 API，Then 返回**空列表 + 友好提示**（不返 500，不抛异常），HTTP 200
 
-### 2.2 US-2 学习计划补全（V3.0）
+### Requirement: Study Plan Completion
+The system SHALL provide a study plan UI with weekly targets and progress aggregation on Dashboard.
 
 - **GWT-4 (happy)**：Given 用户在 `/plan` 创建计划 `name="2 周算法冲刺" weekly_target=[{week_idx:1,target_count:10,target_topics:["algorithms"]}]`，When POST `/api/learn/plans` 成功，Then 计划出现在 `/plan` 列表 + Dashboard 顶部出现"当前计划进度"卡 + 进度条显示 0/10
 - **GWT-5 (edge: 完成度聚合)**：Given 用户答完 5/10 道 algorithms 题，When 调 `GET /api/learn/plans/{id}/progress`，Then 返回 `{"total_target":10, "mastered":5, "completion_rate":0.5, "weak_topics_remaining":[]}` + Dashboard 卡进度条更新到 50%
 
-### 2.3 US-3 精选题单 Collections（V3.1）
+### Requirement: Curated Collections
+The system SHALL provide curated question collections with subscription and progress tracking.
 
 - **GWT-6 (happy)**：Given 题单 `algorithms_100` 含 25 题（V3.2 写满），When 用户 `POST /api/learn/collections/{id}/subscribe`，Then 用户的 `/collections` 列表出现该题单 + 显示 0/25 进度 + 题单详情页可开始刷题
 - **GWT-7 (failure: 题单不存在)**：Given 用户 `subscribe collections_id="nonexistent"`，When POST 请求，Then 返 **404 + `{"error": {"code": "NOT_FOUND"}}`**（V2 L4 改进 #3 错误格式统一）
 
-### 2.4 US-4 每日一题（V3.2）
+### Requirement: Daily Challenge
+The system SHALL provide a daily question that is consistent across UTC day boundary.
 
 - **GWT-8 (happy)**：Given 用户今天未完成每日一题，When 打开 `/dashboard`，Then **DailyChallengeCard** 渲染题目文本 + "开始答"按钮 + 完成状态显示"今日 1 题"
 - **GWT-9 (edge: 跨天不变题)**：Given 用户 23:50 打开 dashboard 看到今日题 `q001`，When 0:10 第二天打开，Then 仍是 `q001`（每日一题按 UTC 0 点切换，不按用户操作时间）
 
-### 2.5 US-5 AI 智能推荐（V3.5 · 集成 AI 推送模块 · A 极简）
+### Requirement: AI Smart Recommendations
+The system SHALL provide AI-driven recommendations on Dashboard based on user interview and answer history with graceful degradation.
 
 - **GWT-12 (happy)**：Given 用户有 1+ 完成面试 + 答题数据，When 打开 `/dashboard`，Then **"今日 AI 推荐"玻璃卡**渲染 3-4 条推荐（来自 `/api/analytics/recommendations`，按 V1 `recommendations_service.get_recommendations` 逻辑），推荐标题含"[补] 系统设计 · 缓存一致性" / "[练] LRU 缓存" / "[读] 字节面试经验"等前缀
 - **GWT-13 (failure: 无数据时降级)**：Given 新用户无面试 + 无答题数据，When 调 `/api/analytics/recommendations`，Then 返 `{"recommendations": [], "message": "Complete at least one interview for recommendations"}` + dashboard 推荐卡显示"完成 1 次面试后解锁 AI 推荐"占位文案（V1 analytics.py:251 已实装）
 
-### 2.6 跨边界 GWT
+### Requirement: Backward Compatibility & Performance
+The system SHALL maintain backward compatibility for V1 plan endpoints and respond within P95 < 200ms under multi-tag filtering.
 
 - **GWT-10 (failure: 学习计划半成品回归保护)**：Given V3.0 学习计划补全改动 `/api/learn/plans` 前端 UI，When 后端 5 端点契约不变，Then 已有 V1 plan 调用方不受影响（接口兼容）
 - **GWT-11 (failure: 标签筛选性能)**：Given 题库从 50 扩到 200 + QuestionTag 系统标签 ~50 个，When 多标签筛选（3 个），Then 响应 P95 < 200ms（走 `idx_qtm_tag_question` 覆盖索引）

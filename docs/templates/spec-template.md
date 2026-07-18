@@ -48,21 +48,79 @@ related:
 
 ---
 
-## 2. 验收标准 / GWT（机器可验证，必填）
+## 2. 验收标准 / Requirement + Scenario（机器可验证，必填）
+
+> **升级说明（2026-07-17）**：从纯 GWT 升级为 **Requirement (SHALL) + Scenario (GWT)** 双层结构。
+> - **Requirement 层** 写"系统承诺"——强制 SHALL，禁 should/may
+> - **Scenario 层** 写"验收用例"——沿用 GWT（Given/When/Then），向后兼容
+> - 既有 GWT 用法继续生效，只是包在 Requirement 下面
+> - 来源：借鉴 [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) 的 SDD 写法（我们不装 OpenSpec，只白嫖写法）
+
+### 2.1 Requirement（系统承诺 · 必填 ≥ 1）
 
 ```markdown
-- Given <前置条件>，When <动作>，Then <期望结果>
+### Requirement: <功能名（动词 + 名词）>
+The system SHALL <单一可验证的承诺>.
 ```
 
-**示例**：
-- Given 用户订阅了 3 个兴趣标签，When 早上 8 点定时任务触发，Then 收到 ≤ 3 条 push
-- Given 用户没订阅任何标签，When 触发推送，Then 收到默认热门推荐 1 条
-- Given 网络失败，When 推送调用失败，Then 重试 3 次后放弃
+**要求**：
+- 必填 `SHALL`（强制承诺；`should` / `may` 一律视为不通过）
+- 每个 Requirement 单一职责（不要把多个承诺写一起）
+- Requirement 数量与下方 Scenario 数量不强制 1:1，但**至少 1 个 Requirement + ≥ 3 个 Scenario**
+
+### 2.2 Scenario（验收用例 · 必填 ≥ 3 · 沿用 GWT）
+
+```markdown
+#### Scenario: <场景名（happy / invalid / edge / failure）>
+- **Given** <前置条件>
+- **When** <动作>
+- **Then** <期望结果 1>
+- **And** <期望结果 2>（可选）
+```
+
+**完整示例**：
+
+```markdown
+### Requirement: User Authentication
+The system SHALL validate user credentials and return a JWT token on success.
+
+#### Scenario: Successful login
+- **Given** a registered user with username "alice@example.com"
+- **When** user submits valid username and password
+- **Then** system returns HTTP 200
+- **And** response body contains a JWT token
+- **And** token expires in 24 hours
+
+#### Scenario: Invalid credentials
+- **Given** a registered user with username "alice@example.com"
+- **When** user submits an incorrect password
+- **Then** system returns HTTP 401
+- **And** error code is "AUTH_INVALID"
+
+#### Scenario: Empty fields
+- **Given** the login form is empty
+- **When** user clicks submit
+- **Then** system returns HTTP 422
+- **And** error code is "VALIDATION_REQUIRED_FIELD"
+
+#### Scenario: Rate limit exceeded
+- **Given** user has submitted credentials 5 times in 1 minute
+- **When** user submits credentials a 6th time
+- **Then** system returns HTTP 429
+- **And** response includes Retry-After header
+```
 
 **要求**：
-- **GWT ≥ 3 条**（happy + edge + failure 各 ≥ 1）
-- 每条 GWT 必须能直接转成测试用例
-- failure GWT 必须存在（AI 写 GWT 容易偏向 happy）
+- **Scenario ≥ 3 条**（happy + invalid + edge/failure 各 ≥ 1）
+- 每条 Scenario 必须能直接转成测试用例
+- failure Scenario 必须存在（AI 写 Scenario 容易偏向 happy）
+- 4 类场景覆盖参考 §3.7
+
+### 2.3 与单测的对接
+
+- 每个 Scenario 的 When/Then → **对应 1 个 pytest 用例**（happy / invalid / edge / failure 各 1 个起步）
+- spec.md 写完后 → 步 4 实施时**直接照 Scenario 写测试**（红→绿），不必再设计测试
+- 改 spec.md → 必须同步改测试（双向同步，防 drift）
 
 ---
 
@@ -97,6 +155,19 @@ related:
 **要求**：
 - 8 类必填：空值/异常/并发/时序/安全/性能/兼容/国际化
 - 不适用 = 显式标注"不适用 + 理由"
+
+### 3.7 Scenario 4 类场景覆盖（与 §2.2 联动）
+
+| 场景类型 | 必填 | 写什么 | 例子 |
+|---|---|---|---|
+| **Happy path** | ✅ | 正常输入 → 正常输出 | 登录成功 → 200 + JWT |
+| **Invalid input** | ✅ | 错误/空/越界 → 错误码 | 错误密码 → 401 + AUTH_INVALID |
+| **Edge / 边界值** | 🟡 推荐 | 最小/最大/临界值 | 24h 内 token → 正好过期 |
+| **Failure / 异常路径** | 🟡 推荐 | 网络/超时/并发/权限/限流 | 网络失败 → 重试 3 次后放弃 |
+
+**联动规则**：
+- §2.2 至少要有 **happy + invalid** 两类
+- §3 边界条件段里涉及的边界 → 在 §2.2 至少有 1 个对应 Scenario
 
 ---
 
@@ -174,8 +245,9 @@ class PushNotification(BaseModel):
 
 ## 🎯 硬性 DOD（spec.md 完成必须全过）
 
-- [ ] 5 段齐全（用户故事 / GWT / 边界 / 数据契约 / 测试场景）
-- [ ] GWT ≥ 3 条（happy + edge + failure 各 ≥ 1）
+- [ ] 5 段齐全（用户故事 / Requirement + Scenario / 边界 / 数据契约 / 测试场景）
+- [ ] Requirement ≥ 1（每个用 SHALL 强约束）
+- [ ] Scenario ≥ 3 条（happy + invalid + edge/failure 各 ≥ 1）
 - [ ] 数据契约 ≥ 1 schema（Pydantic / Zod / TypeScript interface）
 - [ ] 测试场景 ≥ 3 条（happy + edge + failure 各 ≥ 1）
 - [ ] §0 上游引用齐全（调研 + 产品文档）

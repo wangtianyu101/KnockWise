@@ -71,24 +71,38 @@ def check_research(content):
 def check_spec(content):
     errors = []
 
-    # 1. 5 段齐全
-    sections = ['用户故事', '验收标准', '边界条件', '数据契约', '测试用例']
+    # 1. 5 段齐全（测试场景/用例 都接受）
+    sections = ['用户故事', '验收标准', '边界条件', '数据契约', '测试(?:用例|场景)']
     for section in sections:
         if not re.search(rf'##\s+\d+\.?\s*{section}', content):
             errors.append(f'5 段缺失: ## N. {section}')
 
-    # 2. GWT ≥ 3 条（Given-When-Then）
-    gwt_pattern = re.findall(r'Given\s+', content)
-    if len(gwt_pattern) < 3:
-        errors.append(f'GWT 不足 3 条（找到 {len(gwt_pattern)} 个 Given）')
+    # 2. Requirement + Scenario（升级：GWT → Requirement+Scenario 双层，2026-07-17）
+    # 2.1 Requirement ≥ 1（### Requirement: ...）
+    requirement_matches = re.findall(r'^###\s+Requirement\s*:', content, re.MULTILINE)
+    if len(requirement_matches) < 1:
+        errors.append(f'Requirement 不足 1 条（找到 {len(requirement_matches)} 个 "### Requirement:"）')
+
+    # 2.2 SHALL ≥ 1（每个 Requirement 必须用 SHALL 强承诺）
+    shall_matches = re.findall(r'\bSHALL\b', content)
+    if len(shall_matches) < 1:
+        errors.append(f'SHALL 不足 1 条（找到 {len(shall_matches)} 个 "SHALL"）—— Requirement 必须用 SHALL 强约束')
+
+    # 2.3 Scenario ≥ 3（#### Scenario: ...）—— 取代旧 Given ≥ 3
+    scenario_matches = re.findall(r'^####\s+Scenario\s*:', content, re.MULTILINE)
+    if len(scenario_matches) < 3:
+        # 向后兼容：旧 GWT 写法也接受（Given ≥ 3）
+        gwt_pattern = re.findall(r'Given\s+', content)
+        if len(gwt_pattern) < 3:
+            errors.append(f'Scenario 不足 3 条（找到 {len(scenario_matches)} 个 "#### Scenario:"；旧 Given 也仅 {len(gwt_pattern)} 个）—— 至少 happy + invalid + edge/failure 各 1')
 
     # 3. 数据契约 ≥ 1 schema
     schema_patterns = ['Pydantic', 'BaseModel', 'Zod', 'interface ', 'type ', 'Schema']
     if not any(re.search(p, content) for p in schema_patterns):
         errors.append('数据契约缺少 schema 关键字（Pydantic/BaseModel/Zod/interface/type/Schema）')
 
-    # 4. 测试场景 ≥ 3 条（在 ## 5 测试用例 段内）
-    test_section = re.search(r'##\s+5\.?\s*测试用例.*?(?=^##\s|\Z)', content, re.MULTILINE | re.DOTALL)
+    # 4. 测试场景 ≥ 3 条（在 ## 5 测试用例 / 测试场景 段内）
+    test_section = re.search(r'##\s+5\.?\s*测试(?:用例|场景).*?(?=^##\s|\Z)', content, re.MULTILINE | re.DOTALL)
     if test_section:
         test_items = re.findall(r'-\s+\[?\s*\]?\s*\*?\*?TC[-_]?\d+', test_section.group(0))
         if len(test_items) < 3:
@@ -97,7 +111,7 @@ def check_spec(content):
             if len(test_items) < 3:
                 errors.append(f'测试场景不足 3 条（找到 {len(test_items)} 个项）')
     else:
-        errors.append('找不到 "## 5. 测试用例" 段')
+        errors.append('找不到 "## 5. 测试用例 / 测试场景" 段')
 
     # 5. §0 调研结论摘要引用
     if not re.search(r'调研.*引用|research\.md|调研报告', content):

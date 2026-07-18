@@ -93,95 +93,30 @@ git log --oneline -10 -- <相关路径>
 
 ---
 
-## 6. spec.md 规格写法（参考 OpenSpec · 强约束可验证）
+## 6. spec.md 写法（必读 · 指向规范模板）
 
-> ⚠️ 这是给 **下一步（步 1 写 spec.md）** 用的格式。**禁止**在 spec.md 里写空话、感觉流描述。
-> 强约束：每个 Requirement 必须配 ≥ 1 个 Scenario，每个 Scenario 必须能直接转为测试用例。
+> ⚠️ **spec.md 写法是规范化的，禁止在调研报告里重新定义**。
+> 直接打开 [`spec-template.md`](spec-template.md) 按模板写，第 2 段「验收标准 / Requirement + Scenario」已经定义了 Requirement (SHALL) + Scenario (GWT) 双层结构 + 完整示例 + DOD 自检。
 
-### 6.1 结构骨架
+### 6.1 关键约束（spec-template.md §2 摘要）
 
-```markdown
-### Requirement: <功能名（动词 + 名词）>
-The system SHALL <单一可验证的承诺>.
+- **Requirement ≥ 1**：每个用 `### Requirement: <名字>` + `The system SHALL <承诺>`
+- **Scenario ≥ 3**：每个用 `#### Scenario: <名字>` + Given/When/Then（沿用项目 GWT 写法，向后兼容）
+- **4 类场景覆盖**：happy / invalid / edge / failure 至少各 1（详见 spec-template.md §3.7）
+- **强约束 SHALL**：禁止用 should / may，否则 `scripts/check-step.py spec` 不通过
 
-#### Scenario: <场景名（happy path / 边界 / 失败）>
-- **WHEN** <触发条件>
-- **THEN** <预期结果 1>
-- **AND** <预期结果 2>（可选）
+### 6.2 自动校验
 
-#### Scenario: <另一场景>
-- **WHEN** ...
-- **THEN** ...
-```
+- 工具：`python3 scripts/check-step.py spec docs/tasks/<date>-<topic>/spec.md`
+- 钩子：pre-commit 已挂（`scripts/pre-commit` 第 4 段），提交时自动跑
+- 跳过：`PRE_COMMIT_SKIP=1 git commit ...`
 
-### 6.2 关键字用法
+### 6.3 来源（决策记录 · 2026-07-17）
 
-| 关键字 | 用途 | 示例 |
-|---|---|---|
-| **SHALL** | 强制承诺（不能用 should / may）| The system SHALL validate credentials |
-| **WHEN** | 触发条件（输入/动作）| WHEN user submits valid username AND password |
-| **THEN** | 预期结果（输出/状态）| THEN system returns 200 with JWT token |
-| **AND** | 同一层级的并列条件或结果 | AND token expires in 24 hours |
-
-### 6.3 正反例对比
-
-**❌ 反例（感觉流，禁止）**：
-
-```markdown
-## 需求：用户登录
-- 用户能输入用户名密码
-- 失败要提示
-- 成功跳到首页
-```
-
-**✅ 正例（SHALL/WHEN/THEN，可验证）**：
-
-```markdown
-### Requirement: User Authentication
-The system SHALL validate user credentials and return a JWT token on success.
-
-#### Scenario: Successful login
-- **WHEN** user submits valid username AND password
-- **THEN** system returns HTTP 200
-- **AND** response body contains a JWT token
-- **AND** token expires in 24 hours
-
-#### Scenario: Invalid credentials
-- **WHEN** user submits invalid username OR password
-- **THEN** system returns HTTP 401
-- **AND** error code is "AUTH_INVALID"
-
-#### Scenario: Empty fields
-- **WHEN** username OR password is empty
-- **THEN** system returns HTTP 422
-- **AND** error code is "VALIDATION_REQUIRED_FIELD"
-
-#### Scenario: Rate limit exceeded
-- **WHEN** user submits credentials more than 5 times in 1 minute
-- **THEN** system returns HTTP 429
-- **AND** response includes Retry-After header
-```
-
-### 6.4 场景覆盖清单（每个 Requirement 至少覆盖 4 类）
-
-| 场景类型 | 必填 | 写什么 |
-|---|---|---|
-| Happy path | ✅ | 正常输入 → 正常输出 |
-| Invalid input | ✅ | 错误/空/越界 → 错误码 |
-| 边界值 | 🟡 推荐 | 最小/最大/临界值 |
-| 异常路径 | 🟡 推荐 | 网络/超时/并发/权限 |
-
-### 6.5 与 CLAUDE.md § 六 单测的对接
-
-- 每个 Scenario 的 WHEN/THEN → **对应 1 个 pytest 用例**（happy / invalid / edge 各 1 个）
-- spec.md 写完后 → 步 4 实施时**直接照 Scenario 写测试**（红→绿），不必再设计测试
-- 改 spec.md → 必须同步改测试（双向同步，防止 drift）
-
-### 6.6 来源
-
-- 借鉴自 [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) 的 SDD（Spec-Driven Development）写法
-- 原文链接：https://juejin.cn/post/7662638440001388578（Harness 企业级落地三）
-- ⚠️ 我们**不装 OpenSpec**，只**白嫖写法**（避免双源真理，详见 § 0 调研决策）
+- 写法借鉴 [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec) 的 SDD 思想（Requirement + SHALL + Scenario）
+- 与项目原有 GWT 写法**合并**（不替换）：GWT 在 Scenario 段内继续生效，向后兼容
+- **不装 OpenSpec 工具**（避免双源真理，详见 § 0 调研决策）
+- 原文链接：https://juejin.cn/post/7662638440001388578（Harness 企业级落地三 · 给了灵感）
 
 ---
 
@@ -195,4 +130,4 @@ The system SHALL validate user credentials and return a JWT token on success.
 - [ ] 关键决策点 ≥ 1
 - [ ] 已读 `docs/40-追踪/目前缺陷.md`
 - [ ] 已跑 `git log -10` + `git status`
-- [ ] 步 1 写 spec.md 时按 § 6 强制用 SHALL/WHEN/THEN 结构
+- [ ] 步 1 写 spec.md 时按 [spec-template.md](spec-template.md) §2 用 Requirement+Scenario 结构
