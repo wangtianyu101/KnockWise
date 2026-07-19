@@ -75,21 +75,21 @@
   - 产出: 贪心算法 · 阶段 A 保多样性 + 阶段 B 按 score 补足 · DIVERSITY_MIN = {domestic:2, overseas:2, model:3, application:2}
   - **注意**: 5 场景测试中模型 4 / 应用 1 略不达 ≥2 (candidates 数据偏模型) · 实际项目 12 源多样不会有问题
 
-- [ ] T8: DigestService.push_daily() 主入口
-  - 文件: `backend/services/digest_service.py:push_daily`
-  - 测试: `test_push_daily_happy_path` + `test_push_daily_handles_total_failure`
+- [x] T8: DigestService.push_daily() 主入口 🔄 IN PROGRESS — 双 agent
+  - 文件: `backend/services/digest_service.py` (push_daily) + `backend/tests/services/test_digest_push_daily.py`
+  - 测试: 编排流程 (fetch + score + select + save + vibe) + 失败处理
   - 依赖: T5, T7
   - 估时: 1h
   - commit: `feat(services): push_daily 主入口编排 fetch/score/save`
   - 产出: 编排完整流程 · 返回 daily_id · 失败时 vibe 标注
 
-- [ ] T9: DigestPreferenceService.get_user_prefs()
-  - 文件: `backend/services/digest_preference_service.py:get_user_prefs`
-  - 测试: `test_get_user_prefs_includes_hide_keywords`
+- [x] T9: DigestPreferenceService.get_user_prefs() 🔄 IN PROGRESS
+  - 文件: `backend/services/digest_preference_service.py:get_user_prefs` + 测试
+  - 测试: 含 settings + hide 关键词合并 · 7 天 expire
   - 依赖: T3
   - 估时: 1h
   - commit: `feat(services): 偏好整合（标签 + hide 关键词 -50%）`
-  - 产出: dict 含 interested/blocked/hide_topics 合并
+  - 产出: dict 含 interested/blocked/hide_topics/source_authority_bias
 
 ### 阶段 C · API 路由（13 个 endpoint · 5h）
 
