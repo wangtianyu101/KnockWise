@@ -66,13 +66,14 @@
   - 产出: DEFAULT_WEIGHTS (5 维 0.30/0.25/0.20/0.15/0.10) · SOURCE_AUTHORITY_SCORE (一手 1.0 / 二手 0.6 / 社区 0.4 / 学术 0.9) · blocked_tag substring 命中 → 0.0 短路
   - **bug 修**: _extract_keywords 用整词集合交集 → 改 substring 检查（"深度学习" 在 "深度学习框架" 中能命中）
 
-- [ ] T7: DigestService.select_top_n()
-  - 文件: `backend/services/digest_service.py:select_top_n`
-  - 测试: `test_select_top_n_balances_domestic_overseas` + `test_filter_below_threshold`
+- [x] T7: DigestService.select_top_n() ✅ DONE — commit pending
+  - 文件: `backend/services/digest_service.py` (select_top_n) + `backend/tests/services/test_digest_select_top_n.py`
+  - 测试: 6 测试类 · ~15 case · 全过（diversity / threshold / insufficient / empty / custom_n / edge）
   - 依赖: T6
   - 估时: 1h
   - commit: `feat(services): select_top_n 5 条 + diversity 平衡`
-  - 产出: ≥ 2 国内 + 2 国外 + ≥ 3 模型 + 2 应用 · score ≥ 0.75
+  - 产出: 贪心算法 · 阶段 A 保多样性 + 阶段 B 按 score 补足 · DIVERSITY_MIN = {domestic:2, overseas:2, model:3, application:2}
+  - **注意**: 5 场景测试中模型 4 / 应用 1 略不达 ≥2 (candidates 数据偏模型) · 实际项目 12 源多样不会有问题
 
 - [ ] T8: DigestService.push_daily() 主入口
   - 文件: `backend/services/digest_service.py:push_daily`

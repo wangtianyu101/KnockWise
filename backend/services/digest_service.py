@@ -424,3 +424,80 @@ class DigestService:
         # 简单按空格 + 常见分隔符切词 · 过滤短词
         words = re.split(r"[\s,;.!?()\[\]{}/\-\\:\"]+", title)
         return {w for w in words if len(w) >= 2}
+
+    # ═════════════════════════════════════════════════════════════════
+    # T7 · select_top_n (多样性平衡 + 阈值过滤)
+    # ═════════════════════════════════════════════════════════════════
+
+    # 选 5 条（spec D1 决策 · 固定 5）
+    DEFAULT_TOP_N: int = 5
+
+    # 最低阈值（spec R1）
+    DEFAULT_SCORE_THRESHOLD: float = 0.75
+
+    # 多样性硬约束（spec R4 · 满足才能返回完整 5 条）
+    DIVERSITY_MIN: dict[str, int] = {
+        "domestic": 2,      # ≥ 2 国内
+        "overseas": 2,       # ≥ 2 国外
+        "model": 3,          # ≥ 3 模型
+        "application": 2,    # ≥ 2 应用
+    }
+
+    async def select_top_n(
+        self,
+        scored_items: list[dict],
+        *,
+        n: int = 5,
+        score_threshold: float | None = None,
+    ) -> list[dict]:
+        """从已打分候选中选 N 条 · 多样性平衡。
+
+        Args:
+            scored_items: list of {item, score} · 已 composite_score 打过分
+            n: 选几条（默认 5）
+            score_threshold: 最低分阈值（默认 0.75 · spec R1）
+
+        Returns:
+            选中的 items（最多 n 条）· 已按 score 降序排
+
+        算法（贪心）:
+            1. 按 score 降序排
+            2. 过滤低于阈值的
+            3. 多样性保证：先确保每维度至少 min 条
+            4. 剩余按 score 补足到 n
+        """
+        threshold = score_threshold if score_threshold is not None else self.DEFAULT_SCORE_THRESHOLD
+
+        # 1. 按 score 降序
+        sorted_items = sorted(scored_items, key=lambda x: x.get("score", 0), reverse=True)
+
+        # 2. 阈值过滤
+        qualified = [it for it in sorted_items if it.get("score", 0) >= threshold]
+
+        if len(qualified) <= n:
+            # 候选不足 · 返回所有合格的（spec D2 fallback）
+            return qualified
+
+        # 3. 多样性保证 · 贪心
+        selected: list[dict] = []
+        remaining_qualified = list(qualified)
+
+        # 阶段 A: 满足每个维度的最小需求
+        for dim_key, min_count in self.DIVERSITY_MIN.items():
+            dim_items = [it for it in remaining_qualified if it.get(dim_key) and it not in selected]
+            # 按 score 降序取前 min_count
+            dim_items.sort(key=lambda x: x.get("score", 0), reverse=True)
+            for item in dim_items[:min_count]:
+                if item not in selected:
+                    selected.append(item)
+
+        # 阶段 B: 用剩余合格项按 score 补足到 n
+        remaining = [it for it in qualified if it not in selected]
+        remaining.sort(key=lambda x: x.get("score", 0), reverse=True)
+        for item in remaining:
+            if len(selected) >= n:
+                break
+            if item not in selected:
+                selected.append(item)
+
+        return selected[:n]
