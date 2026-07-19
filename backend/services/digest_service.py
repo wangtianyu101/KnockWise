@@ -222,3 +222,205 @@ class DigestService:
             )
         await db.execute(stmt)
         await db.commit()
+
+    # ═════════════════════════════════════════════════════════════════
+    # T6 · composite_score (5 维加权打分)
+    # ═════════════════════════════════════════════════════════════════
+
+    # 5 维权重 (spec R3 + plan.md 决策 6) · 合计 1.0
+    # 可通过 settings.composite_weights 覆盖 (未来扩展)
+    DEFAULT_WEIGHTS: dict[str, float] = {
+        "hot": 0.30,             # 热度（GitHub stars / 量子位阅读量 / HN points）
+        "novel": 0.25,           # 新颖（首次出现该 topic / 概念）
+        "changed": 0.20,         # 变化（相对历史 delta · 新版本 / 新数字）
+        "source_authority": 0.15, # 来源权威（A 一手 > B 二手 > C 社区）
+        "user_pref": 0.10,        # 用户偏好匹配（关注标签命中）
+    }
+
+    # 来源权威映射 (spec R3) · 一手 = 1.0, 二手 = 0.6, 社区实战 = 0.4
+    SOURCE_AUTHORITY_SCORE: dict[str, float] = {
+        "一手": 1.0,
+        "二手": 0.6,
+        "社区": 0.4,
+        "学术": 0.9,  # arXiv 等 · 权威介于 一手 和 二手 之间
+    }
+
+    def composite_score(
+        self,
+        item: dict,
+        user_prefs: dict | None = None,
+        source_category: str = "二手",
+    ) -> float:
+        """5 维加权打分 · 0.0-1.0。
+
+        Args:
+            item: 单条原始数据 (from fetch_all_sources) · 至少含
+                {title, source_name, published_at, summary}
+            user_prefs: 用户偏好 · from DigestPreferenceService.get_user_prefs()
+                {interested_tags: [...], blocked_tags: [...], ...}
+                None 时 user_pref 维度取默认值 0.5（中性偏好）
+            source_category: 来源类别 · "一手" / "二手" / "社区" / "学术"
+                默认 "二手"（spec § 3.1 类别映射）
+
+        Returns:
+            0.0 - 1.0 的综合分 · spec R1 阈值 0.75
+
+        公式: hot * 0.30 + novel * 0.25 + changed * 0.20
+              + source_authority * 0.15 + user_pref * 0.10
+
+        边界 case:
+        - item 缺 published_at → changed 维度降权 0.5x
+        - user_prefs=None → user_pref 默认 0.5
+        - user_pref 缺字段 → 同上 0.5
+        - blocked_tag 命中 → 该 item 分数直接 0.0（spec R5 屏蔽优先）
+        """
+        # 0. 屏蔽标签 → 直接 0.0 (spec R5: hide 优先)
+        # 用 substring 检查（不是整词匹配）· "深度学习" 在 "深度学习框架" 中也能命中
+        if user_prefs and user_prefs.get("blocked_tags"):
+            text_to_check = (item.get("title") or "") + " " + (item.get("summary") or "")
+            for blocked in user_prefs["blocked_tags"]:
+                if blocked and blocked in text_to_check:
+                    return 0.0
+
+        # 1. hot 维度 (0.30) · 基于来源权威 + 简单启发
+        # MVP 简化：没有实时热度数据源 → 用 source_authority 作为 hot 代理
+        # 实际生产应接：GitHub stars / HN points / 量子位阅读量 / arXiv citations
+        # 启发：published_at 距今 < 6h 算 hot · 否则按时间衰减
+        hot_score = self._calc_hot(item)
+
+        # 2. novel 维度 (0.25) · 简化：基于标题关键词是否有"新/首次/全新/独家"
+        novel_score = self._calc_novel(item)
+
+        # 3. changed 维度 (0.20) · 简化：基于 published_at 是否近期
+        # 边界：item 缺 published_at → 降权 0.5x
+        changed_score = self._calc_changed(item)
+
+        # 4. source_authority 维度 (0.15) · 来源类别直接映射
+        authority_score = self.SOURCE_AUTHORITY_SCORE.get(source_category, 0.5)
+
+        # 5. user_pref 维度 (0.10) · 标题关键词 vs 关注标签
+        if user_prefs:
+            pref_score = self._calc_user_pref(item, user_prefs)
+        else:
+            pref_score = 0.5  # 中性偏好
+
+        # 加权求和
+        weights = self.DEFAULT_WEIGHTS
+        score = (
+            hot_score * weights["hot"]
+            + novel_score * weights["novel"]
+            + changed_score * weights["changed"]
+            + authority_score * weights["source_authority"]
+            + pref_score * weights["user_pref"]
+        )
+        # 限制到 0.0-1.0
+        return max(0.0, min(1.0, score))
+
+    def _calc_hot(self, item: dict) -> float:
+        """hot 维度 · MVP 简化：发布时间 + 来源权威组合。
+
+        实际生产可接：
+        - GitHub stars（watched repo）
+        - HN points
+        - 量子位阅读量
+        - arXiv citations
+
+        MVP 启发：6h 内 = 1.0 · 24h 内 = 0.7 · 7d 内 = 0.4 · 更久 = 0.2
+        """
+        published_at = item.get("published_at")
+        if not published_at:
+            return 0.5  # 中性
+
+        try:
+            pub = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+            if pub.tzinfo is None:
+                pub = pub.replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            hours_ago = (now - pub).total_seconds() / 3600
+
+            if hours_ago < 6:
+                return 1.0
+            elif hours_ago < 24:
+                return 0.7
+            elif hours_ago < 168:  # 7d
+                return 0.4
+            else:
+                return 0.2
+        except (ValueError, TypeError):
+            return 0.5
+
+    def _calc_novel(self, item: dict) -> float:
+        """novel 维度 · 标题关键词启发。
+
+        启发（高 → 低）：
+        - 含 "首次/独家/全新/首发/new/first" → 0.9
+        - 含 "重大突破/里程碑/里程碑式/breakthrough/milestone" → 0.8
+        - 含 "发布/开源/推出/launch/release/open source" → 0.6
+        - 其他 → 0.4
+        """
+        title = (item.get("title") or "").lower()
+        summary = (item.get("summary") or "").lower()
+        text = title + " " + summary
+
+        high_signals = ["首次", "独家", "全新", "首发", "first", "unprecedented"]
+        mid_signals = ["重大", "突破", "里程碑", "breakthrough", "milestone"]
+        release_signals = ["发布", "开源", "推出", "launch", "release", "open source"]
+
+        if any(s in text for s in high_signals):
+            return 0.9
+        if any(s in text for s in mid_signals):
+            return 0.8
+        if any(s in text for s in release_signals):
+            return 0.6
+        return 0.4
+
+    def _calc_changed(self, item: dict) -> float:
+        """changed 维度 · 简化：用 published_at 距今远近来代表"变化"。
+
+        边界 case: item 缺 published_at → 降权 0.5x (spec R3)
+        """
+        published_at = item.get("published_at")
+        if not published_at:
+            return 0.5 * 0.5  # 缺字段 · 基础分 0.5 * 降权 0.5 = 0.25
+
+        try:
+            pub = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+            if pub.tzinfo is None:
+                pub = pub.replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            hours_ago = (now - pub).total_seconds() / 3600
+
+            # 24h 内 = 变化明显 · 7d+ = 已稳定
+            if hours_ago < 24:
+                return 1.0
+            elif hours_ago < 72:  # 3d
+                return 0.7
+            elif hours_ago < 168:  # 7d
+                return 0.4
+            else:
+                return 0.2
+        except (ValueError, TypeError):
+            return 0.25
+
+    def _calc_user_pref(self, item: dict, user_prefs: dict) -> float:
+        """user_pref 维度 · 标题/摘要 vs 关注标签命中。
+
+        命中比例 0-1：0 个标签 = 0.5 · 命中 1 个 = 0.7 · 全部命中 = 1.0
+        """
+        interested = user_prefs.get("interested_tags", [])
+        if not interested:
+            return 0.5  # 无偏好 · 中性
+
+        text = ((item.get("title") or "") + " " + (item.get("summary") or "")).lower()
+        matched = sum(1 for tag in interested if tag.lower() in text)
+        match_ratio = matched / len(interested) if interested else 0.5
+        # 0 命中 → 0.3 · 1 命中 → 0.7 · 全部命中 → 1.0
+        return 0.3 + 0.4 * match_ratio
+
+    def _extract_keywords(self, item: dict) -> set[str]:
+        """提取 item 的关键词（用于 blocked_tags 匹配）。MVP 简化：标题切词。"""
+        import re
+        title = item.get("title") or ""
+        # 简单按空格 + 常见分隔符切词 · 过滤短词
+        words = re.split(r"[\s,;.!?()\[\]{}/\-\\:\"]+", title)
+        return {w for w in words if len(w) >= 2}
