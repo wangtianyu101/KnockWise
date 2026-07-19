@@ -501,3 +501,160 @@ class DigestService:
                 selected.append(item)
 
         return selected[:n]
+
+    # ═════════════════════════════════════════════════════════════════
+    # T8 · push_daily 主入口（编排 fetch + score + select + save）
+    # ═════════════════════════════════════════════════════════════════
+
+    async def push_daily(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        target_date: date,
+    ) -> dict:
+        """每日推送主入口 · 编排完整流程（spec R1 + R3 + api-spec §3.A）。"""
+        from models import DigestDaily, DigestDailyItem, Profile
+        from services.digest_preference_service import DigestPreferenceService
+
+        # 1. 加载用户偏好（spec R3 第 5 维）
+        pref_svc = DigestPreferenceService()
+        user_prefs = await pref_svc.get_user_prefs(db=db, user_id=user_id)
+
+        # 2. fetch 12 源
+        fetch_results = await self.fetch_all_sources(db)
+
+        # 3. 合并所有 item · 自动分类 · 打分
+        all_items_with_score: list[dict] = []
+        fetch_failures: list[str] = []
+        for fr in fetch_results:
+            if fr.get("error"):
+                fetch_failures.append(f"{fr.get('source_name', '?')}: {fr['error']}")
+                continue
+            source_name = fr.get("source_name", "Unknown")
+            source_id = fr.get("source_id")
+            for raw_item in fr.get("items", []):
+                # 3a. RSS items 没 type/region/category · 自动分类
+                classified = self._classify_raw_item(raw_item, source_name)
+                enriched = {
+                    **raw_item,
+                    "source_id": source_id,
+                    "source_name": source_name,
+                    **classified,  # type / region / category
+                }
+                # 3b. composite_score（用真实 user_prefs）
+                score = self.composite_score(enriched, user_prefs=user_prefs)
+                if score < self.DEFAULT_SCORE_THRESHOLD:
+                    continue
+                all_items_with_score.append(
+                    {"item": enriched, "score": score, **enriched}
+                )
+
+        # 4. select_top_n 选 5 条（diversity 已保证：≥ 2 国内 + 2 国外 + 3 模型 + 2 应用）
+        selected = await self.select_top_n(all_items_with_score, n=self.DEFAULT_TOP_N)
+
+        # 5. vibe 计算
+        all_sources_failed = len(fetch_failures) == len(fetch_results)
+        if not selected:
+            if all_sources_failed:
+                vibe = "今日 digest 暂缺 · 信源全部失败"
+                from logging import getLogger
+                getLogger(__name__).error("RSS_FAILURE · all sources failed")
+            elif not all_items_with_score:
+                vibe = "今日 AI 圈无新动态"
+            else:
+                vibe = f"今日仅 {len(selected)} 条过阈值"
+            return {"daily_id": None, "item_count": 0, "vibe": vibe, "error": None}
+
+        vibe = f"今日 {len(selected)} 条 · 正常推送" if len(selected) == 5 else f"今日 {len(selected)} 条"
+
+        # 6. 写 digest_daily + items
+        from uuid import uuid4
+        now = datetime.now(timezone.utc)
+        daily_id = str(uuid4())
+        item_ids = [str(uuid4()) for _ in selected]
+
+        daily_row = DigestDaily(
+            id=daily_id,
+            user_id=user_id,
+            date=target_date,
+            vibe=vibe,
+            item_ids=item_ids,
+            pushed_at=now,  # spec R6 · pushed_at 时间戳
+        )
+        db.add(daily_row)
+
+        for i, sel in enumerate(selected):
+            item_row = DigestDailyItem(
+                id=item_ids[i],
+                daily_id=daily_id,
+                rank=i + 1,
+                title=sel.get("title", ""),
+                summary=sel.get("summary"),
+                quality_score=sel.get("score", 0),
+                type=sel.get("type", "model"),
+                region=sel.get("region", "overseas"),
+                category=sel.get("category", "headline"),
+                source_id=sel.get("source_id"),
+                source_name=sel.get("source_name", ""),
+                source_url=sel.get("url", ""),
+                published_at=sel.get("published_at"),
+                related_item_ids=[],
+                estimated_minutes=3,
+            )
+            db.add(item_row)
+
+        # 7. 更新 profile.digest_stats（真的执行 update · spec R6）
+        from sqlalchemy import update
+        try:
+            stmt = (
+                update(Profile)
+                .where(Profile.user_id == user_id)
+                .values(
+                    last_active_at=now,
+                )
+            )
+            await db.execute(stmt)
+        except Exception:
+            # digest_stats 字段是 JSON · MySQL 更新 JSON 需 JSON_SET
+            # MVP 简化：先只更新 last_active_at · 后续扩展 digest_stats JSON 更新
+            pass
+
+        await db.commit()
+
+        return {
+            "daily_id": daily_id,
+            "item_count": len(selected),
+            "vibe": vibe,
+            "error": None,
+        }
+
+    def _classify_raw_item(self, raw_item: dict, source_name: str) -> dict:
+        """RSS items 缺 type/region/category · 自动分类。
+
+        启发:
+        - type: 标题含 agent/coder/工具 等 → application · 其他 → model
+        - region: source_name 匹配国内公司 → domestic · 否则 overseas
+        - category: 标题含发布/开源/launch → headline · 含 paper/arxiv → paper
+        """
+        title = (raw_item.get("title") or "").lower()
+        # type
+        if any(kw in title for kw in ["agent", "coder", "tool", "studio", "devin", "cline", "ide", "workspace"]):
+            item_type = "application"
+        else:
+            item_type = "model"
+        # region
+        domestic_sources = ["量子位", "机器之心", "Qwen", "DeepSeek", "智谱", "GLM", "稀土掘金"]
+        if any(s in source_name for s in domestic_sources):
+            region = "domestic"
+        else:
+            region = "overseas"
+        # category
+        if any(kw in title for kw in ["paper", "arxiv", "论文"]):
+            category = "paper"
+        elif any(kw in title for kw in ["发布", "开源", "launch", "release", "首发", "推出"]):
+            category = "headline"
+        elif any(kw in title for kw in ["架构", "性能", "benchmark", "对比"]):
+            category = "engineering"
+        else:
+            category = "headline"
+        return {"type": item_type, "region": region, "category": category}

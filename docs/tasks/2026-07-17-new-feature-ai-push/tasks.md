@@ -75,7 +75,7 @@
   - 产出: 贪心算法 · 阶段 A 保多样性 + 阶段 B 按 score 补足 · DIVERSITY_MIN = {domestic:2, overseas:2, model:3, application:2}
   - **注意**: 5 场景测试中模型 4 / 应用 1 略不达 ≥2 (candidates 数据偏模型) · 实际项目 12 源多样不会有问题
 
-- [x] T8: DigestService.push_daily() 主入口 🔄 IN PROGRESS — 双 agent
+- [x] T8: DigestService.push_daily() 主入口 ✅ DONE — commit pending (双 agent)
   - 文件: `backend/services/digest_service.py` (push_daily) + `backend/tests/services/test_digest_push_daily.py`
   - 测试: 编排流程 (fetch + score + select + save + vibe) + 失败处理
   - 依赖: T5, T7
