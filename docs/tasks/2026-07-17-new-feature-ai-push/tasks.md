@@ -93,7 +93,7 @@
 
 ### 阶段 C · API 路由（13 个 endpoint · 5h）
 
-- [x] T1[0-4]: ✅ DONE — commit pending Digest Daily API（3 endpoint · GET）
+- [x] T10 ✅ DONE — commit pending Digest Daily API（3 endpoint · GET）
   - 文件: `backend/api/digest/daily.py`
   - 测试: `test_api_digest_today` + `test_api_digest_daily_by_date` + `test_api_digest_dailies_list`
   - 依赖: T8
@@ -101,7 +101,7 @@
   - commit: `feat(api): /api/digest/{today,daily/{date},dailies}`
   - 产出: 3 个 GET endpoint + Pydantic 响应
 
-- [x] T1[0-4]: ✅ DONE — commit pending Bookmark API（3 endpoint）
+- [x] T11 ✅ DONE — commit pending Bookmark API（3 endpoint）
   - 文件: `backend/api/digest/bookmarks.py`
   - 测试: `test_bookmark_create_409_on_duplicate` + `test_bookmark_delete_404` + `test_bookmark_list_filter`
   - 依赖: T3
@@ -109,7 +109,7 @@
   - commit: `feat(api): /api/digest/bookmarks CRUD`
   - 产出: GET/POST/DELETE · 409 重复 · 403 别人的
 
-- [x] T1[0-4]: ✅ DONE — commit pending Behavior API（2 endpoint）
+- [x] T12 ✅ DONE — commit pending Behavior API（2 endpoint）
   - 文件: `backend/api/digest/behavior.py`
   - 测试: `test_post_read_duration_below_30_not_marked` + `test_post_hide_filters_emoji_topics`
   - 依赖: T9
@@ -117,7 +117,7 @@
   - commit: `feat(api): /api/digest/{read,hide} 行为上报`
   - 产出: POST /read · POST /hide · 关键词白名单过滤
 
-- [x] T1[0-4]: ✅ DONE — commit pending Sources API（3 endpoint）
+- [x] T13 ✅ DONE — commit pending Sources API（3 endpoint）
   - 文件: `backend/api/digest/sources.py`
   - 测试: `test_create_source_url_unreachable` + `test_patch_source_403_other_user`
   - 依赖: T5
@@ -125,7 +125,7 @@
   - commit: `feat(api): /api/digest/sources CRUD + RSS 校验`
   - 产出: GET/POST/PATCH · HEAD 校验 RSS 可达 · 403 防越权
 
-- [x] T1[0-4]: ✅ DONE — commit pending Settings API（2 endpoint）
+- [x] T14 ✅ DONE — commit pending Settings API（2 endpoint）
   - 文件: `backend/api/digest/settings.py`
   - 测试: `test_get_settings_returns_defaults` + `test_patch_settings_validates_tags_count`
   - 依赖: T3
