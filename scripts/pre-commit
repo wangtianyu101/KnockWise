@@ -106,5 +106,32 @@ if [ -n "$task_files" ]; then
   fi
 fi
 
+# ─── 5. tasks.md 同步校验(对治问题 #N 任务追踪不更新) ─────
+# 规则(CLAUDE.md § 6.5):实施类 commit (backend/ frontend/ scripts/) 必须同步对应 task 的 tasks.md
+# 例外:纯文档 commit (docs/ memory/ CLAUDE.md) → 不要求
+# 跳过: SKIP_TASKS_SYNC=1 git commit ...
+if [ -n "$backend_changed$frontend_changed" ] && [ -z "$SKIP_TASKS_SYNC" ]; then
+  tasks_changed=$(echo "$staged_files" | grep -E "^docs/tasks/.+/tasks\.md$" || true)
+  if [ -z "$tasks_changed" ]; then
+    echo ""
+    echo "❌ tasks.md 同步校验失败:"
+    echo "   检测到实施类文件改动,但没有 tasks.md 同步"
+    echo ""
+    echo "   改动文件(前 5 条):"
+    echo "$backend_changed$frontend_changed" | grep -E "^(backend|frontend)/" | head -5 | sed 's/^/     /'
+    echo ""
+    echo "   按 CLAUDE.md § 6.5 (及 feedback-immediate-tasks-md-sync memory),必须:"
+    echo "     1. 把对应 task 标 - [x] ✅ DONE — commit \`hash\`"
+    echo "     2. 加实际耗时 vs 估时"
+    echo "     3. 更新 § 6 总估时 + § 7 实施顺序"
+    echo ""
+    echo "   跳过方式(仅用于纯 bug fix / 纯 docs 改动):"
+    echo "     SKIP_TASKS_SYNC=1 git commit -m '...'"
+    echo "     (PRE_COMMIT_SKIP=1 也可跳过全部检查)"
+    exit 1
+  fi
+  echo "✅ tasks.md 同步校验通过"
+fi
+
 echo ""
 echo "✅ pre-commit 全部通过"
