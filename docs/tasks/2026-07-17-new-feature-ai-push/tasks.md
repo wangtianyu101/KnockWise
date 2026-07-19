@@ -135,7 +135,7 @@
 
 ### 阶段 D · 集成层（5h）
 
-- [ ] T15: EmailService.send_daily_digest()
+- [x] T15: ✅ DONE — commit pending EmailService.send_daily_digest()
   - 文件: `backend/services/email_service.py:send_daily_digest`
   - 测试: `test_send_daily_digest_resend_mock` + `test_send_handles_resend_5xx`
   - 依赖: T8
@@ -143,7 +143,7 @@
   - commit: `feat(services): email 发送 Resend + 模板`
   - 产出: Resend SDK 集成 · HTML 模板 · 重试 3 次
 
-- [ ] T16: 缓存层 digest_cache.py（Redis TTL 多级）
+- [x] T16: ✅ DONE — commit pending 缓存层 digest_cache.py（Redis TTL 多级）
   - 文件: `backend/services/digest_cache.py`
   - 测试: `test_cache_today_5min_ttl` + `test_cache_invalidate_on_write`
   - 依赖: T3
@@ -151,7 +151,7 @@
   - commit: `feat(services): Redis TTL 多级缓存`
   - 产出: L1 today 5min · L2 weekly 1h · 写入时失效
 
-- [ ] T17: Rate limiting middleware
+- [x] T17: ✅ DONE — commit pending Rate limiting middleware
   - 文件: `backend/api/middleware/rate_limit.py`
   - 测试: `test_rate_limit_per_user_60min` + `test_rate_limit_returns_429`
   - 依赖: T3
@@ -159,7 +159,7 @@
   - commit: `feat(api): rate limiting 60/min 读 + 30/min 写`
   - 产出: 全局中间件 · Redis 计数 · 429 + Retry-After
 
-- [ ] T18: DigestScheduler 注册到 APScheduler
+- [x] T18: ✅ DONE — commit pending DigestScheduler 注册到 APScheduler
   - 文件: `backend/services/digest_scheduler.py` + `backend/services/scheduler.py`
   - 测试: `test_scheduler_registered_per_minute` + `test_scheduler_skips_already_pushed_today`
   - 依赖: T8, T15
@@ -167,7 +167,7 @@
   - commit: `feat(scheduler): DigestScheduler 每分钟检查 + 防重复推送`
   - 产出: 每分钟 cron · 按 user.tz 触发 · 防重复
 
-- [ ] T19: 错误处理 + observability
+- [x] T19: ✅ DONE — commit pending 错误处理 + observability
   - 文件: `backend/services/digest_service.py` + `backend/utils/logger.py`
   - 测试: `test_error_handler_logs_with_trace_id`
   - 依赖: T8
