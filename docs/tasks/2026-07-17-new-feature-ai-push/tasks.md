@@ -177,7 +177,7 @@
 
 ### 阶段 E · 测试套件（5h）
 
-- [ ] T20: API 集成测试（16 endpoint × ~3 case）
+- [x] T20: ✅ DONE — commit pending API 集成测试（16 endpoint × ~3 case）
   - 文件: `backend/tests/api/test_digest_api.py`
   - 测试: 覆盖 16 endpoint 的 happy + invalid + edge case
   - 依赖: T10-T14
@@ -185,7 +185,7 @@
   - commit: `test(api): digest 16 endpoint 集成测试`
   - 产出: ~48 个 pytest cases · fixture 复用
 
-- [ ] T21: Service 单元测试（4 service method）
+- [x] T21: ✅ DONE — commit pending Service 单元测试（4 service method）
   - 文件: `backend/tests/services/test_digest_service.py`
   - 测试: fetch_all_sources / composite_score / select_top_n / push_daily 单元 case
   - 依赖: T5-T8
@@ -193,7 +193,7 @@
   - commit: `test(services): digest service 单元测试`
   - 产出: 4 method × ~5 case = ~20 个 unit tests
 
-- [ ] T22: LLM mock 测试（DeepSeek API）
+- [x] T22: ✅ DONE — commit pending LLM mock 测试（DeepSeek API）
   - 文件: `backend/tests/services/test_digest_llm.py`
   - 测试: `test_select_top_n_prompt_contains_user_prefs` + `test_summary_prompt_filters_scope`
   - 依赖: T6, T7
@@ -201,7 +201,7 @@
   - commit: `test(llm): digest 选题/摘要 prompt 内容验证`
   - 产出: mock DeepSeek · 验证 prompt 含用户偏好 + scope 过滤词
 
-- [ ] T23: RSS 抓取 mock 测试（12 源）
+- [x] T23: ✅ DONE — commit pending RSS 抓取 mock 测试（12 源）
   - 文件: `backend/tests/services/test_rss_fetch.py`
   - 测试: 12 源 mock fixtures + RSSHub fallback 路径
   - 依赖: T5
@@ -209,7 +209,7 @@
   - commit: `test(rss): 12 源 mock 抓取 + RSSHub fallback`
   - 产出: 12 fixture files · 抓取失败 → fallback 验证
 
-- [ ] T24: E2E 完整 push 流程
+- [x] T24: ✅ DONE — commit pending E2E 完整 push 流程
   - 文件: `backend/tests/e2e/test_digest_push.py`
   - 测试: `test_e2e_cron_to_db_to_api_to_email`
   - 依赖: T8, T15, T18
@@ -227,7 +227,7 @@
   - commit: `feat(frontend): /push 5 页面路由 + V3 dark CSS`
   - 产出: 5 页面 + 复用 V3 sidebar/app-nav
 
-- [ ] T26: 5 核心组件（DigestCard / DigestList / VibeBadge / SourceToggleRow / HideDialog）
+- [x] T26: ✅ DONE — commit pending 5 核心组件（DigestCard / DigestList / VibeBadge / SourceToggleRow / HideDialog）
   - 文件: `frontend/components/digest/{DigestCard,DigestList,VibeBadge,SourceToggleRow,HideDialog}/index.tsx`
   - 测试: 5 组件 render 测试 + interaction 测试（HideDialog 开/关）
   - 依赖: T25
