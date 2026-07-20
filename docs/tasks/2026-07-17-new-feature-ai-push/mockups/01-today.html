@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KnockWise · AI 推送 · 今日</title>
+<style>
+  :root {
+    --color-primary: #6366f1;
+    --color-primary-hover: #4f46e5;
+    --color-cyan: #06b6d4;
+    --color-emerald: #10b981;
+    --color-amber: #f59e0b;
+    --color-violet: #a78bfa;
+    --color-pink: #ec4899;
+    --color-bg-page: #050914;
+    --color-bg-card: rgba(15, 20, 40, 0.7);
+    --color-bg-card-hover: rgba(20, 26, 50, 0.85);
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #94a3b8;
+    --color-text-tertiary: #64748b;
+    --color-success: #34d399;
+    --color-warning: #fbbf24;
+    --color-error: #f87171;
+    --color-info: #60a5fa;
+    --color-border: rgba(148, 163, 184, 0.08);
+    --color-border-hover: rgba(99, 102, 241, 0.25);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--color-bg-page);
+    background-image: radial-gradient(at 20% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                     radial-gradient(at 80% 100%, rgba(167, 139, 250, 0.05) 0%, transparent 50%);
+    color: var(--color-text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.011em;
+  }
+  .app-nav { background: rgba(5, 9, 20, 0.85); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid var(--color-border); padding: 0 32px; height: 56px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; }
+  .nav-logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; margin-right: 16px; }
+  .nav-logo-icon { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, var(--color-primary), var(--color-violet)); display: flex; align-items: center; justify-content: center; }
+  .breadcrumb { font-weight: 600; font-size: 14px; }
+  .sidebar { position: fixed; top: 56px; left: 0; bottom: 0; width: 240px; background: rgba(8, 12, 24, 0.85); backdrop-filter: blur(24px) saturate(180%); border-right: 1px solid var(--color-border); display: flex; flex-direction: column; padding: 12px; z-index: 50; overflow-y: auto; }
+  .sidebar-group { margin-bottom: 12px; }
+  .sidebar-group-title { display: flex; align-items: center; gap: 6px; padding: 6px 8px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; background: transparent; border: none; border-radius: 8px; color: var(--color-text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s var(--ease-out); text-align: left; font-family: inherit; }
+  .sidebar-item:hover { background: rgba(255, 255, 255, 0.04); color: var(--color-text-primary); }
+  .sidebar-item.active { background: rgba(99, 102, 241, 0.12); color: white; box-shadow: inset 2px 0 0 var(--color-primary); }
+  .sidebar-item svg { flex-shrink: 0; opacity: 0.8; }
+  .sidebar-item:hover svg, .sidebar-item.active svg { opacity: 1; }
+  .sidebar-badge { margin-left: auto; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.3); }
+  .main-content { margin-left: 240px; padding: 32px 32px 64px; min-height: calc(100vh - 56px); }
+  .vibe-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+  .vibe-info { background: rgba(99, 102, 241, 0.15); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.35); }
+  .digest-card { background: var(--color-bg-card); backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--color-border); border-left: 3px solid rgba(99, 102, 241, 0.6); border-radius: 12px; padding: 20px; margin-bottom: 12px; transition: all 0.2s var(--ease-out); }
+  .digest-card:hover { border-color: var(--color-border-hover); box-shadow: var(--shadow-md); }
+  .digest-card.read { opacity: 0.6; border-left-color: var(--color-border); }
+  .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; border: 1px solid transparent; }
+  .tag-type-model { background: rgba(96, 165, 250, 0.18); color: #93c5fd; border-color: rgba(96, 165, 250, 0.35); }
+  .tag-type-app { background: rgba(167, 139, 250, 0.18); color: #c4b5fd; border-color: rgba(167, 139, 250, 0.35); }
+  .tag-region-dom { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border-color: rgba(245, 158, 11, 0.35); }
+  .tag-region-os { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.35); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 1px solid transparent; cursor: pointer; transition: all 0.15s var(--ease-out); white-space: nowrap; font-family: inherit; }
+  .btn-ghost { background: transparent; color: var(--color-text-secondary); }
+  .btn-ghost:hover { background: rgba(255, 255, 255, 0.04); color: var(--color-text-primary); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 200; }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: rgba(15, 20, 40, 0.95); backdrop-filter: blur(24px); border: 1px solid var(--color-border-hover); border-radius: 16px; padding: 32px; width: 520px; max-width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+  @media (max-width: 1024px) { .sidebar { transform: translateX(-100%); } .main-content { margin-left: 0; } }
+</style>
+</head>
+<body>
+
+<nav class="app-nav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon"><svg width="14" height="14" viewBox="0 0 28 28" fill="none"><path d="M9 19L13 14L17 17L20 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="13" r="1.5" fill="white"/></svg></div>
+    <span>KnockWise</span>
+  </div>
+  <span class="breadcrumb">/ AI 推送 · 今日</span>
+</nav>
+
+<aside class="sidebar">
+  <div class="sidebar-group">
+    <button class="sidebar-item">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span>今日概览</span>
+    </button>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">面试</div>
+    <button class="sidebar-item"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4V8L10.5 9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>今日面试</span></button>
+    <button class="sidebar-item"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 1 0 1.76-4.24" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 4V8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>历史报告</span></button>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">学习</div>
+    <button class="sidebar-item"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4C2 3.45 2.45 3 3 3H13C13.55 3 14 3.45 14 4V13L8 11L2 13V4Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><span>题目浏览</span></button>
+    <button class="sidebar-item"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M5 1.5L10 3.5L5 5.5V1.5Z" fill="currentColor"/><path d="M10 3.5V8.5L5 11V5.5L10 3.5Z" stroke="currentColor" stroke-width="1.3"/></svg><span>复习中心</span></button>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-title">知识库</div>
+    <button class="sidebar-item"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4C2.9 2.9 4 2 5 2H11C12.1 2 13 2.9 13 4V10C13 11.1 12.1 12 11 12H6L4 13.5V12H5C4 12 3 11.1 3 10V4Z" stroke="currentColor" stroke-width="1.3"/></svg><span>问答</span></button>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-title"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1L6.6 4L9 4.5L6.6 5L6 8L5.4 5L3 4.5L5.4 4L6 1Z" fill="currentColor"/></svg>AI 推送</div>
+    <button class="sidebar-item active"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 1L6.6 4L9 4.5L6.6 5L6 8L5.4 5L3 4.5L5.4 4L6 1Z" fill="currentColor"/></svg><span>今日推荐</span><span class="sidebar-badge">新</span></button>
+    <button class="sidebar-item" onclick="window.location='02-daily-detail.html'"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4H14M2 8H14M2 12H10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>历史 digest</span></button>
+    <button class="sidebar-item" onclick="window.location='03-bookmarks.html'"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2H13V14L8 11L3 14V2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><span>我的收藏</span></button>
+    <button class="sidebar-item" onclick="window.location='04-settings.html'"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M8 1V3M8 13V15M1 8H3M13 8H15" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>推送设置</span></button>
+    <button class="sidebar-item" onclick="window.location='05-sources.html'"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><span>信源管理</span></button>
+  </div>
+</aside>
+
+<main class="main-content">
+  <span class="vibe-badge vibe-info">✨ 今日 5 条 · 正常推送</span>
+
+  <header class="mb-8">
+    <p style="color: var(--color-text-tertiary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">2026 年 7 月 17 日 · 周五</p>
+    <h1 style="font-size: 36px; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 8px; line-height: 1.2;">今日 <span style="background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent;">AI 推送</span></h1>
+    <p style="color: var(--color-text-secondary); font-size: 14px;">5 条 AI/LLM/Agent 最新动态 · 预计 2-3 分钟读完</p>
+  </header>
+
+  <article class="digest-card">
+    <div class="flex items-center gap-2 mb-3" style="font-size: 12px; color: var(--color-text-secondary); flex-wrap: wrap;">
+      <span class="tag tag-type-model">模型</span>
+      <span class="tag tag-region-dom">国内</span>
+      <span class="tag" style="background: rgba(244,114,182,0.18); color: #fbcfe8; border-color: rgba(244,114,182,0.35);">头条</span>
+      <span>· DeepSeek Docs · 2 小时前</span>
+    </div>
+    <h2 style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 8px;">DeepSeek V4 Pro 永久降价至原价 1/4</h2>
+    <p style="font-size: 14px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 12px;">缓存命中输入 0.025 元/M tokens（降 75%）· 1M 上下文 · 推理对标 GPT-5 中端 · 月成本降至 25%。</p>
+    <div class="flex items-center justify-between" style="font-size: 12px; color: var(--color-text-tertiary);">
+      <div class="flex items-center gap-3"><span>⏱ 3 分钟</span><span>·</span><span style="color: var(--color-amber);">⭐ 4.8</span></div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">🔖 收藏</button>
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('hideModal').classList.add('active')">🔇 屏蔽</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="digest-card" onclick="window.location='02-daily-detail.html'" style="cursor: pointer;">
+    <div class="flex items-center gap-2 mb-3" style="font-size: 12px; color: var(--color-text-secondary); flex-wrap: wrap;">
+      <span class="tag tag-type-model">模型</span>
+      <span class="tag tag-region-os">国外</span>
+      <span class="tag" style="background: rgba(244,114,182,0.18); color: #fbcfe8; border-color: rgba(244,114,182,0.35);">头条</span>
+      <span>· Anthropic News · 4 小时前</span>
+    </div>
+    <h2 style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 8px;">Claude 4.7 Sonnet 发布 · 1M 上下文 + Agentic Coding 优化</h2>
+    <p style="font-size: 14px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 12px;">SWE-bench Verified 78.4% · 工具调用稳定性 +23% · 定价不变。</p>
+    <div class="flex items-center justify-between" style="font-size: 12px; color: var(--color-text-tertiary);">
+      <div class="flex items-center gap-3"><span>⏱ 4 分钟</span><span>·</span><span style="color: var(--color-amber);">⭐ 4.9</span></div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px; color: var(--color-info);">✓ 已收藏</button>
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;" onclick="event.stopPropagation(); document.getElementById('hideModal').classList.add('active')">🔇 屏蔽</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="digest-card read">
+    <div class="flex items-center gap-2 mb-3" style="font-size: 12px; color: var(--color-text-secondary); flex-wrap: wrap;">
+      <span class="tag tag-type-app">应用</span>
+      <span class="tag tag-region-dom">国内</span>
+      <span class="tag" style="background: rgba(96,165,250,0.12); color: #93c5fd; border-color: rgba(96,165,250,0.25);">工程</span>
+      <span>· 量子位 · 6 小时前</span>
+    </div>
+    <h2 style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 8px;">阿里通义 Qwen3-Coder 30B 开源 · HumanEval 82.1%</h2>
+    <p style="font-size: 14px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 12px;">1M 上下文 + 代码补全 · 超过 Code Llama 70B · MIT 协议可商用。</p>
+    <div class="flex items-center justify-between" style="font-size: 12px; color: var(--color-text-tertiary);">
+      <div class="flex items-center gap-3"><span>⏱ 3 分钟</span><span>·</span><span style="color: var(--color-amber);">⭐ 4.5</span></div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">🔖 收藏</button>
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">🔇 屏蔽</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="digest-card">
+    <div class="flex items-center gap-2 mb-3" style="font-size: 12px; color: var(--color-text-secondary); flex-wrap: wrap;">
+      <span class="tag tag-type-model">模型</span>
+      <span class="tag tag-region-os">国外</span>
+      <span class="tag" style="background: rgba(167,139,250,0.18); color: #c4b5fd; border-color: rgba(167,139,250,0.35);">论文</span>
+      <span>· arXiv cs.CL · 8 小时前</span>
+    </div>
+    <h2 style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 8px;">[arXiv] Sparse MoE · 1T active params · 推理 4x 速度</h2>
+    <p style="font-size: 14px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 12px;">MIT + Together AI · 总 8T · 推理成本降至 1/4 · 开源实现即将发布。</p>
+    <div class="flex items-center justify-between" style="font-size: 12px; color: var(--color-text-tertiary);">
+      <div class="flex items-center gap-3"><span>⏱ 5 分钟</span><span>·</span><span style="color: var(--color-amber);">⭐ 4.6</span></div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">🔖 收藏</button>
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">🔇 屏蔽</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="digest-card">
+    <div class="flex items-center gap-2 mb-3" style="font-size: 12px; color: var(--color-text-secondary); flex-wrap: wrap;">
+      <span class="tag tag-type-app">应用</span>
+      <span class="tag tag-region-os">国外</span>
+      <span class="tag" style="background: rgba(96,165,250,0.12); color: #93c5fd; border-color: rgba(96,165,250,0.25);">工程</span>
+      <span>· LangChain Blog · 10 小时前</span>
+    </div>
+    <h2 style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; margin-bottom: 8px;">LangChain v0.4 · Middleware API + LangGraph Studio GA</h2>
+    <p style="font-size: 14px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 12px;">类 Express middleware · 可视化 agent 调试 · breaking change 较多。</p>
+    <div class="flex items-center justify-between" style="font-size: 12px; color: var(--color-text-tertiary);">
+      <div class="flex items-center gap-3"><span>⏱ 3 分钟</span><span>·</span><span style="color: var(--color-amber);">⭐ 4.3</span></div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">🔖 收藏</button>
+        <button class="btn btn-ghost" style="padding: 4px 10px; font-size: 12px;">🔇 屏蔽</button>
+      </div>
+    </div>
+  </article>
+
+  <p style="text-align: center; margin-top: 32px; color: var(--color-text-tertiary); font-size: 13px;">
+    2/5 已读 · 剩余 3 分钟 · 推送时间：每天 08:00 (Asia/Shanghai)
+  </p>
+</main>
+
+<div class="modal-overlay" id="hideModal">
+  <div class="modal-content">
+    <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">不再推送类似内容？</h2>
+    <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 20px;">Claude 4.7 Sonnet 发布 · 1M 上下文 + Agentic Coding 优化</p>
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+      <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(99, 102, 241, 0.08); border: 1px solid var(--color-border-hover); border-radius: 6px; cursor: pointer;"><input type="radio" name="reason" checked><span style="font-size: 14px;">不感兴趣</span></label>
+      <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;"><input type="radio" name="reason"><span style="font-size: 14px;">已从其他渠道看过</span></label>
+      <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;"><input type="radio" name="reason"><span style="font-size: 14px;">内容质量低</span></label>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <p style="font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 8px;">关键词（点击屏蔽）</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="tag tag-type-model" style="cursor: pointer;">Claude</span>
+        <span class="tag tag-type-model" style="cursor: pointer;">Anthropic</span>
+        <span class="tag tag-type-app" style="cursor: pointer;">Agent</span>
+        <span class="tag tag-type-app" style="cursor: pointer;">1M 上下文</span>
+        <span class="tag tag-type-app" style="cursor: pointer;">SWE-bench</span>
+      </div>
+      <p style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 6px;">屏蔽后 7 天内同类内容权重 -50%</p>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; border-top: 1px solid var(--color-border);">
+      <button class="btn btn-ghost" onclick="document.getElementById('hideModal').classList.remove('active')">取消</button>
+      <button class="btn" style="background: rgba(248, 113, 113, 0.15); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.3);">确认屏蔽</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

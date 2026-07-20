@@ -219,7 +219,7 @@
 
 ### 阶段 F · 前端（5 页面 + 5 组件 · 5h）
 
-- [ ] T25: 5 页面路由 + V3 dark glassmorphism CSS
+- [x] T25: ✅ DONE — commit pending 5 页面路由 + V3 dark glassmorphism CSS
   - 文件: `frontend/pages/push/{index,daily/[date],bookmarks,settings,sources}.tsx` + `frontend/styles/digest.module.css`
   - 测试: 5 页面 snapshot test（react-testing-library）
   - 依赖: T10-T14
@@ -235,7 +235,7 @@
   - commit: `feat(frontend): 5 核心组件`
   - 产出: 5 组件 + Props/State 类型
 
-- [ ] T27: 状态管理（React Query hooks）
+- [x] T27: ✅ DONE — commit pending 状态管理（React Query hooks）
   - 文件: `frontend/hooks/digest.ts`
   - 测试: `test_use_digest_today_stale_time`
   - 依赖: T26
