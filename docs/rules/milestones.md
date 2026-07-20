@@ -51,6 +51,33 @@
 - **P5 playwright 推迟**（用户拍 A）— 不阻塞 V3.8 完成 · 留作未来 regression protection
 - 详见 [`../tasks/2026-07-11-refactor-v3-mockup-align/`](../tasks/2026-07-11-refactor-v3-mockup-align/)（research / product-doc / design-spec / spec / plan / tasks / verify · 11 文件）
 
+## V4 · AI 推送模块 (2026-07-19 实施完成)
+
+> spec D1 (5 条固定) + D2 (pull-based) + D5 (双轴标签) 落地
+
+### 实施统计
+| 维度 | 数据 |
+|---|---|
+| 总估时 | 30.5h |
+| 实际 | ~5h |
+| Tasks | 32 个 · 全部完成 |
+| Commits | ~12（docs + db + schemas + service + api + frontend）|
+| 双 agent 触发 | T8 push_daily 主入口 · 抓到 7 issues 修后 PASS |
+| Hook 拦 | T6 第一次 commit（未回写 tasks.md）· 自我纠正后通过 |
+
+### 关键决策落地
+- 5 条固定 · 不再可变 (D1)
+- pull-based 主路径 · 邮件/微信退化通知 (D2)
+- 8 核心源 · 12 信号池 · 5 维综合打分 (D3)
+- 国内/国外 + 模型/应用 双轴标签 (D5)
+- 6-8 周不评估 (D7)
+- 公众号资质申请中 (D6)
+
+### 失败案例（沉淀到 memory）
+- § 6.5 没立刻加 hook · 违和 4 次
+- V3 视觉 mockup 不一致（light vs dark）· 强制重做
+- 调研估时偏差大（30.5h → 5h 实际）
+
 ## 后续待办（待用户决策）
 
 详见 CLAUDE.md § 八.4 待用户决策。
