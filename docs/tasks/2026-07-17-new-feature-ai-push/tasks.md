@@ -243,7 +243,7 @@
   - commit: `feat(frontend): React Query hooks digest cache 5min`
   - 产出: useDigestToday / useBookmark / useHide / useSources hooks
 
-- [ ] T28: 视觉对齐 verify-loop（spec § 6.7）
+- [x] T28: ✅ DONE 视觉对齐 verify-loop（spec § 6.7）
   - 文件: `frontend/tests/visual/digest.spec.ts`
   - 测试: Playwright 视觉对比 · mockup vs 实际渲染
   - 依赖: T25-T27
@@ -251,7 +251,7 @@
   - commit: `test(visual): mockup vs 实际渲染对齐`
   - 产出: Playwright visual regression test · CI 集成
 
-- [ ] T29: 端到端 Playwright（spec § 6.7 verify-loop）
+- [x] T29: ✅ DONE 端到端 Playwright（spec § 6.7 verify-loop）
   - 文件: `frontend/tests/e2e/digest.spec.ts`
   - 测试: 用户点开 → 看 5 条 → 屏蔽某条 → 收藏 → 看设置等
   - 依赖: T27
@@ -261,7 +261,7 @@
 
 ### 阶段 G · DevOps + 文档（3h）
 
-- [ ] T30: RSSHub Docker 部署
+- [x] T30: ✅ DONE RSSHub Docker 部署
   - 文件: `docker-compose.yml` (新增 service) + `scripts/deploy-rsshub.sh`
   - 测试: `curl http://localhost:1200/juejin/tag/AI` 返回 RSS
   - 依赖: —
@@ -269,7 +269,7 @@
   - commit: `chore(devops): RSSHub Docker 部署`
   - 产出: RSSHub 跑在 1200 端口 · fallback 路径就绪
 
-- [ ] T31: 监控告警 + retro.md
+- [x] T31: ✅ DONE 监控告警 + retro.md
   - 文件: `backend/utils/metrics.py` + `docs/tasks/2026-07-17-new-feature-ai-push/retro.md`
   - 测试: `test_metrics_emits_digest_failure_rate`
   - 依赖: T19
@@ -277,7 +277,7 @@
   - commit: `chore(devops): digest metrics + retro`
   - 产出: 失败率 / 推送延迟 / RSSHub 健康指标 · retro 总结
 
-- [ ] T32: 更新 docs/rules/milestones.md
+- [x] T32: ✅ DONE 更新 docs/rules/milestones.md
   - 文件: `docs/rules/milestones.md`
   - 测试: —
   - 依赖: T31
