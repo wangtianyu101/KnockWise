@@ -443,7 +443,7 @@ class DigestService:
         "application": 2,    # ≥ 2 应用
     }
 
-    async def select_top_n(
+    def select_top_n(
         self,
         scored_items: list[dict],
         *,
@@ -550,7 +550,7 @@ class DigestService:
                 )
 
         # 4. select_top_n 选 5 条（diversity 已保证：≥ 2 国内 + 2 国外 + 3 模型 + 2 应用）
-        selected = await self.select_top_n(all_items_with_score, n=self.DEFAULT_TOP_N)
+        selected = self.select_top_n(all_items_with_score, n=self.DEFAULT_TOP_N)
 
         # 5. vibe 计算
         all_sources_failed = len(fetch_failures) == len(fetch_results)

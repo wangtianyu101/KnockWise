@@ -49,7 +49,7 @@ class TestSendDailyDigest:
         svc = EmailService()
         call_count = {"n": 0}
 
-        async def flaky():
+        async def flaky(*args, **kwargs):
             call_count["n"] += 1
             if call_count["n"] < 3:
                 raise Exception("5xx")

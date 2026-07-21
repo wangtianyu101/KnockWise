@@ -47,7 +47,7 @@ class TestDigestDailyItemCreate:
     def test_valid_minimal(self):
         item = DigestDailyItemCreate(
             title="Claude 4.7 Sonnet 发布",
-            quality_score=4.8,
+            quality_score=0.98,
             type="model",
             region="overseas",
             category="headline",
@@ -55,7 +55,7 @@ class TestDigestDailyItemCreate:
             source_url="https://www.anthropic.com/news/...",
         )
         assert item.title == "Claude 4.7 Sonnet 发布"
-        assert item.quality_score == 4.8
+        assert item.quality_score == 0.98
         assert item.type == "model"
         assert item.summary is None
         assert item.estimated_minutes == 3  # default
@@ -93,7 +93,7 @@ class TestDigestDailyItem:
             rank=1,
             title="Test",
             summary="Test summary",
-            quality_score=4.5,
+            quality_score=0.9,
             type="application",
             region="domestic",
             category="engineering",
@@ -122,9 +122,9 @@ class TestDigestTodayResponse:
         items = [
             DigestDailyItem(
                 id=f"uuid-{i}", rank=i + 1, title=f"Title {i}",
-                quality_score=4.0, type="model", region="overseas",
+                quality_score=0.8, type="model", region="overseas",
                 category="headline", source_name="x",
-                source_url="https://x.com",
+                source_url="https://x.com", estimated_minutes=3,
             )
             for i in range(5)
         ]
@@ -140,9 +140,10 @@ class TestDigestTodayResponse:
     def test_max_5_items_enforced(self):
         items = [
             DigestDailyItem(
-                id=f"uuid-{i}", rank=i + 1, title=f"t{i}",
+                id=f"uuid-{i}", rank=1, title=f"t{i}",
                 quality_score=0.5, type="model", region="overseas",
                 category="headline", source_name="x", source_url="https://x.com",
+                estimated_minutes=3,
             )
             for i in range(6)  # 6 items
         ]
