@@ -42,7 +42,8 @@ async def list_recent_interviews(db, user_id: str, limit: int = 3) -> list[dict]
     排序：started_at DESC
     Limit：1-10
 
-    性能：走 idx_user_status 索引（V1 closure 已加）· O(log N + limit)
+    性能：拟走 (user_id, status, deleted_at) 复合索引 · O(log N + limit)
+    ⚠️ 索引 idx_user_status 尚未创建（见 docs/issues.md 债务 1），当前实际为全表扫
     """
     stmt = (
         select(Interview)
