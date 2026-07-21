@@ -3,12 +3,45 @@
 > 记录已识别的设计缺陷、技术债务、待讨论议题。**这是动态文档** —— 遇到新发现随时加。
 >
 > 状态图例：📋 待讨论 · 🚧 进行中 · ✅ 已解决 · ❌ 不会做 · ⚠️ 已知限制
+>
+> **唯一主账**：任务 `tasks.md` / `retro.md` 或代码 `TODO` 中出现的长期遗留项，必须同步登记到本文；其他文件只能引用，不能成为第二份状态源。
+>
+> **最近清账**：2026-07-21 · 关闭动作按 [`issue-closure-template.md`](templates/issue-closure-template.md) 核验。
+>
+> **2026-07-22 决策更新**（同步自 [`research.md` § 八](tasks/2026-07-21-issues-audit/research.md#八用户决策清单不属调研产出需用户拍板)）：
+> - ✅ **议题 A + E** 联合实施：service 真调 `graph.ainvoke` + `evaluate_agent` / `report_agent` 用 `with_structured_output`（不升级 LangGraph 框架）
+> - 🟡 **议题 B** 默认按职责拆（lifecycle/runtime/query）· 待用户最终确认
+> - ✅ **议题 C** 全力全双工（路径 2）：三路径全替换 + transcript+语音 UI + LiveKit built-in VAD
+> - 🟡 **议题 D + F** 暂缓，与 🔴 组并行不冲突
+
+---
+
+## 决策更新（2026-07-22）
+
+> 📌 **决策主账**：[`docs/tasks/2026-07-21-issues-audit/decisions.md`](tasks/2026-07-21-issues-audit/decisions.md)
+>
+> 本节是简表镜像 · 详细记录请看 decisions.md
+
+| # | 决策项 | 选择 | 状态 |
+|---|---|---|---|
+| 1 | 议题 C 语音架构 | ✅ 全力全双工 | ✅ 已决策 |
+| 2 | 议题 B 拆分路径 | 🟡 按职责拆（默认） | 🟡 待最终确认 |
+| 3 | 债务 4 Alembic | ⏸ 保留为未来迁移 | ⏸ 暂缓 |
+| 4 | 债务 5 密码哈希 | ⏸ 接受 600K pbkdf2 | ⏸ 暂缓 |
+| 5 | 同步 issues.md 偏差 | ✅ 是（5 处） | ✅ 已完成 |
+| 6 | 启动 § 2 计划 | ⏸ 等用户指令 | ⏸ 待定 |
+| 7 | 议题 C 实施范围 | ✅ 全部语音路径（Q1=2） | ✅ 已决策 |
+| 8 | 议题 C UI 形态 | ✅ transcript+语音（Q2=2） | ✅ 已决策 |
+| 9 | 议题 C VAD 策略 | ✅ LiveKit built-in（Q3=1） | ✅ 已决策 |
+| 10 | 进 § 1 规格 | ✅ spec.md + design-spec.md + mockup | ✅ 已决策 |
 
 ---
 
 ## 一、设计议题（待深入讨论）
 
 ### 议题 A — 会话状态机：LangGraph StateGraph 写了但没用上
+
+**状态**：✅ **2026-07-22 已决策**（与议题 E 联合实施）· 进 § 1 规格 · spec.md 已起草
 
 **现状**：`backend/agents/interview_graph.py` 定义了完整的 StateGraph 编译产物，但 `backend/services/interview_service.py:80-150` 实际走的是**直接调用** `question_engine` / `followup_engine` / `evaluate_agent`，绕开了 graph 的状态转移逻辑。
 
@@ -26,9 +59,17 @@
 
 ---
 
-### 议题 B — `interview.py` 803 行的拆分
+### 议题 B — `interview.py` 873 行的拆分
 
-**现状**：`backend/api/interview.py` 单文件 803 行，承担了 start / list / next-question / submit-answer / complete / favorite / delete / records 全部端点。
+**状态**：🟡 **2026-07-22 默认决策**：按职责拆（lifecycle/runtime/query） · 待用户最终确认 · spec.md 已起草
+
+**现状**：`backend/api/interview.py` 单文件 873 行，承担了 13 个端点（议题描述列了 8 个，漏算 5 个）：
+- Lifecycle：POST / + POST /complete + POST /{id}/favorite + DELETE /{id}
+- Runtime：POST /{id}/next-question + POST /records/{id}/answer + POST /voice/respond + POST /transcribe + POST /livekit-token
+- Query：GET / + GET /recent + GET /{id} + GET /{id}/records
+- Other：2 个内联 Pydantic 模型（VoiceRespondRequest / LiveKitTokenRequest）
+
+`grep -rn "from api.interview import" backend/api/` 仅命中 main.py —— **无反向依赖，拆分零摩擦**。
 
 **影响**：
 - 改动一处容易影响别处
@@ -46,11 +87,15 @@
 
 ### 议题 C — 语音架构：3 套并存的最终形态
 
+**状态**：✅ **2026-07-22 已决策**：全力全双工（路径 2）+ 全部语音路径替换（`/interview/room` + `/interview/setup` + `/interview.tsx`）+ transcript+语音 UI（上下分栏）+ LiveKit built-in VAD/turn-taking · spec.md 已起草
+
 **现状**：
 - `/interview.tsx` → `VoiceRoom.tsx`（旧 PTT + WebSocket）
 - `/interview/setup.tsx` → `/interview/room.tsx` → `VoiceRecord.tsx`（新 PTT）
 - `LiveKitVoice.tsx` 组件存在但**没有任何页面用**
-- `voice/livekit_worker.py` 在每次 start interview 时启动，但**没有客户端连**
+- `voice/livekit_worker.py`（61 行）**从未被代码调用** —— 实际被 `_start_voice_worker` spawn 的是 `backend/voice/interview_room.py`（300+ 行），前者是 dead code
+- `_start_voice_worker` 在 `start_interview` 时无条件启动 LiveKit worker，但前端 `/interview/room` 走 VoiceRecord（WebSocket ASR/TTS）**从不连 LiveKit 房间** → worker 永远 `wait_for_participant()` 阻塞直到 `/complete`
+- `frontend/lib/livekit.ts` helper + `POST /api/interviews/livekit-token` 端点都是孤儿代码
 
 **影响**：
 - 维护 3 套组件的认知成本
@@ -68,7 +113,13 @@
 
 ### 议题 D — 跨模块数据流：AI 推荐如何真正打通
 
-**现状**：`recommendations_service.py` 已经能从 `blind_spots` 推"补充学习"建议，但跟 `knowledge_service`（Obsidian）、`news_service`（日报）没有真正的内容联动 —— 推荐的"相关笔记"是占位文字。
+**状态**：📋 待核验（已有后续模块实施，但尚未逐条对照本议题关闭条件）
+
+**现状**：`recommendations_service.py` 主路径已真实集成 Obsidian + News（不再是占位）：
+- L14 `from services.obsidian_service import obsidian` · L73 `obsidian.search(spot, limit=3)` 把 `name` / `path` 拼进 `title` / `link`
+- L15 `from services.news_service import news_service` · L126 `news_service.get_code_stats(days=7)` 生成 stats 卡
+- 但 L87-92 **fallback 仍是占位文案**（obsidian 召回为空时插入硬编码「补充学习「{weak_spots[0]}」」+「知识库中暂无相关笔记，建议添加」）
+- `backend/api/analytics.py:236-281` 暴露独立 `/recommendations` 端点，**不调 `recommendations_service`**，自己写一套 blind_spot 计数逻辑（Counter → `{topic, label, frequency, priority}`）—— **两套并行实现并存**
 
 **影响**：
 - "AI 副脑"的差异化定位目前只体现在 dashboard 卡片上
@@ -84,6 +135,8 @@
 ---
 
 ### 议题 E — AI Agent 框架：现在的"假 LangGraph"要不要换
+
+**状态**：✅ **2026-07-22 已决策**：与议题 A 联合实施 · `evaluate_agent` / `report_agent` 用 `with_structured_output` · 不升级 LangGraph 2.x / `create_agent` · spec.md 已起草
 
 **现状**：
 - `interview_graph.py` 编译了图但运行时绕开
@@ -105,11 +158,17 @@
 
 ### 议题 F — 可观测性：零 trace / metrics / structured log
 
+**状态**：📋 待核验（已有相关设计，尚未验证全链路 trace / metrics / error 聚合）
+
 **现状**：
-- 所有日志走 `logging.getLogger("knockwise.xxx")` + print
-- 没有 trace 关联（一次 request 跨多服务/agent 怎么串起来）
-- 没有 metrics（LLM 调用次数、token 消耗、STT 延迟、报告生成耗时）
-- 没有 error 聚合（Sentry / GlitchTip 都没接）
+- 73 处 `logger.{info,error,warning,debug}` 调用，绝大多数仍走 stdlib 默认 Formatter（纯文本）
+- T15-T19 commit `96566d8` 在 `backend/utils/logger.py` 落了脚手架：
+  - `setup_logger()` JSON formatter（ts/level/trace_id/logger/msg/exc）· `DigestMetrics`（push_total/push_failed/fetch_failures/push_latency_ms）· 模块级 `digest_logger` / `digest_metrics` 实例
+- **全代码库零调用方** —— grep `from utils.logger` / `digest_metrics.` / `digest_logger.` 全 backend 0 命中（"抽屉里的工具盒"）
+- `request_id` / `X-Request` / `correlation_id` 全仓 0 命中（除 logger.py 自己定义外）
+- trace_id 是**进程级单值**（模块全局 `_trace_id`），并发请求会互相覆盖 —— 即便接 middleware 也是 race condition，关闭前必修
+- `RateLimitMiddleware` 类存在但未注册 · slowapi `app.state.limiter` 但未加 `SlowAPIMiddleware`
+- `sentry-sdk` / `glitchtip` / `langfuse` / `opentelemetry-*` 全部 0 命中
 
 **影响**：
 - 上线后出问题只能靠用户报
@@ -127,27 +186,7 @@
 
 ## 二、已发现 bug（待修复）
 
-### Bug 9 — SM-2 测试与函数签名不一致 🔥 NEW 2026-06-25
-
-**位置**：`backend/tests/test_sm2.py` vs `backend/services/learning_progress_service.py:52`
-
-**症状**：
-- `pytest tests/test_sm2.py` → **10 failed, 82 passed**
-- 错误：`TypeError: calculate_next_srs() got an unexpected keyword argument 'repetition_count'`
-
-**根因**：
-- 函数签名用 `review_count`（参数名 + dict key + DB 字段名）
-- 测试用 `repetition_count`（参数名 + dict key）
-- 不匹配
-
-**修复方向**：
-- ✅ 改测试 → 用 `review_count`（与函数/DB 一致，无迁移）
-- ❌ 改函数 → 要 DB 迁移 + 影响所有调用方
-
-**影响文件**：
-- `backend/tests/test_sm2.py`（改测试）
-
-**优先级**：🔴 高（阻塞 pre-commit hook）
+当前无已登记且完成证据不足的 Bug。新 Bug 必须写明复现路径、影响、优先级和对应回归测试。
 
 ---
 
@@ -212,11 +251,15 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ---
 
-### 债务 3 — 测试覆盖几乎为零 ⚠️
+### 债务 3 — 测试覆盖需要持续量化 ⚠️
 
-**位置**：`backend/tests/` 目录存在但稀疏
+**状态**：🚧 改善中
 
-**现状**：从 `git log` 看项目里几乎没有单元测试，E2E 全靠手动 curl。
+**位置**：`backend/tests/` + `frontend/__tests__/`
+
+**现状（2026-07-21 清账）**：已有 **29 个后端 `test_*.py` 文件**（实测 `ls backend/tests/test_*.py | wc -l`）和 **25 个前端 Vitest 文件**（实测 `find frontend -name “*.test.*” -not -path “*/node_modules/*” | wc -l`），”几乎为零”已不成立；但仍需要用最新覆盖率报告确认核心 service 是否持续达到 ≥80%，并补齐关键 API contract / E2E。
+
+注：`pyproject.toml` 无 coverage 配置；`requirements.txt:29` 列了 `pytest-cov>=6.0.0` 但未启用；无 `.coverage` / `htmlcov` 文件。
 
 **建议优先级**：
 1. 核心 service 单测（`interview_service.process_answer`、`report_agent.generate_report`）
@@ -241,13 +284,14 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ### 债务 5 — 邮箱 + 密码哈希用 stdlib `hashlib.pbkdf2_hmac` 而非 bcrypt/argon2 ⚠️
 
-**位置**：`backend/api/auth.py` 注册路径
+**位置**：`backend/api/auth.py:38,46` 注册 / 校验路径
 
-**现状**：注释说"零依赖"所以选 stdlib。PBKDF2 是 OK 的，但 PBKDF2-SHA256 调 600K 次的官方建议很多库还没跟进。
+**现状（2026-07-21 清账）**：`_hash_password` / `_verify_password` 已使用 **PBKDF2-SHA256 iterations=600_000**（OWASP 2023 推荐值，原议题的"调到 600000+"建议已落实）。仅剩"非 argon2/bcrypt（内存硬度不足）"一点仍成立。
+> 关联虚假注释：`backend/models/__init__.py:49` 注释写 `# bcrypt hash`，实际是 pbkdf2 —— 应改注释（见新增发现，非本议题必修项）。
 
-**建议**：换 argon2-cffi（更现代、内存硬度好），或显式把 PBKDF2 iterations 调到 600000+。
+**建议**：若上线前要进一步硬化，换 argon2-cffi（内存硬度更好）；否则接受 600K pbkdf2 现状并修正误导注释即可。
 
-**优先级**：低（生产前要改）
+**优先级**：低（600K 已达标，仅算法选择与注释订正）
 
 ---
 
@@ -290,6 +334,7 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 | React StrictMode 双触发防护 | 2026-06-17 | commit `interview/room.tsx` `interview.tsx` |
 | 文档英文名 → 中文名 + 合并重构方案 | 2026-06-18 | `docs/` git mv |
 | Alembic 启动 ALTER 自动跑 | 2026-06-17 | `core/database.py:_MIGRATIONS` |
+| Bug 9：SM-2 测试参数 `repetition_count` → `review_count` | 2026-06-25 | commit `7a5a21e` · commit 记录 92 passed；2026-07-21 代码复核一致，当前环境无 pytest 未重复执行 |
 
 ---
 
@@ -315,4 +360,4 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 **影响文件**：
 - `backend/tests/test_sm2.py`（改）
-- `docs/40-追踪/目前缺陷.md`（本文档登记）
+- `docs/issues.md`（本文档登记）
