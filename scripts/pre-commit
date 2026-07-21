@@ -1,5 +1,5 @@
 #!/bin/sh
-# pre-commit hook for Intervue
+# pre-commit hook for KnockWise
 # 安装: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 # 跳过: PRE_COMMIT_SKIP=1 git commit ...
 
@@ -24,7 +24,13 @@ if [ -n "$backend_changed" ]; then
     echo "⚠️  backend/.venv 不存在,跳过 pytest(首次 clone 后跑 ./scripts/setup.sh)"
   else
     echo "📦 backend 改动 → 跑 pytest..."
-    if ! (cd backend && ./.venv/bin/python -m pytest tests/ --tb=short -q 2>&1 | tail -30); then
+    # 捕获真实退出码：`... | tail` 的退出码取自末端 tail(恒 0),会吞掉 pytest 失败
+    set +e
+    pytest_out=$(cd backend && ./.venv/bin/python -m pytest tests/ --tb=short -q 2>&1)
+    pytest_rc=$?
+    set -e
+    echo "$pytest_out" | tail -30
+    if [ "$pytest_rc" -ne 0 ]; then
       echo ""
       echo "❌ pytest 失败,禁止 commit"
       echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
@@ -40,7 +46,13 @@ if [ -n "$frontend_changed" ]; then
     echo "⚠️  frontend/node_modules 不存在,跳过 tsc(首次 clone 后跑 npm install)"
   else
     echo "🎨 frontend 改动 → 跑 tsc..."
-    if ! (cd frontend && npx tsc --noEmit 2>&1 | tail -30); then
+    # 同 pytest：捕获真实退出码,避免 `| tail` 吞掉 tsc 失败
+    set +e
+    tsc_out=$(cd frontend && npx tsc --noEmit 2>&1)
+    tsc_rc=$?
+    set -e
+    echo "$tsc_out" | tail -30
+    if [ "$tsc_rc" -ne 0 ]; then
       echo ""
       echo "❌ tsc 失败,禁止 commit"
       echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
@@ -64,17 +76,17 @@ if [ -n "$diff_lines" ] && [ "$diff_lines" -gt 500 ] 2>/dev/null; then
   esac
 fi
 
-# ─── 4. 7 步 DOD 校验(对治 DOD 缺失) ─────────────────────────
+# ─── 4. 6 步 v2 DOD 校验(对治 DOD 缺失) ──────────────────────
 task_files=$(echo "$staged_files" | grep -E "^docs/tasks/.*\.md$" || true)
 if [ -n "$task_files" ]; then
   if [ ! -f "scripts/check-step.py" ]; then
     echo ""
     echo "⚠️  检测到 docs/tasks/ 改动,但 scripts/check-step.py 不存在"
-    echo "   TODO: 接入 7 步 DOD 校验(7 步 × 38 条)"
+    echo "   TODO: 接入 6 步 v2 DOD 校验"
     echo "   临时跳过,记得手动验证文档符合 docs/DOD.md"
   else
     echo ""
-    echo "📋 docs/tasks/ 改动 → 跑 7 步 DOD 校验..."
+    echo "📋 docs/tasks/ 改动 → 跑 6 步 v2 DOD 校验..."
     failed=0
     for file in $task_files; do
       step=""
@@ -85,7 +97,6 @@ if [ -n "$task_files" ]; then
         tasks.md)        step="tasks" ;;
         test-cases.md)   step="implement" ;;
         verify.md)       step="verify" ;;
-        ship.md)         step="ship" ;;
         retro.md)        step="retro" ;;
       esac
       if [ -z "$step" ]; then
@@ -98,11 +109,11 @@ if [ -n "$task_files" ]; then
     done
     if [ $failed -ne 0 ]; then
       echo ""
-      echo "❌ 7 步 DOD 校验失败,禁止 commit"
+      echo "❌ 6 步 v2 DOD 校验失败,禁止 commit"
       echo "   完整 DOD 定义见 docs/DOD.md"
       exit 1
     fi
-    echo "✅ 7 步 DOD 校验通过"
+    echo "✅ 6 步 v2 DOD 校验通过"
   fi
 fi
 
