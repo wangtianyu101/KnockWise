@@ -356,9 +356,9 @@
   - 依赖: T36 / V5-01 / V5-03
   - 估时: 1h → 实际约 25 min
   - 边界: Prompt 仅包含偏好标签与候选白名单字段；20 条/字段长度硬上限；非法 JSON、超时、限流、模型异常均保留原摘要；邮件经可注入 provider 调用 Resend HTTP API
-  - Verify-loop: FAIL（重试/幂等/email_enabled/主题链接/非阻塞）→ FAIL（错误路由/全局锁）→ 修复为 Resend 幂等键 + per-key lock + `/ai/today` + commit 后 background task
+  - Verify-loop: FAIL（重试/幂等/email_enabled/主题链接/非阻塞）→ FAIL（错误路由/全局锁）→ PASS；修复 commit `f5200a0`（与 T38 接线共享）
 
-- [x] T38: ✅ DONE — commit `pending` · Scheduler → Service → MySQL → API → Email 真 E2E
+- [x] T38: ✅ DONE — commit `f5200a0` · Scheduler → Service → MySQL → API → Email 真 E2E
   - 文件: `backend/tests/e2e/test_digest_push.py` + 必要 API/Service 接线
   - 测试: ✅ 隔离 MySQL `knockwise_harness_test` **1 passed**；✅ 后端全量 **711 passed / 2 skipped / 4 xfailed**；quality **48 files / 693 tests / 0 violations**
   - 依赖: T37 / V5-02
@@ -494,7 +494,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T35 | `ef0a342` | 1h | ~55min |
 | T36 | `dec649d` | 1h | ~25min |
 | T37 | `8d48fb2` | 1h | ~25min |
-| T38 | `pending` | 1h | ~45min |
+| T38 | `f5200a0` | 1h | ~45min |
 | **小计** | 12 commits | 9.75h | ~7.25h |
 
 ---
