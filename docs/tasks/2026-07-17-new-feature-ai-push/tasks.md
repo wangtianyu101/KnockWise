@@ -333,7 +333,7 @@
 
 ### 阶段 J · Harness 治理（阶段 5 · 验证 · 1h）
 
-- [x] T35: ⚠️ VERIFIED / FAILED — commit 待回写 · 基于真实命令重写 verify + retro
+- [x] T35: ⚠️ VERIFIED / FAILED — commit `ef0a342` · 基于真实命令重写 verify + retro
   - 文件: `verify.md` + `retro.md` + `tasks.md`
   - 测试: quality **0 violations**；backend **698 passed / 1 skipped / 4 xfailed**；MySQL **1 passed**；Vitest **210 passed**；Playwright **5 failed**
   - 依赖: T34
@@ -458,8 +458,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T6 | `560ba40` | 1h | ~45min |
 | T33 | `dd546d9`（初版，与 T20 混合）+ `05c7d57`（边界修正） | 1h | ~45min |
 | T34 | `bcd6f78` + `3ff6566` | 1h | ~55min |
-| T35 | 待本提交完成后回写 | 1h | ~55min |
-| **小计** | 8 commits + T35 pending | 6.75h | ~5h35min |
+| T35 | `ef0a342` | 1h | ~55min |
+| **小计** | 9 commits | 6.75h | ~5h35min |
 
 ---
 
