@@ -278,6 +278,53 @@ DELETE FROM user_questions WHERE user_id = ?;
 
 ---
 
+### 债务 10 — V1/V3 旧模块审计发现 183 真实测试失败 ✅ 已验证修复（2026-07-23）
+
+**位置**：audit v1/v2 报告（2026-07-21 / 2026-07-22）记录以下模块当时失败：
+- `test_summary_service.py`（dashboard / weekly sync / generate_narrative）
+- `test_study_plan_service.py`（progress aggregation / delete plan）
+- 其他 V1/V3 既有模块
+
+**审计来源**：[`docs/tasks/2026-07-23-audit-183-failures/research.md`](tasks/2026-07-23-audit-183-failures/research.md)（2026-07-23 实测审计）
+
+**背景**：
+- audit v1/v2 报告后端 `pytest` 实测 `183 failed, 494 passed, 4 xfailed`（681 collect）
+- 当时 `backend/.venv` 缺失 + greenlet / openai-whisper 隐性依赖未装 + 无 `.env.local` + 可能 DB migration 未 init
+- 183 failed 集中在 `summary_service` / `study_plan_service` · 这些测试高度依赖 DB session fixture
+- 推测根因：测试环境瞬时状态问题（不是代码 bug）
+
+**修复情况**：✅ **2026-07-23 已验证 0 fail**
+
+实测：
+```bash
+cd backend && ./.venv/bin/python -m pytest --tb=no -q
+# 703 tests collected
+# 695 passed, 4 skipped, 4 xfailed, 22 warnings in 1.83s
+# 0 failed
+```
+
+单跑原本失败的文件验证：
+```bash
+cd backend && ./.venv/bin/python -m pytest tests/test_summary_service.py tests/test_study_plan_service.py -v
+# 48 passed, 1 warning in 0.54s
+# 0 failed
+```
+
+**根因**：环境设置累积（commit `ee5dbd8` 加 greenlet/whisper + 用户本地 `.env.local` 创建 + DB migration 初始化）· 不是代码 bug · **未做代码修复**（不需要修）
+
+**状态变更**：2026-07-22 登记 🔴 P0 → 2026-07-23 立即标 ✅ 已修复（无需代码改动）
+
+**教训**：
+- 审计报告（test environment 状态）有"半衰期" · 环境累积后现象可能自然消失
+- 重新实测是必要的 · 不能只看历史报告
+- 类似审计应附"实测时间 + 环境状态"元信息
+
+**关联决策**：用户拍板"选项 B：登记 + 立即关闭"（2026-07-23）
+**关联文档**：
+- [`docs/tasks/2026-07-23-audit-183-failures/research.md`](tasks/2026-07-23-audit-183-failures/research.md)（完整调研 + 验证步骤）
+
+---
+
 ### 债务 1 — 数据库缺少复合索引 ⚠️
 
 **位置**：`backend/models/__init__.py` 的 Interview / QuestionRecord
