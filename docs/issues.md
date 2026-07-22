@@ -279,7 +279,16 @@ DELETE FROM user_questions WHERE user_id = ?;
 - T20 实跑 `pytest tests/api/test_digest_api.py -q` = **16 passed** · 前端 Vitest **26 files / 210 tests** 全过
 - 详见 [`docs/tasks/2026-07-21-issues-audit/baseline.md`](tasks/2026-07-21-issues-audit/baseline.md)（baseline 完整记录）
 
-**修复工时估算**（已闭环）：~10.5h AI 工作量 → **8/9 已完成于 2026-07-22**（audit 触发的紧急修复 · 由用户/其他 agent 实施）
+**2026-07-22 阶段五复核（最新状态 · 🚧 未关闭）**：
+
+- 空测试治理已通过：44 files / 681 AST tests / 0 violations；后端 698 passed / 1 skipped / 4 xfailed；Digest coverage 85.61% / 82%。
+- 但原修复路径 3（T22）未完成：`test_digest_llm.py` 不存在，Digest 路径没有 `ainvoke` 契约。
+- 原修复路径 5（T24）未达到 E2E 边界：测试直接调用 service，并 Mock DB/ORM/偏好/RSS；Email 仍为 `NotImplementedError`。
+- 原修复路径 7（T29）实跑结果为 5 failed / 0 passed；`/ai/today` 仍是 EmptyState，bookmarks/settings 缺 QueryClientProvider。
+- 前端 Vitest 210 passed，但 typecheck 有 12 条 diagnostics，Next build 失败；后端优雅停机另发现 `asyncio` 未导入。
+- 完整证据与 V5-01～V5-08 关闭条件见 [`verify.md`](tasks/2026-07-17-new-feature-ai-push/verify.md)。不得再以“8/9 已完成”解释为 Harness 项目闭环。
+
+**修复工时估算（阶段五复核：未闭环）**：原估 ~10.5h；空测试治理已完成，但 V5-01～V5-08 仍需重新拆分估时与实施。
 
 **关联决策**：decisions.md 决策 11 + 12 + 13（2026-07-22 新增）
 **关联文档**：
