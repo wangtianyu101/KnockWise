@@ -343,7 +343,7 @@
 
 ### 阶段 K · Harness 修复回路（步骤 4 · 4h）
 
-- [x] T36: ✅ DONE — commit 待回写 · shutdown + RSSHub fallback + 跨源去重
+- [x] T36: ✅ DONE — commit `dec649d` · shutdown + RSSHub fallback + 跨源去重
   - 文件: `backend/{main.py,core/config.py,services/digest_service.py}` + `backend/tests/{test_main_shutdown.py,services/test_rss_fetch.py}`
   - 测试: ✅ **20 passed**；红灯 3 failed → 绿灯
   - 依赖: T35 / V5-04 / V5-07
@@ -489,8 +489,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T33 | `dd546d9`（初版，与 T20 混合）+ `05c7d57`（边界修正） | 1h | ~45min |
 | T34 | `bcd6f78` + `3ff6566` | 1h | ~55min |
 | T35 | `ef0a342` | 1h | ~55min |
-| T36 | 待本提交完成后回写 | 1h | ~25min |
-| **小计** | 9 commits + T36 pending | 7.75h | ~6h |
+| T36 | `dec649d` | 1h | ~25min |
+| **小计** | 10 commits | 7.75h | ~6h |
 
 ---
 
