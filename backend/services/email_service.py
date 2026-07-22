@@ -1,17 +1,48 @@
-"""EmailService (T15: 2026-07-17 实施).
-
-Resend API 邮件发送 + HTML 模板 + 重试 3 次
-配套 docs/tasks/2026-07-17-new-feature-ai-push/spec.md § 7.2
-
-注: resend SDK 未装,这里写为接口预留;实际部署时 `pip install resend`
-"""
+"""Email delivery boundary backed by the Resend HTTP API."""
 from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, Protocol
+
+import httpx
 
 logger = logging.getLogger(__name__)
+
+
+class EmailProvider(Protocol):
+    async def send(self, to_email: str, subject: str, html: str) -> str: ...
+
+
+class ResendEmailProvider:
+    """Minimal Resend adapter; callers can inject a deterministic test provider."""
+
+    API_URL = "https://api.resend.com/emails"
+
+    async def send(self, to_email: str, subject: str, html: str) -> str:
+        from core.config import settings
+
+        if not settings.resend_api_key or not settings.resend_from_email:
+            raise RuntimeError("Resend is not configured")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                self.API_URL,
+                headers={
+                    "Authorization": f"Bearer {settings.resend_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": settings.resend_from_email,
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html,
+                },
+            )
+            response.raise_for_status()
+            message_id = response.json().get("id")
+            if not message_id:
+                raise RuntimeError("Resend response did not include a message id")
+            return str(message_id)
 
 
 class EmailService:
@@ -20,6 +51,9 @@ class EmailService:
     # 重试配置 (spec § 7.2)
     MAX_RETRIES = 3
     RETRY_DELAYS = [5, 15, 60]  # 秒 · spec § 7.2 错误码重试间隔
+
+    def __init__(self, provider: EmailProvider | None = None) -> None:
+        self.provider = provider or ResendEmailProvider()
 
     async def send_daily_digest(
         self,
@@ -52,7 +86,9 @@ class EmailService:
         # 2. 重试 3 次 (spec § 7.2 错误码重试)
         for attempt in range(self.MAX_RETRIES):
             try:
-                result = await self._send_via_resend(user_email, digest_date, html)
+                result = await self._send_via_resend(
+                    user_email, f"KnockWise Daily · {digest_date}", html
+                )
                 logger.info(f"email sent: user={user_email} message_id={result}")
                 return {
                     "message_id": result,
@@ -106,14 +142,8 @@ class EmailService:
     async def _send_via_resend(
         self, to_email: str, subject: str, html: str
     ) -> str:
-        """Resend API 调用 (实际部署时启用)。"""
-        # 部署时: import resend; resend.api_key = settings.resend_api_key
-        # params = {"from": "...", "to": [to_email], "subject": subject, "html": html}
-        # resend.Emails.send(params)
-        # return params['message_id']
-        #
-        # MVP 简化: raise NotImplementedError · 部署时启用
-        raise NotImplementedError("Resend SDK 未装 · 部署时 `pip install resend` 启用")
+        """Delegate delivery to the configured provider boundary."""
+        return await self.provider.send(to_email, subject, html)
 
 
 # 模块级 singleton

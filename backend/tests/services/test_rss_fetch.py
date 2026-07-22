@@ -149,10 +149,7 @@ class TestFetchOneRetry:
 
     @pytest.mark.asyncio
     async def test_retry_recovers_from_transient_failure(self):
-        """前 2 次失败 · 第 3 次成功 → 调 _fetch_and_parse 共 3 次（替代原 rsshub_fallback）"""
-        # 注：原 stub 名 `test_rsshub_fallback_on_failure` 暗示有 RSSHub 降级路径
-        # 实际实现只有「同 URL 重试 3 次」机制（无 RSSHub fallback · T30 deploy 脚本还没接入服务发现）
-        # 故测试改为验证现有重试行为
+        """前 2 次失败 · 第 3 次直连成功 → 不进入 RSSHub fallback。"""
 
         service = DigestService()
         src = make_source()

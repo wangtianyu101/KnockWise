@@ -43,6 +43,10 @@ RSSHUB_SOURCE_ROUTES: dict[str, str] = {
 class DigestService:
     """AI 推送信源抓取 + 选题 + 推送编排。"""
 
+    def __init__(self, llm_service: Any | None = None, email_service: Any | None = None) -> None:
+        self.llm_service = llm_service
+        self.email_service = email_service
+
     # ═════════════════════════════════════════════════════════════════
     # T5 · fetch_all_sources
     # ═════════════════════════════════════════════════════════════════
@@ -635,6 +639,11 @@ class DigestService:
 
         vibe = f"今日 {len(selected)} 条 · 正常推送" if len(selected) == 5 else f"今日 {len(selected)} 条"
 
+        # The application owns the prompt/output contract. Tests inject a fake
+        # boundary; the module singleton below supplies the production client.
+        if self.llm_service is not None:
+            selected = await self.llm_service.enrich_items(selected, user_prefs)
+
         # 6. 写 digest_daily + items
         from uuid import uuid4
         now = datetime.now(timezone.utc)
@@ -689,11 +698,26 @@ class DigestService:
 
         await db.commit()
 
+        email_result = None
+        if self.email_service is not None:
+            from models import User
+
+            email_query = await db.execute(select(User.email).where(User.id == user_id))
+            user_email = email_query.scalar_one_or_none()
+            if user_email:
+                email_result = await self.email_service.send_daily_digest(
+                    user_email=str(user_email),
+                    digest_date=target_date.isoformat(),
+                    items=selected,
+                    vibe=vibe,
+                )
+
         return {
             "daily_id": daily_id,
             "item_count": len(selected),
             "vibe": vibe,
             "error": None,
+            "email": email_result,
         }
 
     def _classify_raw_item(self, raw_item: dict, source_name: str) -> dict:
@@ -731,4 +755,10 @@ class DigestService:
 # ─── 模块级 singleton（2026-07-22 audit 修复）────────────────
 # api/digest/daily.py:26 `from services.digest_service import digest_service` 一直期待这个实例
 # 之前缺失导致 GET /api/digest/today 抛 ImportError
-digest_service = DigestService()
+from services.digest_llm_service import digest_llm_service
+from services.email_service import email_service
+
+digest_service = DigestService(
+    llm_service=digest_llm_service,
+    email_service=email_service,
+)

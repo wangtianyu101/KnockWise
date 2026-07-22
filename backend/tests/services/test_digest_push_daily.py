@@ -198,3 +198,52 @@ class TestPushDailyPartialFailure:
         # 5 good items → 全部 push
         assert result["daily_id"] is not None
         assert result["item_count"] == 5
+
+
+class TestPushDailyExternalContracts:
+    @pytest.mark.asyncio
+    async def test_enriches_before_persisting_and_emails_committed_digest(self):
+        llm_service = AsyncMock()
+        llm_service.enrich_items.return_value = [
+            {
+                **make_raw_item("AI 首次发布"),
+                "source_id": "src-1",
+                "source_name": "Test Source",
+                "score": 0.95,
+                "summary": "LLM contract summary",
+            }
+        ]
+        email_service = AsyncMock()
+        email_service.send_daily_digest.return_value = {
+            "message_id": "message-1",
+            "error": None,
+        }
+        svc = DigestService(
+            llm_service=llm_service,
+            email_service=email_service,
+        )
+        fetch_results = [make_fetch_result(items=[make_raw_item("AI 首次发布")])]
+        db = AsyncMock()
+        email_query = MagicMock()
+        email_query.scalar_one_or_none.return_value = "user@example.com"
+        db.execute.side_effect = [MagicMock(), email_query]
+
+        with patch.object(
+            svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)
+        ), patch.object(svc, "composite_score", return_value=0.95):
+            result = await svc.push_daily(
+                db=db,
+                user_id="user-1",
+                target_date=date(2026, 7, 22),
+            )
+
+        llm_service.enrich_items.assert_awaited_once()
+        persisted_item = db.add.call_args_list[1].args[0]
+        assert persisted_item.summary == "LLM contract summary"
+        db.commit.assert_awaited_once()
+        email_service.send_daily_digest.assert_awaited_once()
+        assert (
+            email_service.send_daily_digest.await_args.kwargs["items"][0]["summary"]
+            == "LLM contract summary"
+        )
+        assert result["email"]["message_id"] == "message-1"

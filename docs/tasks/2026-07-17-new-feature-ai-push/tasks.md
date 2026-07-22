@@ -350,11 +350,12 @@
   - 估时: 1h → 实际约 25 min
   - 边界: RSSHub 仅对有明确 route 的来源 fallback；官方源继续 fail closed
 
-- [ ] T37: Digest LLM contract + Email provider boundary
+- [x] T37: ✅ DONE — commit `pending` · Digest LLM contract + Email provider boundary
   - 文件: `backend/services/{digest_llm_service.py,email_service.py,digest_service.py}` + 对应 tests
-  - 测试: prompt / JSON parse / fallback / timeout / scope + provider retry / single call
+  - 测试: ✅ **17 passed / 3 xfailed**（定向）；✅ 后端全量 **711 passed / 1 skipped / 4 xfailed**；quality **47 files / 692 tests / 0 violations**
   - 依赖: T36 / V5-01 / V5-03
-  - 估时: 1h
+  - 估时: 1h → 实际约 25 min
+  - 边界: Prompt 仅包含偏好标签与候选白名单字段；20 条/字段长度硬上限；非法 JSON、超时、限流、模型异常均保留原摘要；邮件经可注入 provider 调用 Resend HTTP API
 
 - [ ] T38: Scheduler → Service → MySQL → API → Email 真 E2E
   - 文件: `backend/tests/e2e/test_digest_push.py` + 必要 API/Service 接线
@@ -471,10 +472,10 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 - 阶段 H（T33）：1h → 实际约 45min
 - 阶段 I（T34）：1h → 实际约 55min
 - 阶段 J（T35）：1h → 实际约 55min
-- 阶段 K（T36-T39）：4h → T36 实际约 25min
+- 阶段 K（T36-T39）：4h → T36/T37 实际各约 25min
 - **总估时**：37.5h
-- **已用**：~6h（T1+T2+T5+T6+T33-T36）
-- **剩余**：~29.75h（含 T37-T39）
+- **已用**：~6.5h（T1+T2+T5+T6+T33-T37）
+- **剩余**：~29.25h（含 T38-T39）
 - **实际偏差**：≤ 30%（事后验证 · 写入 retro.md）
 ```
 
@@ -490,7 +491,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T34 | `bcd6f78` + `3ff6566` | 1h | ~55min |
 | T35 | `ef0a342` | 1h | ~55min |
 | T36 | `dec649d` | 1h | ~25min |
-| **小计** | 10 commits | 7.75h | ~6h |
+| T37 | `pending` | 1h | ~25min |
+| **小计** | 11 commits | 8.75h | ~6.5h |
 
 ---
 
@@ -528,10 +530,10 @@ Phase 10 · Harness 验证（T35，1h）        ← 2026-07-22 ⚠️ VERIFIED /
   T35（L3/L5 已实跑；V5-01～V5-08 待修）
 
 Phase 11 · Harness 修复（T36-T39，4h）    ← 2026-07-22 🚧 IN PROGRESS
-  ✅ T36 → T37 → T38 → T39
+  ✅ T36 → ✅ T37 → T38 → T39
 ```
 
-**总周期**：~4 个工作日 · 已用 ~6h（含 T36）· 剩余 ~29.75h
+**总周期**：~4 个工作日 · 已用 ~6.5h（含 T37）· 剩余 ~29.25h
 
 **下次实施时**：开始前先看 § 6 总估时 + 实际 commit 历史表 → 知道上回做到哪 → 从未完成的任务继续
 

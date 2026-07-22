@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     # RSSHub fallback (AI digest)
     rsshub_url: str = "http://localhost:1200"
 
+    # Email delivery (Resend HTTP API)
+    resend_api_key: str = ""
+    resend_from_email: str = ""
+
     class Config:
         env_file = (".env", ".env.local")
 

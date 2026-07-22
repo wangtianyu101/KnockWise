@@ -3,14 +3,14 @@
 覆盖：4 个场景（happy / all-failed / partial / no-candidates）
 
 实现位置：services/digest_service.py::DigestService.push_daily
-邮件发送（EmailService._send_via_resend）当前 NotImplementedError（生产 P0 · 待 resend SDK 集成）
+邮件发送通过可注入 provider 边界验证，不访问公网。
 
 测试策略：
 - 全链路 mock（fetch / DB save / email）
 - 验证 push_daily 编排正确（调用顺序 + 异常处理）
 - 验证 vibe 文本覆盖 5 种状态（全失败/无候选/部分/正常/全部）
 - 验证 DB 持久化调用（add + commit 顺序）
-- email 发送单独验证 NotImplementedError 路径（生产待补）
+- email 发送单独验证 provider 调用契约
 """
 from __future__ import annotations
 
@@ -185,24 +185,24 @@ class TestPushDailyOrchestration:
         db.add.assert_not_called()
 
 
-# ── Tests · email 集成（生产 P0 · 待 resend SDK）───────────────
+# ── Tests · email provider 集成 ───────────────────────────────
 
 
 class TestEmailIntegration:
-    """EmailService._send_via_resend 当前 NotImplementedError（生产 P0）"""
+    """EmailService delegates delivery to the configured provider."""
 
     @pytest.mark.asyncio
-    async def test_email_send_raises_not_implemented(self):
-        """EmailService._send_via_resend → NotImplementedError（待 resend SDK 集成）
-
-        注：这是当前已知限制。集成 resend 后此测试改为验证 resend.Emails.send 调用
-        """
+    async def test_email_send_delegates_to_provider(self):
         from services.email_service import EmailService
 
-        svc = EmailService()
-        with pytest.raises(NotImplementedError, match="Resend SDK 未装"):
-            await svc._send_via_resend(
-                to_email="test@example.com",
-                subject="KnockWise Daily 2026-07-22",
-                html="<html>test</html>",
-            )
+        provider = AsyncMock()
+        provider.send.return_value = "message-1"
+        svc = EmailService(provider=provider)
+        message_id = await svc._send_via_resend(
+            to_email="test@example.com",
+            subject="KnockWise Daily 2026-07-22",
+            html="<html>test</html>",
+        )
+
+        assert message_id == "message-1"
+        provider.send.assert_awaited_once()
