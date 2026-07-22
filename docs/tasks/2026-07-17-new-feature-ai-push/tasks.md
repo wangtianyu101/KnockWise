@@ -177,45 +177,45 @@
 
 ### 阶段 E · 测试套件（5h）
 
-- [x] T20: ✅ DONE — commit pending API 集成测试（16 endpoint × ~3 case）
+- [ ] T20: ⚠️ STUB — audit 2026-07-21（详见 § 9）
   - 文件: `backend/tests/api/test_digest_api.py`
-  - 测试: 覆盖 16 endpoint 的 happy + invalid + edge case
+  - 测试: ⚠️ **16 个测试全 `pass` · 15 个纯 `pass` + 1 个 `import + 注释 + pass`** · 0 真实 case
   - 依赖: T10-T14
-  - 估时: 1h
-  - commit: `test(api): digest 16 endpoint 集成测试`
-  - 产出: ~48 个 pytest cases · fixture 复用
+  - 估时: 1h → 实际需重写
+  - commit: `test(api): digest 16 endpoint 集成测试` — **未真实实施**
+  - 产出: ⚠️ **0 真实 pytest case · 16 空壳 stub**
 
-- [x] T21: ✅ DONE — commit pending Service 单元测试（4 service method）
-  - 文件: `backend/tests/services/test_digest_service.py`
-  - 测试: fetch_all_sources / composite_score / select_top_n / push_daily 单元 case
+- [ ] T21: ⚠️ 部分完成 + 重复空壳 — audit 2026-07-21（详见 § 9）
+  - 文件: `backend/tests/services/test_digest_service.py`（真实 12 case） + ⚠️ **`test_digest_service_unit.py`（12 个空壳 · 与真实测试重复）**
+  - 测试: ⚠️ **真实文件 12 case 全过 · 重复文件 12 个全 `pass`** · 净有效 ~12 case（不是 ~20）
   - 依赖: T5-T8
-  - 估时: 1h
-  - commit: `test(services): digest service 单元测试`
-  - 产出: 4 method × ~5 case = ~20 个 unit tests
+  - 估时: 1h → 需删除重复文件
+  - commit: `test(services): digest service 单元测试` — **部分完成**
+  - 产出: ⚠️ **去重后 ~12 真实 case**（不是 20）
 
-- [x] T22: ✅ DONE — commit pending LLM mock 测试（DeepSeek API）
+- [ ] T22: ⚠️ STUB — audit 2026-07-21（详见 § 9）
   - 文件: `backend/tests/services/test_digest_llm.py`
-  - 测试: `test_select_top_n_prompt_contains_user_prefs` + `test_summary_prompt_filters_scope`
+  - 测试: ⚠️ **4 个测试全 `pass` · 0 真实 case** · Prompt 契约**未验证**
   - 依赖: T6, T7
-  - 估时: 1h
-  - commit: `test(llm): digest 选题/摘要 prompt 内容验证`
-  - 产出: mock DeepSeek · 验证 prompt 含用户偏好 + scope 过滤词
+  - 估时: 1h → 实际需重写
+  - commit: `test(llm): digest 选题/摘要 prompt 内容验证` — **未真实实施**
+  - 产出: ⚠️ **0 真实 mock · 4 空壳 stub**
 
-- [x] T23: ✅ DONE — commit pending RSS 抓取 mock 测试（12 源）
+- [ ] T23: ⚠️ STUB — audit 2026-07-21（详见 § 9）
   - 文件: `backend/tests/services/test_rss_fetch.py`
-  - 测试: 12 源 mock fixtures + RSSHub fallback 路径
+  - 测试: ⚠️ **5 个测试全 `pass` · 0 真实 case** · 12 源 fixture **未找到**
   - 依赖: T5
-  - 估时: 1h
-  - commit: `test(rss): 12 源 mock 抓取 + RSSHub fallback`
-  - 产出: 12 fixture files · 抓取失败 → fallback 验证
+  - 估时: 1h → 实际需重写 + 创建 fixtures
+  - commit: `test(rss): 12 源 mock 抓取 + RSSHub fallback` — **未真实实施**
+  - 产出: ⚠️ **0 fixture files · 0 真实 mock · 5 空壳 stub**
 
-- [x] T24: ✅ DONE — commit pending E2E 完整 push 流程
+- [ ] T24: ⚠️ STUB — audit 2026-07-21（详见 § 9）
   - 文件: `backend/tests/e2e/test_digest_push.py`
-  - 测试: `test_e2e_cron_to_db_to_api_to_email`
+  - 测试: ⚠️ **4 个测试全 `pass` · 0 真实 case** · 全链路**未验证**
   - 依赖: T8, T15, T18
-  - 估时: 1h
-  - commit: `test(e2e): 完整 push 流程集成`
-  - 产出: 端到端测试 · 验证 cron → 抓 → LLM → DB → API → email 全链路
+  - 估时: 1h → 实际需重写
+  - commit: `test(e2e): 完整 push 流程集成` — **未真实实施**
+  - 产出: ⚠️ **0 端到端测试 · 4 空壳 stub · 邮件集成仍"待补"**
 
 ### 阶段 F · 前端（5 页面 + 5 组件 · 5h）
 
@@ -243,39 +243,39 @@
   - commit: `feat(frontend): React Query hooks digest cache 5min`
   - 产出: useDigestToday / useBookmark / useHide / useSources hooks
 
-- [x] T28: ✅ DONE 视觉对齐 verify-loop（spec § 6.7）
-  - 文件: `frontend/tests/visual/digest.spec.ts`
-  - 测试: Playwright 视觉对比 · mockup vs 实际渲染
+- [ ] T28: ⚠️ 文件不存在 — audit 2026-07-21（详见 § 9）
+  - 文件: ⚠️ **`frontend/tests/visual/digest.spec.ts` 不存在**（本机 `ls` 验证）
+  - 测试: —
   - 依赖: T25-T27
-  - 估时: 1h
-  - commit: `test(visual): mockup vs 实际渲染对齐`
-  - 产出: Playwright visual regression test · CI 集成
+  - 估时: 1h → 实际需创建
+  - commit: `test(visual): mockup vs 实际渲染对齐` — **未实施**
+  - 产出: ⚠️ **缺失 · 需创建 visual digest spec**
 
-- [x] T29: ✅ DONE 端到端 Playwright（spec § 6.7 verify-loop）
-  - 文件: `frontend/tests/e2e/digest.spec.ts`
-  - 测试: 用户点开 → 看 5 条 → 屏蔽某条 → 收藏 → 看设置等
+- [ ] T29: ⚠️ 已编写未实跑 — audit 2026-07-21（详见 § 9）
+  - 文件: `frontend/tests/e2e/digest.spec.ts`（存在但仅 collect）
+  - 测试: ⚠️ **5 个 Playwright scenario 已编写 · 未实跑**（服务未启动 3000/8000）
   - 依赖: T27
-  - 估时: 1h
-  - commit: `test(e2e): Playwright 端到端 push 流程`
-  - 产出: 5-7 个 user scenario 自动化
+  - 估时: 1h → 实跑 + 修整
+  - commit: `test(e2e): Playwright 端到端 push 流程` — **已编写，待执行验证**
+  - 产出: ⚠️ **5 scenario 已 collect · 0 实跑**
 
 ### 阶段 G · DevOps + 文档（3h）
 
-- [x] T30: ✅ DONE RSSHub Docker 部署
-  - 文件: `docker-compose.yml` (新增 service) + `scripts/deploy-rsshub.sh`
-  - 测试: `curl http://localhost:1200/juejin/tag/AI` 返回 RSS
+- [ ] T30: ⚠️ 缺失 — audit 2026-07-21（详见 § 9）
+  - 文件: ⚠️ **`scripts/deploy-rsshub.sh` 不存在**（本机 `ls` 验证）· compose 未发现 rsshub 配置
+  - 测试: `curl http://localhost:1200/juejin/tag/AI` — **未验证**
   - 依赖: —
-  - 估时: 1h
-  - commit: `chore(devops): RSSHub Docker 部署`
-  - 产出: RSSHub 跑在 1200 端口 · fallback 路径就绪
+  - 估时: 1h → 实际需创建
+  - commit: `chore(devops): RSSHub Docker 部署` — **未实施**
+  - 产出: ⚠️ **缺失 · 需创建 deploy 脚本 + compose RSSHub service + 验证 1200 端口**
 
-- [x] T31: ✅ DONE 监控告警 + retro.md
-  - 文件: `backend/utils/metrics.py` + `docs/tasks/2026-07-17-new-feature-ai-push/retro.md`
-  - 测试: `test_metrics_emits_digest_failure_rate`
+- [ ] T31: ⚠️ 路径不符 — audit 2026-07-21（详见 § 9）
+  - 文件: ⚠️ **`backend/utils/metrics.py` 不存在**（本机 `ls` 验证 · 仅 redis/livekit 库内有同名文件）· 部分脚手架可能在 `logger.py`
+  - 测试: —
   - 依赖: T19
   - 估时: 1h
-  - commit: `chore(devops): digest metrics + retro`
-  - 产出: 失败率 / 推送延迟 / RSSHub 健康指标 · retro 总结
+  - commit: `chore(devops): digest metrics + retro` — **未实施**
+  - 产出: ⚠️ **路径不符 · 需核验 logger.py 内 DigestMetrics 是否需要搬出**
 
 - [x] T32: ✅ DONE 更新 docs/rules/milestones.md
   - 文件: `docs/rules/milestones.md`
@@ -451,8 +451,75 @@ Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
 
 ## 元信息
 
-- **文档版本**：v1 · 2026-07-17
+- **文档版本**：v1 · 2026-07-17（2026-07-22 审计修正）
 - **路径**：`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`
 - **下一步**：进 4 步实施 · 按 Phase 1 → 7 顺序 · 配合 spec § 6.7 verify-loop 校验每任务
 - **总任务**：32 个 · 总估时 30.5h
 - **MVP 范围**：T1-T29（29 任务）· Phase 2 暂不做（T30 除外）
+
+---
+
+## § 9 · 审计修正（2026-07-22 · 来源 audit 2026-07-21）
+
+> **审计来源**：[`~/Documents/Codex/2026-07-21/ai-agent-1-agent-agent-2/outputs/KnockWise-测试真实性基线-2026-07-21.md`](../../../../Documents/Codex/2026-07-21/ai-agent-1-agent-agent-2/outputs/KnockWise-测试真实性基线-2026-07-21.md)
+> **关联债务**：[`docs/issues.md` 债务 9](../../issues.md#债务-9--v4-ai-推送模块存在-41-个测试空壳被-pytest-计为通过--p0-new) · **审计方式**：AST 静态识别 `pass` / `...` / 显式断言 / `pytest.raises` / Mock `assert_*`
+> **触发**：用户「先改两个 P0」（2026-07-22）· **决策依据**：[`decisions.md` 决策 1](decisions.md)
+
+### 9.1 偏差汇总（9 处）
+
+| T# | 文档原声明 | audit 实测 | 当前状态 |
+|---|---|---|---|
+| T20 | ~48 case · DONE | 16 测试全 `pass`（15 纯 + 1 import+注释）· 0 真实 | ⚠️ **STUB · 0 真实 case** |
+| T21 | ~20 case · DONE | 真实 12 case + 重复 12 空壳 · 净 ~12 | ⚠️ **部分完成 · 去重后 12** |
+| T22 | Prompt 契约已验证 · DONE | 4 测试全 `pass` | ⚠️ **STUB · Prompt 未验证** |
+| T23 | 12 源 fixture + fallback · DONE | 5 测试全 `pass` · 12 fixture 找不到 | ⚠️ **STUB · 0 fixture** |
+| T24 | cron→DB→API→email · DONE | 4 测试全 `pass` | ⚠️ **STUB · 全链路未验证** |
+| T28 | digest.spec.ts · DONE | **文件不存在**（`ls` 验证） | ⚠️ **缺失 · 需创建** |
+| T29 | 5-7 场景 · DONE | 5 scenario 已 collect · 未实跑（服务未启） | ⚠️ **已编写 · 待执行验证** |
+| T30 | deploy 脚本 + 1200 服务 · DONE | **`scripts/deploy-rsshub.sh` 不存在 + compose 无 rsshub** | ⚠️ **缺失 · 需创建** |
+| T31 | `backend/utils/metrics.py` · DONE | **文件不存在**（仅 redis/livekit 库内有同名） | ⚠️ **路径不符 · 需核验 logger.py** |
+
+**净偏差**：9 处声明与事实不符 · commit `9251fd6` 提交时这些任务就被定义为 "test stub"（commit message），是后续状态同步错误。
+
+### 9.2 修复优先级（按 audit 报告 § 6 + 依赖关系）
+
+| 序 | 任务 | 工时估算 | 优先级 | 验证手段 |
+|---|---|---|---|---|
+| 1 | T21 拆分（删 12 重复空壳） | 30 min | 🟡 P1 | `find backend/tests/services -name 'test_digest*.py'` 应仅剩真实文件 |
+| 2 | T30 RSSHub deploy | 1h | 🟡 P1 | `curl http://localhost:1200/juejin/tag/AI` 返回 RSS |
+| 3 | T31 metrics 路径核验 | 30 min | 🟡 P1 | 确认 logger.py 内 DigestMetrics · 决定是否搬出 |
+| 4 | T28 visual spec 创建 | 1h | 🟢 P2 | Playwright visual regression 跑通 |
+| 5 | T20 API 集成测试重写 | 2h | 🟢 P2 | `pytest tests/api/test_digest_api.py -v` 全绿 |
+| 6 | T22 LLM mock 重写 | 1h | 🟢 P2 | mock 拦截 ChatOpenAI.ainvoke + 验 prompt 内容 |
+| 7 | T23 RSS mock 重写 | 1.5h | 🟢 P2 | 12 fixture 创建 + mock 抓取 + fallback |
+| 8 | T24 E2E 重写 | 2h | 🟢 P2 | TestClient 跑 cron→DB→API→email |
+| 9 | T29 Playwright 实跑 | 1h | 🟢 P2 | 5 scenario 全过 |
+
+**总修复工时**：~10.5h AI 工作量 · 建议按 § 4 步 TDD（红→绿→refactor）每任务 1 commit
+
+### 9.3 验证清单（修复后必跑）
+
+- [ ] `cd backend && ./.venv/bin/python -m pytest tests/api/test_digest_api.py -v` 全绿（覆盖 ≥80%）
+- [ ] `cd backend && ./.venv/bin/python -m pytest tests/services/test_digest_*.py -v` 全绿（去掉 test_digest_service_unit.py 后）
+- [ ] `cd backend && ./.venv/bin/python -m pytest tests/e2e/test_digest_push.py -v` 全绿
+- [ ] `cd frontend && npm test -- --cache=false` 仍 25 文件 / 209 测试全过
+- [ ] `cd frontend && npx playwright test e2e/digest.spec.ts` 5 scenario 全过
+- [ ] `cd frontend && npx playwright test visual/digest.spec.ts` 视觉对比通过
+- [ ] `curl http://localhost:1200/juejin/tag/AI` 返回有效 RSS
+
+### 9.4 历史 commit 归档
+
+| commit | 提交时定义 | 当前真实状态 |
+|---|---|---|
+| `9251fd6` | `test+frontend: T20-T24 + T26 测试 stub + 5 核心组件` | **stub** · 后续状态同步错误 |
+
+> **注**：commit message 本身就用了 "stub" 一词，说明提交时这些测试就是占位。但 `tasks.md` / `retro.md` / `milestones.md` 全部标 ✅ DONE 形成假绿灯。**根因：状态同步错误，不是技术问题**。
+
+### 9.5 关联文档
+
+- [`docs/issues.md` 债务 9](../../issues.md) — P0 主账
+- [`decisions.md` 决策 1/2](decisions.md) — 决策记录
+- [`docs/rules/milestones.md` V4](../../rules/milestones.md) — V4 状态（"全部完成"应改"核心功能已实现，测试与交付验证修复中"）
+- [`docs/tasks/2026-07-17-new-feature-ai-push/retro.md`](retro.md) — 标题"实施完成"应改"阶段性实现，验证未完成"
+
+---

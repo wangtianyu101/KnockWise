@@ -13,14 +13,17 @@
 > - 🟡 **议题 B** 默认按职责拆（lifecycle/runtime/query）· 待用户最终确认
 > - ✅ **议题 C** 全力全双工（路径 2）：三路径全替换 + transcript+语音 UI + LiveKit built-in VAD
 > - 🟡 **议题 D + F** 暂缓，与 🔴 组并行不冲突
+> - 🔴 **2026-07-22 新增债务 9**：V4 AI 推送模块存在 **41 个测试空壳被 pytest 计为通过**（详见三、债务 9）· 用户原话「先改两个 P0」
 
 ---
 
 ## 决策更新（2026-07-22）
 
-> 📌 **决策主账**：[`docs/tasks/2026-07-21-issues-audit/decisions.md`](tasks/2026-07-21-issues-audit/decisions.md)
+> 📌 **决策主账**（按任务独立 · CLAUDE.md § 6.9）：
+> - 审计任务：[`docs/tasks/2026-07-21-issues-audit/decisions.md`](tasks/2026-07-21-issues-audit/decisions.md)（议题 A/B/C/D/F · 1-10/15-17）
+> - V4 AI 推送：[`docs/tasks/2026-07-17-new-feature-ai-push/decisions.md`](tasks/2026-07-17-new-feature-ai-push/decisions.md)（V4 决策 1/2 = 原审计 13/14 · 已迁）
 >
-> 本节是简表镜像 · 详细记录请看 decisions.md
+> 本节是简表镜像 · 详细记录请看对应 decisions.md
 
 | # | 决策项 | 选择 | 状态 |
 |---|---|---|---|
@@ -34,6 +37,8 @@
 | 8 | 议题 C UI 形态 | ✅ transcript+语音（Q2=2） | ✅ 已决策 |
 | 9 | 议题 C VAD 策略 | ✅ LiveKit built-in（Q3=1） | ✅ 已决策 |
 | 10 | 进 § 1 规格 | ✅ spec.md + design-spec.md + mockup | ✅ 已决策 |
+| 11 | V4 假绿灯处置（债务 9） → [V4 决策 1](tasks/2026-07-17-new-feature-ai-push/decisions.md) | 🔴 **立即修** | 🔴 已决策（执行中） |
+| 12 | 债务 3 数字偏差（29 → 41） → [V4 决策 2](tasks/2026-07-17-new-feature-ai-push/decisions.md) | 🔴 **同步修** | 🔴 已决策（执行中） |
 
 ---
 
@@ -215,6 +220,64 @@ DELETE FROM user_questions WHERE user_id = ?;
 
 ---
 
+### 债务 9 — V4 AI 推送模块存在 41 个测试空壳被 pytest 计为通过 🔴 P0 NEW
+
+**位置**：以下 5 个文件全部位于 V4（`docs/tasks/2026-07-17-new-feature-ai-push/`）模块
+
+**审计来源**：[`KnockWise-测试真实性基线-2026-07-21.md`](~/Documents/Codex/2026-07-21/ai-agent-1-agent-agent-2/outputs/KnockWise-测试真实性基线-2026-07-21.md)（2026-07-21 Codex 双 agent 静态 AST 审计）· 本机 `find backend/tests -name "test_*.py" | wc -l` 递归实测 = **41**（与审计一致）
+
+**背景**：commit `9251fd6` 提交时这些测试在 commit message 就被定义为 **"test stub"**（标题：`test+frontend: T20-T24 + T26 测试 stub + 5 核心组件`），但随后 `tasks.md` / `retro.md` / `milestones.md` 全部标为 ✅ DONE，形成"假绿灯"状态。
+
+**空壳分布**（41 个空壳 + 0 真实测试）：
+
+| 文件 | 测试数 | 全部空壳 | 备注 |
+|---|---:|---:|---|
+| `backend/tests/api/test_digest_api.py` | 16 | 16 | 15 个纯 `pass` + 1 个 `import + 注释 + pass` |
+| `backend/tests/e2e/test_digest_push.py` | 4 | 4 | 全 `pass` |
+| `backend/tests/services/test_digest_llm.py` | 4 | 4 | 全 `pass` |
+| `backend/tests/services/test_digest_service_unit.py` | 12 | 12 | 全 `pass` + 与真实 Digest 测试**重复** |
+| `backend/tests/services/test_rss_fetch.py` | 5 | 5 | 全 `pass` · 12 源 fixture 找不到 |
+| **合计** | **41** | **41** | pytest 会全计为通过 |
+
+**额外 3 个弱测试**（不在 41 个内，但建议复核）：
+- `test_interview_filters.py::test_status_filter_is_applied` → 准备 Mock 但不调用接口，可认定为假绿灯
+- `test_archive_service.py::test_logs_count_when_archived` → 只验"没崩"
+- `test_cache.py::test_close_idempotent` → 用"不抛异常"表达幂等
+
+**影响**：
+- V4 模块的 "32 个 Tasks 全部完成" 声明不成立（tasks.md T20-T24 / T28-T31 全部 ✅ DONE 但实际无效）
+- milestones.md V4 "全部完成" 是统计幻觉
+- retro.md "49+ 测试类" 数字混淆（测试类 / 测试函数 / 空壳测试 混算）
+- verify.md (`docs/tasks/2026-07-17-new-feature-ai-push/verify.md`) **不存在** · 验证阶段未真正完成
+- 邮件真实集成在 retro.md 自己的改进项中仍写"待补"
+- 后端当前无 pytest 运行环境（`backend/.venv` 不存在），无法现场验证修复效果
+
+**修复路径**（建议按 § 4 步分批，每任务 1 commit）：
+1. **T20 重写**：16 endpoint × happy + invalid + edge 用 `TestClient` + fixture 跑通（约 48 case）
+2. **T21 拆分**：删除 `test_digest_service_unit.py` 12 个空壳（与真实测试重复），让 `test_digest_service.py` 12 case + `test_digest_composite_score.py` 23 + `test_digest_push_daily.py` 5 + `test_digest_select_top_n.py` 8 作为真实单测基线
+3. **T22 重写**：4 个 LLM mock 测试用 `unittest.mock` 拦截 `ChatOpenAI.ainvoke` + 验证 prompt 含用户偏好 + scope 过滤词
+4. **T23 重写**：5 个 RSS mock + 12 源 fixture（实际创建 `backend/tests/fixtures/rss/*.xml`）
+5. **T24 重写**：4 个 E2E 用 `TestClient` 跑 `cron → DB → API → email` 全链路（可 mock email）
+6. **T28 视觉测试**：创建 `frontend/tests/visual/digest.spec.ts`（spec § 6.7 verify-loop）
+7. **T29 E2E**：5 个 Playwright scenario 实跑（已编写但未执行）
+8. **T30 RSSHub**：创建 `scripts/deploy-rsshub.sh` + `docker-compose.yml` RSSHub service + `curl http://localhost:1200/juejin/tag/AI` 验证
+9. **T31 metrics**：将 `backend/utils/logger.py` 内的 `DigestMetrics` 搬出到独立 `backend/utils/metrics.py` 并暴露接口
+
+**验证手段**：
+- 重建 `backend/.venv` 后 `pytest backend/tests --collect-only` 收集所有测试
+- `pytest backend/tests/api/test_digest_api.py -v` 跑 16 endpoint 测试
+- 跑完用 `pytest --tb=short --cov=backend/services/digest_service --cov-report=term-missing` 输出覆盖率
+
+**优先级**：🔴 **P0（高优工程债务）**——直接影响 V4 模块的可信度与"完成度"声明
+**修复工时估算**：约 6-8h AI 工作量（含跑通）
+**关联决策**：decisions.md 决策 11 + 12（2026-07-22 新增）
+**关联文档**：
+- [`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`](tasks/2026-07-17-new-feature-ai-push/tasks.md)（T20-T31 状态即将同步校正）
+- [`docs/tasks/2026-07-17-new-feature-ai-push/retro.md`](tasks/2026-07-17-new-feature-ai-push/retro.md)（标题"实施完成"应改"阶段性实现，验证未完成"）
+- [`docs/rules/milestones.md`](rules/milestones.md) V4 状态（"全部完成"应改"核心功能已实现，测试与交付验证修复中"）
+
+---
+
 ### 债务 1 — 数据库缺少复合索引 ⚠️
 
 **位置**：`backend/models/__init__.py` 的 Interview / QuestionRecord
@@ -257,7 +320,9 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 **位置**：`backend/tests/` + `frontend/__tests__/`
 
-**现状（2026-07-21 清账）**：已有 **29 个后端 `test_*.py` 文件**（实测 `ls backend/tests/test_*.py | wc -l`）和 **25 个前端 Vitest 文件**（实测 `find frontend -name “*.test.*” -not -path “*/node_modules/*” | wc -l`），”几乎为零”已不成立；但仍需要用最新覆盖率报告确认核心 service 是否持续达到 ≥80%，并补齐关键 API contract / E2E。
+**现状（2026-07-22 数字修正）**：递归统计 `find backend/tests -name "test_*.py" -type f | wc -l` = **41 个**（含 `api/` `e2e/` `schemas/` `services/` 4 个子目录），顶层 `ls backend/tests/test_*.py | wc -l` = 29 个 —— 之前 29 数字是顶层漏算。**前端 25 个 Vitest 文件不变**（实测 `find frontend -name "*.test.*" -not -path "*/node_modules/*" | wc -l`）。
+
+⚠️ **关联债务 9**：V4 AI 推送模块的 5 个文件含 **41 个确定空壳测试**（纯 `pass`），pytest 会全计为通过。这部分"覆盖"是虚假绿光，详见三、债务 9。
 
 注：`pyproject.toml` 无 coverage 配置；`requirements.txt:29` 列了 `pytest-cov>=6.0.0` 但未启用；无 `.coverage` / `htmlcov` 文件。
 
@@ -265,6 +330,7 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 1. 核心 service 单测（`interview_service.process_answer`、`report_agent.generate_report`）
 2. API contract 测试（OpenAPI snapshot）
 3. E2E happy path 1-2 个
+4. **修复债务 9**：V4 41 个空壳测试重写
 
 **优先级**：中（重构前必做，否则改完没信心）
 
