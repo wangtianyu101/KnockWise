@@ -350,7 +350,7 @@
   - 估时: 1h → 实际约 25 min
   - 边界: RSSHub 仅对有明确 route 的来源 fallback；官方源继续 fail closed
 
-- [x] T37: ✅ DONE — commit `pending` · Digest LLM contract + Email provider boundary
+- [x] T37: ✅ DONE — commit `8d48fb2` · Digest LLM contract + Email provider boundary
   - 文件: `backend/services/{digest_llm_service.py,email_service.py,digest_service.py}` + 对应 tests
   - 测试: ✅ **17 passed / 3 xfailed**（定向）；✅ 后端全量 **711 passed / 1 skipped / 4 xfailed**；quality **47 files / 692 tests / 0 violations**
   - 依赖: T36 / V5-01 / V5-03
@@ -491,7 +491,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T34 | `bcd6f78` + `3ff6566` | 1h | ~55min |
 | T35 | `ef0a342` | 1h | ~55min |
 | T36 | `dec649d` | 1h | ~25min |
-| T37 | `pending` | 1h | ~25min |
+| T37 | `8d48fb2` | 1h | ~25min |
 | **小计** | 11 commits | 8.75h | ~6.5h |
 
 ---
