@@ -46,8 +46,21 @@
 - [ ] 跑 `git status`（看 unstaged / 多 agent 冲突）
 - [ ] 找到 ≥ 3 个相关文件
 - [ ] 列出依赖影响（改 A 会影响 B/C）
-- [ ] 风险点带等级（🔴/🟡/🟢）+ 缓解方案
+- [ ] 风险点带等级（🔴/🟡/🟢）+ 缓解方案（**涉及 CI/CD / Agent / 密钥 / 网络 / 文件系统时还要过 § 0.2.1 安全审查**）
 - [ ] 给完整 6 步路径建议
+
+### 0.2.1 安全审查清单（涉及 CI/CD / DevOps / Agent / 网络 / 密钥 / 高权限操作时必做）
+
+> 📌 **2026-07-22 新增**（源自 CI auto-fix 任务调研盲点 · 见 [memory `feedback-ai-agent-security-4-gates`](~/.claude/projects/-Users-wangtianyu-IdeaProjects-KnockWise/memory/feedback-ai-agent-security-4-gates.md)）
+
+- [ ] **官方安全文档已读**
+  - CI/CD → [GitHub Actions Security Hardening](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
+  - Web → OWASP Top 10 / CWE
+  - LLM/Agent → [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [ ] **威胁模型 ≥ 3 个场景**（攻击者能力 + 攻击向量 + 影响 + 等级）
+- [ ] **权限边界图**（ASCII 画"哪些组件有 secrets / 哪些需要 approval / 哪些只读"）
+- [ ] **外部依赖审查**（第三方 Action / 库 / API 必须列出完整 SHA 或锁定版本，**禁止** `@main` / `@beta` / `@v1` 等移动 tag）
+- [ ] **不可信输入清单**（LLM/Agent 接收的所有外部数据源 + 净化策略）
 
 ### 0.3 产物落地
 
@@ -169,6 +182,12 @@
 - [ ] Pydantic schema 的 Literal/Range 校验有测试
 - [ ] Bug 修复有回归测试
 - [ ] `pytest` / `vitest` 全绿才 commit
+- [ ] **安全审查**（涉及 CI/CD / Agent / 密钥 / 网络 / 文件系统时必做）
+  - [ ] 过 § 6.10 节 4 道关（不可信输入净化 / 权限分层 / 供应链防御 / 人工 gate）
+  - [ ] 无移动 tag（`@beta` / `@main` / `@v1`）· 第三方 Action 必 pin 完整 SHA
+  - [ ] 无 secrets + checkout 非可信代码同 job
+  - [ ] 无 LLM 直接读不可信数据（CI 日志 / commit msg / PR 标题视为不可信）
+  - [ ] 高权限操作有 environment approval
 
 ### 6.4 违反处置
 
@@ -349,6 +368,55 @@ verifier (独立 Agent prompt)
 - ❌ 把 decisions.md 散在多个 task 目录（统一放 task 目录）
 
 **memory**：`feedback-decisions-sync-to-decisions.md` · 完整例子和反例在该文件
+
+### 6.10 AI Agent 安全强制规则（2026-07-22 新增 · P0 反模式）
+
+> 📌 **2026-07-22 新增**（源自 CI auto-fix 任务自我复盘 · 用户指出 P0 风险）
+
+任何 **"AI Agent + 不可信数据 + 高权限操作"** 场景必须过 **4 道关**：
+
+#### 关 1 · 不可信输入净化
+- LLM 接收的所有外部数据视为不可信：PR 标题 / commit msg / CI 日志 / 用户输入 / webhook payload
+- **不直接作为指令传 LLM** · 仅作"上下文摘要"（限定字段 + 截断长度 + 类型过滤）
+- 例：CI 日志只传"失败 job 名 + 错误类型 + 关键字符串前 200 字符"，不传原始堆栈
+
+#### 关 2 · 权限分层（最小权限）
+- 拆 **diagnostic job**（read-only，无 secrets）+ **action job**（env approval 后才有 secrets）
+- secrets 仅在 human-approved environment 内暴露
+- 单 job 同时有 secrets + checkout 非可信代码 = **反模式**
+
+#### 关 3 · 供应链防御
+- 第三方 Action 必须 pin **完整 40 字符 SHA**（非 `@main` / `@beta` / `@v1` / `@latest`）
+- 例：`anthropics/claude-code-action@a1b2c3d4e5f6...` （40 字符）
+- 升级前先 review 新 SHA 对应 commit · 不自动跟随
+
+#### 关 4 · 人工审批 gate
+- "AI 自动 push 到 main" / "AI 触发 workflow_run" / "AI 暴露 secrets" 必须 **environment approval**
+- "全自动 commit 推原 PR" = 反模式（除非 threat model 评估通过 + 人工 gate）
+
+#### 反例（不要做）
+
+- ❌ `workflow_run` 触发 + `contents: write` + checkout 非可信代码 + `secrets: ANTHROPIC_API_KEY`
+- ❌ LLM 直接读 raw CI 日志并据此改代码
+- ❌ Action 用 `@beta` / `@main` / `@v1` 等移动 tag
+- ❌ Auto-fix 直接 push 到原 PR 分支（绕开人工 review）
+- ❌ 自我豁免标记（`[NO-TEST-NEEDED]`）作为唯一合规手段
+- ❌ Fork PR 自动 checkout 并跑任意代码
+- ❌ 高权限 workflow 不分 job（read-only 诊断 + 写入同 job）
+
+#### 关联文档
+
+- § 0.2.1 安全审查清单（调研阶段必做）
+- § 6.3 自检清单（commit 前必过安全审查）
+- § 6.10 即本节（强制规则）
+
+#### memory
+
+- `feedback-ai-agent-security-4-gates.md`（4 道关主规则）
+- `feedback-workflow-run-secrets-risk.md`（P0 反模式案例）
+- `feedback-no-self-attestation-in-ci.md`（自我豁免不安全）
+- `feedback-pin-third-party-action-sha.md`（供应链防御）
+- `feedback-untrusted-data-not-instruction.md`（反 prompt injection）
 
 ### 6.7.1 进阶路径：Workflow tool（≥ 3 verify cycle 或 ≥ 5 phase 时升级 · 2026-07-17 整合）
 

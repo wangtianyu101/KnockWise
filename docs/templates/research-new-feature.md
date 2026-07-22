@@ -66,6 +66,16 @@ git log --oneline -10 -- <相关路径>
 | 议題沉积影响判断 | 🟡 | 必读 `docs/issues.md` |
 | 估时偏差 > 50% | 🟡 | 拆更小的 task |
 
+### 4.1 安全风险（涉及 CI/CD / Agent / 密钥 / 网络 / 高权限时必填 · CLAUDE.md § 0.2.1）
+
+| 风险 | 等级 | 缓解 |
+|---|---|---|
+| 密钥外发（secrets + 不可信代码） | 🔴 | 分层权限 · secrets 仅 env approval 后暴露 |
+| Fork PR / 不可信代码 checkout | 🔴 | 不处理 fork · 或 sandbox 执行 |
+| 供应链攻击（Action / 库被劫持） | 🔴 | 第三方 pin 完整 40 字符 SHA |
+| Prompt injection（不可信数据 → LLM） | 🔴 | 输入净化 · 不可信数据仅作"上下文摘要" |
+| 权限提升（低权限 job 调高权限 API） | 🟡 | 最小权限 · read-only job 拆出 |
+
 ## 5. 输出建议（必填）
 
 ### 5.1 推荐路径

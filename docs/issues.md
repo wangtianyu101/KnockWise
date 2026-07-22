@@ -14,6 +14,7 @@
 > - ✅ **议题 C** 全力全双工（路径 2）：三路径全替换 + transcript+语音 UI + LiveKit built-in VAD
 > - 🟡 **议题 D + F** 暂缓，与 🔴 组并行不冲突
 > - 🔴 **2026-07-22 新增债务 9**：V4 AI 推送模块存在 **41 个测试空壳被 pytest 计为通过**（详见三、债务 9）· 用户原话「先改两个 P0」
+> - 🟡 **2026-07-22 新增任务 · CI 失败自动修复**（[`tasks/2026-07-22-new-feature-ci-autofix/`](tasks/2026-07-22-new-feature-ci-autofix/research.md)）：v2 安全审查完成（research.md v2 + decisions.md 10/10 全拍 · CLAUDE.md § 6.10 4 道关全部对齐）· 进 1 步写 spec.md（10 Requirement）
 
 ---
 
@@ -22,6 +23,7 @@
 > 📌 **决策主账**（按任务独立 · CLAUDE.md § 6.9）：
 > - 审计任务：[`docs/tasks/2026-07-21-issues-audit/decisions.md`](tasks/2026-07-21-issues-audit/decisions.md)（议题 A/B/C/D/F · 1-10/15-17）
 > - V4 AI 推送：[`docs/tasks/2026-07-17-new-feature-ai-push/decisions.md`](tasks/2026-07-17-new-feature-ai-push/decisions.md)（V4 决策 1/2 = 原审计 13/14 · 已迁）
+> - **CI 失败自动修复（2026-07-22 v2）**：[`docs/tasks/2026-07-22-new-feature-ci-autofix/decisions.md`](tasks/2026-07-22-new-feature-ci-autofix/decisions.md)（决策 1-10 全拍 = 方案 1 + Draft PR + 3 次/commt + job 白名单加固 + 外部 check + $20/月 + Action pin SHA + 双 job + fork 排除 + 日志净化 · 含安全审查 4 道关）
 >
 > 本节是简表镜像 · 详细记录请看对应 decisions.md
 
@@ -39,6 +41,16 @@
 | 10 | 进 § 1 规格 | ✅ spec.md + design-spec.md + mockup | ✅ 已决策 |
 | 11 | V4 假绿灯处置（债务 9） → [V4 决策 1](tasks/2026-07-17-new-feature-ai-push/decisions.md) | 🔴 **立即修** | 🔴 已决策（执行中） |
 | 12 | 债务 3 数字偏差（29 → 41） → [V4 决策 2](tasks/2026-07-17-new-feature-ai-push/decisions.md) | 🔴 **同步修** | 🔴 已决策（执行中） |
+| 13 | CI auto-fix 选方案 → [CI 决策 1](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 方案 1（Claude Code Action + SHA 约束） | ✅ 已决策 |
+| 14 | CI auto-fix commit 模式（v2 修订）→ [CI 决策 2](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ Draft PR（v2 · 修订自推原分支） | ✅ 已决策 |
+| 15 | CI auto-fix 失败上限（v2 修订）→ [CI 决策 3](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 3 次/commt（v2 · 修订自 2 次） | ✅ 已决策 |
+| 16 | CI auto-fix job 白名单（v2 加固）→ [CI 决策 4](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 含 backend 限 typecheck/coverage + backend service 必走 Draft PR | ✅ 已决策 |
+| 17 | CI auto-fix 单测协同（v2 修订）→ [CI 决策 5](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 外部 check（T33 + pytest 实际绿 · v2 修订自自我豁免） | ✅ 已决策 |
+| 18 | CI auto-fix API 费用 → [CI 决策 6](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ $20/月 | ✅ 已决策 |
+| 19 | 🆕 CI auto-fix Action pin SHA（v2 新增）→ [CI 决策 7](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 完整 40 字符 SHA（非 @beta） | ✅ 已决策 |
+| 20 | 🆕 CI auto-fix 双 job 权限分层（v2 新增）→ [CI 决策 8](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ diagnostic（read-only）+ apply-fix（env approval） | ✅ 已决策 |
+| 21 | 🆕 CI auto-fix Fork PR 排除（v2 新增）→ [CI 决策 9](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 不处理 fork PR | ✅ 已决策 |
+| 22 | 🆕 CI auto-fix 日志净化（v2 新增）→ [CI 决策 10](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 仅传 job 名 + 错误类型 + 截断字符串 | ✅ 已决策 |
 
 ---
 
