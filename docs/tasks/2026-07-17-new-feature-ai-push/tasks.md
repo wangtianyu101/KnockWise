@@ -270,13 +270,14 @@
   - commit: `chore(devops): RSSHub Docker 部署` — **未实施**
   - 产出: ⚠️ **缺失 · 需创建 deploy 脚本 + compose RSSHub service + 验证 1200 端口**
 
-- [ ] T31: ⚠️ 路径不符 — audit 2026-07-21（详见 § 9）
-  - 文件: ⚠️ **`backend/utils/metrics.py` 不存在**（本机 `ls` 验证 · 仅 redis/livekit 库内有同名文件）· 部分脚手架可能在 `logger.py`
-  - 测试: —
+- [x] T31: ✅ DONE — commit pending 拆分（DigestMetrics logger.py → metrics.py）
+  - 文件: ✅ **`backend/utils/metrics.py` 已创建**（从 `utils/logger.py` 搬出 DigestMetrics 类 + digest_metrics 实例）
+  - 测试: ⚠️ **仍无测试**（dead code 状态 · 无 call site · 测试待真实集成阶段补）
   - 依赖: T19
-  - 估时: 1h
-  - commit: `chore(devops): digest metrics + retro` — **未实施**
-  - 产出: ⚠️ **路径不符 · 需核验 logger.py 内 DigestMetrics 是否需要搬出**
+  - 估时: 15 min（vs 估时 30min · 提前）
+  - commit: `refactor(utils): T31 拆分 · DigestMetrics 从 logger.py 搬出至 metrics.py` — **待 commit**
+  - 产出: ✅ **关注点拆分**（logger.py 专做 logging · metrics.py 专做指标）· **dead code 已标注 TODO + 接入指南**（见 `utils/metrics.py` 模块 docstring）
+  - 决策依据: 决策 1 § 3 "T31 metrics 路径核验" · 核验发现 = 当前 `DigestMetrics` 全代码库零调用 → 搬出 + 标注 dead code 是最小有效改动
 
 - [x] T32: ✅ DONE 更新 docs/rules/milestones.md
   - 文件: `docs/rules/milestones.md`

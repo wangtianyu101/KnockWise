@@ -1,6 +1,11 @@
-"""Logger + Observability (T19: 2026-07-17 实施).
+"""Logger + Trace ID (T19: 2026-07-17 实施).
 
-结构化日志 + trace_id + 关键 metrics
+结构化日志 + trace_id 上下文
+
+⚠️ **2026-07-22 audit（T31 路径核验）**：
+- `DigestMetrics` 类已从本文件搬出至 `utils/metrics.py`（拆分关注点）
+- logger.py 专做 logging + trace_id · metrics.py 专做指标采集
+- 无向后兼容 shim — 当前零调用方，搬出无破坏
 """
 from __future__ import annotations
 
@@ -68,40 +73,5 @@ def self_format_exc(exc_info) -> str:
     return "".join(traceback.format_exception(*exc_info))
 
 
-# Metrics 简易实现 (T19 关键指标)
-class DigestMetrics:
-    """关键指标 (failure_rate / push_latency / rsshub_health)。"""
-
-    def __init__(self):
-        self.counters: dict[str, int] = {
-            "push_total": 0,
-            "push_failed": 0,
-            "fetch_failures": 0,
-            "rsshub_routes_broken": 0,
-        }
-        self.timings: dict[str, list[float]] = {
-            "push_latency_ms": [],
-        }
-
-    def inc(self, key: str, by: int = 1):
-        self.counters[key] = self.counters.get(key, 0) + by
-
-    def timing(self, key: str, ms: float):
-        self.timings.setdefault(key, []).append(ms)
-
-    def snapshot(self) -> dict[str, Any]:
-        import statistics
-        snapshot = {"counters": dict(self.counters)}
-        snapshot["timings"] = {}
-        for k, vs in self.timings.items():
-            if vs:
-                snapshot["timings"][k] = {
-                    "count": len(vs), "avg": statistics.mean(vs),
-                    "p50": statistics.median(vs), "p95": sorted(vs)[int(len(vs) * 0.95)] if len(vs) > 1 else vs[0],
-                }
-        return snapshot
-
-
-# 模块级
-digest_metrics = DigestMetrics()
+# 模块级 logger 实例
 digest_logger = setup_logger("knockwise.digest")
