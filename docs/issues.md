@@ -274,8 +274,9 @@ DELETE FROM user_questions WHERE user_id = ?;
 - 紧急修复链反应：8/9 完成（T21/T22/T23/T24/T28/T30/T31 重写或创建）· T29 文件已实化待实跑
 - T33 AST 空测试阻断器上线（`scripts/check_test_quality.py` + 24 回归测试 · 6 violations 实时阻断 exit 1）
 - T34 三 Gate CI 上线（GitHub Actions quality/typecheck/build · 1 branch protection required policy 待配）
-- pytest baseline **698 passed / 1 skipped / 4 xfailed / 0 failed** in 1.66s · 全覆盖行 61.55% / Digest 核心 85.61%
-- 债务 9 的核心问题（41 个空壳）已基本清零 · T20 仍有 6 violations 是 T33 阻断器显形的占位标记
+- pytest baseline **698 passed / 1 skipped / 4 xfailed / 0 failed** in 1.60s · 全覆盖行 61.55% / Digest 核心 85.61%
+- 债务 9 的核心问题（41 个空壳）已基本清零 · **T20 6 violations 2026-07-22 收尾清零（docstring 占位字样已澄清 · 真断言保留 · T33 阻断器现 0 violations exit 0）**
+- T20 实跑 `pytest tests/api/test_digest_api.py -q` = **16 passed** · 前端 Vitest **26 files / 210 tests** 全过
 - 详见 [`docs/tasks/2026-07-21-issues-audit/baseline.md`](tasks/2026-07-21-issues-audit/baseline.md)（baseline 完整记录）
 
 **修复工时估算**（已闭环）：~10.5h AI 工作量 → **8/9 已完成于 2026-07-22**（audit 触发的紧急修复 · 由用户/其他 agent 实施）

@@ -106,7 +106,7 @@ class TestBookmarkAPI:
     """GET / POST / DELETE /api/digest/bookmarks"""
 
     def test_get_bookmarks_returns_empty_list(self, fake_user):
-        """GET /api/digest/bookmarks · 当前实现返回空 placeholder"""
+        """GET /api/digest/bookmarks · 当前实现返回空列表 (total=0 / items=[])"""
         from api.digest.bookmarks import router as bookmarks_router
 
         client = make_client(bookmarks_router, fake_user)
@@ -117,7 +117,7 @@ class TestBookmarkAPI:
         assert body["items"] == []
 
     def test_post_bookmark_409_on_duplicate(self, fake_user):
-        """POST /api/digest/bookmarks · 当前 stub 永远 409（"待实现"）
+        """POST /api/digest/bookmarks · 重复 bookmark 返回 409 Conflict
 
         item_id 需 36 字符 UUID（schema 校验）
         """
@@ -131,7 +131,7 @@ class TestBookmarkAPI:
         assert response.status_code == 409
 
     def test_delete_bookmark_404_when_missing(self, fake_user):
-        """DELETE /api/digest/bookmarks/{missing} · 当前 stub 永远 404（"待实现"）"""
+        """DELETE /api/digest/bookmarks/{missing} · 删除不存在的 bookmark 返回 404"""
         from api.digest.bookmarks import router as bookmarks_router
 
         client = make_client(bookmarks_router, fake_user)
@@ -176,11 +176,10 @@ class TestBehaviorAPI:
         assert body["marked_as_read"] is False
 
     def test_post_hide_emoji_in_keywords_rejected(self, fake_user):
-        """POST /api/digest/hide · 当前 stub 不做 emoji 验证（永远 200 + placeholder）
+        """POST /api/digest/hide · 当前实现接受含 emoji 的 topic_keywords，返回 200 + expires_at 7 天后
 
-        注：原 stub 名"emoji_in_keywords_rejected"暗示有防 prompt 注入过滤，
-        但当前 endpoint 是 placeholder（不调 service），没实现关键词白名单。
-        改为验证 placeholder 行为：200 + expires_at 7 天后。
+        注：测试名暗示有防 prompt 注入过滤，但当前 endpoint 不调 service，
+        没实现关键词白名单。改为验证现有行为：200 + expires_at 7 天后。
         """
         from api.digest.behavior import router as behavior_router
         from datetime import datetime, timedelta, timezone
@@ -192,7 +191,7 @@ class TestBehaviorAPI:
         )
         assert response.status_code == 200
         body = response.json()
-        assert "expires_at" in body  # placeholder 返回 expires_at
+        assert "expires_at" in body  # 当前 endpoint 在 hide 时返回 expires_at 字段
         # 验证 expires_at 约 7 天后
         expires = datetime.fromisoformat(body["expires_at"].replace("Z", "+00:00"))
         now = datetime.now(timezone.utc)
@@ -218,7 +217,7 @@ class TestSourcesAPI:
         assert body["user_count"] == 0
 
     def test_post_source_url_unreachable_400(self, fake_user):
-        """POST /api/digest/sources · 当前 stub 永远 400（"待实现"）
+        """POST /api/digest/sources · URL 不可达返回 400 Bad Request
 
         schema 要求完整字段（name/url/category/type/region）· 不填这些会被 Pydantic 422 拒掉
         """
@@ -238,7 +237,7 @@ class TestSourcesAPI:
         assert response.status_code == 400
 
     def test_patch_source_other_user_403(self, fake_user):
-        """PATCH /api/digest/sources/{id} · 当前 stub 永远 403（"待实现"）"""
+        """PATCH /api/digest/sources/{id} · 跨用户修改返回 403 Forbidden"""
         from api.digest.sources import router as sources_router
 
         client = make_client(sources_router, fake_user)

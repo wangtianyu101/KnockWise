@@ -241,10 +241,12 @@ v2 七段必备：
 
 ### 12.4 v3 Retro 完成判定
 
-- ✅ 闭环判定可更新：v2「未完全闭环 · 进入 5 步验证 + 6-8h 修复」→ v3「8/9 闭环 · T29 待实跑 · 183 failed 审计（V1/V3 模块）独立未决」
+- ✅ 闭环判定可更新：v2「未完全闭环 · 进入 5 步验证 + 6-8h 修复」→ v3「8/9 闭环 · T29 待实跑 · T20 6 violations 2026-07-22 收尾清零」
 - ✅ pytest baseline 建立（audit § 7 阻塞项解除）
-- ✅ T33/T34 防御基建上线（**根因解决**）
-- 🟡 T29 Playwright 实跑 · 1 branch protection required policy · 183 failed 审计（V1/V3）= 3 项待跟进
+- ✅ T33 AST 阻断器 + T34 三 Gate CI 上线（**根因解决**）+ T20 6 violations docstring 误判**收尾清零（exit 0）**
+- ✅ **T20 收尾精化**：T33 报告的 6 violations 是 docstring 误判（不是 stub），按 stub-test-debt memory 第 6 类"误判召回"处置 —— 见 [`docs/issues.md` 债务 9](../../issues.md) v3 进展段 + [`docs/tasks/2026-07-21-issues-audit/baseline.md` § 剩余事项](../2026-07-21-issues-audit/baseline.md)
+- ✅ **183 failed 实际已闭环**：V4 retro v2 § 8.4 写 "183 failed 审计" 引用 v2 时点 pytest 实测，但 2026-07-22 紧急修复链反应**同时修了 V1/V3 模块的失败测试**（不是 stub 范围），现在 `pytest --tb=no -q` = **698 passed / 1 skipped / 4 xfailed / 0 failed** · 全清 · 详见 `baseline.md` § 总体数字
+- 🟡 2 项待跟进：T29 Playwright 实跑（dev server） + 1 GitHub branch protection required policy（用户 UI 操作）
 
 ---
 
