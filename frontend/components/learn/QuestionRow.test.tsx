@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import type {
   QuestionListItem,
-  QuestionProgressOut,
+  QuestionProgress,  // 2026-07-22 audit 修复 · 实际导出名（无 Out 后缀）
   MasteryStatus,
   QuestionSource,
   QAChatInput,
@@ -28,9 +28,9 @@ describe('types/learn.ts', () => {
     });
   });
 
-  describe('QuestionProgressOut', () => {
+  describe('QuestionProgress', () => {
     it('必填字段存在', () => {
-      const p: QuestionProgressOut = {
+      const p: QuestionProgress = {
         id: 'p1',
         status: 'new',
         practice_count: 0,
@@ -46,7 +46,7 @@ describe('types/learn.ts', () => {
     });
 
     it('可选字段可空', () => {
-      const p: QuestionProgressOut = {
+      const p: QuestionProgress = {
         id: 'p1',
         status: 'mastered',
         practice_count: 10,
