@@ -658,3 +658,9 @@ class DigestService:
         else:
             category = "headline"
         return {"type": item_type, "region": region, "category": category}
+
+
+# ─── 模块级 singleton（2026-07-22 audit 修复）────────────────
+# api/digest/daily.py:26 `from services.digest_service import digest_service` 一直期待这个实例
+# 之前缺失导致 GET /api/digest/today 抛 ImportError
+digest_service = DigestService()

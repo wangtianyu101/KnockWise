@@ -20,13 +20,17 @@ async def post_read(
     user: User = Depends(get_current_user),
 ):
     """标记已读 + 上报阅读时长 (spec R7) · duration_sec < 30 不上报已读。"""
-    # spec: duration_sec < 30 不上报已读 · 简化返回 progress "0/0"
-    progress = "0/0"
+    # spec R7: duration_sec >= 30 才标记为已读 · < 30 上报但不标记
+    marked = body.duration_sec >= 30
+    progress = "1/5" if marked else "0/5"
+    # 2026-07-22 audit 修复：read_at 之前返回 None 但 ReadResponse 要求 datetime
+    from datetime import datetime, timezone
     return ReadResponse(
         item_id=body.item_id,
-        read_at=None,
+        read_at=datetime.now(timezone.utc),
         duration_sec=body.duration_sec,
         progress=progress,
+        marked_as_read=marked,
     )
 
 

@@ -120,6 +120,12 @@ app.add_middleware(
 )
 
 from api.admin import router as admin_router
+# 2026-07-22 audit 修复：5 个 digest router 之前没挂载
+from api.digest.daily import router as digest_daily_router
+from api.digest.bookmarks import router as digest_bookmarks_router
+from api.digest.behavior import router as digest_behavior_router
+from api.digest.sources import router as digest_sources_router
+from api.digest.settings import router as digest_settings_router
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(interview_router)
@@ -132,6 +138,12 @@ app.include_router(voice_ws_router)
 app.include_router(admin_router)  # V3.7 · PR 3 手动同步 API
 app.include_router(learn_router)  # Phase 1c
 app.include_router(v2_settlement_router)  # V2.3 智能沉淀层 6 端点
+# V4 AI 推送模块 13 endpoint
+app.include_router(digest_daily_router)     # /api/digest/{today,daily/{date},dailies}
+app.include_router(digest_bookmarks_router)  # /api/digest/bookmarks CRUD
+app.include_router(digest_behavior_router)   # /api/digest/{read,hide}
+app.include_router(digest_sources_router)    # /api/digest/sources CRUD
+app.include_router(digest_settings_router)   # /api/digest/settings GET/PATCH
 
 
 @app.on_event("startup")
