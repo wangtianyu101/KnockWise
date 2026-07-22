@@ -293,6 +293,17 @@
   - commit: `docs(milestones): AI 推送 MVP 完成记录`
   - 产出: V4 AI push milestone 写入
 
+### 阶段 H · Harness 治理（阶段 3 · 1h）
+
+- [x] T33: ✅ DONE — commit 待本提交完成后回写 · AST 空测试阻断器
+  - 文件: `scripts/check_test_quality.py` + `backend/tests/test_check_test_quality.py`
+  - 测试: ✅ **23/23 通过**；覆盖 sync/async `pass`、`...`、仅 docstring、占位注释/docstring、函数/类级无理由 `skip/skipif`、合法 `assert` / `pytest.raises` / Mock 断言 / helper 契约、CLI 退出码
+  - 依赖: § 9 假绿灯审计基线
+  - 估时: 1h → 实际约 35 min
+  - commit: `ci(test): reject empty and placeholder Python tests` — **待提交后回写 hash**
+  - 产出: ✅ `python3 scripts/check_test_quality.py backend/tests` 可复现；当前真实工作树发现 **10 violations** 并返回 **exit 1**（T20 6 个占位标记 + T24 4 个空 E2E）
+  - 边界: 本阶段只交付 AST gate；GitHub Actions 接线属于 Harness 阶段 4，不在 T33 范围
+
 ---
 
 ## § 3 · 任务依赖图
@@ -350,6 +361,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T29 | e2e/digest.spec.ts | Playwright user scenario |
 | T30 | 部署后 curl 测试 | RSSHub 可达 |
 | T31-T32 | test_metrics + docs | 监控 + retro |
+| T33 | test_check_test_quality.py | 空测试/占位标记/无理由 skip + CLI 非零退出码 |
 
 ---
 
@@ -372,6 +384,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T18 | R6 定时 | — |
 | T25-T29 | component-spec § 1.5 | — |
 | T30 | plan.md 决策 1（RSSHub fallback）| — |
+| T33 | 用户确认的 Harness 治理阶段 3 | — |
 
 ---
 
@@ -385,7 +398,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 - 阶段 E（T20-T24）：5h
 - 阶段 F（T25-T29）：5h
 - 阶段 G（T30-T32）：2.5h
-- **总估时**：30.5h
+- 阶段 H（T33）：1h → 实际约 35min
+- **总估时**：31.5h
 - **已用**：3.0h（T1+T2+T5+T6）
 - **剩余**：~27.5h
 - **实际偏差**：≤ 30%（事后验证 · 写入 retro.md）
@@ -399,7 +413,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T2 | `d7e09cd` | 45min | ~30min |
 | T5 | `4f8c92d` | 1h | ~45min |
 | T6 | `560ba40` | 1h | ~45min |
-| **小计** | 4 commits | 3.75h | 3.0h |
+| T33 | 待本提交完成后回写 | 1h | ~35min |
+| **小计** | 4 commits + T33 pending | 4.75h | ~3h35min |
 
 ---
 
@@ -426,6 +441,9 @@ Phase 6 · 前端（T25-T29，5h）            ← Day 3 下午
 
 Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
   T30 → T31 → T32
+
+Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
+  T33（AST 空测试阻断器；CI 接线留阶段 4）
 ```
 
 **总周期**：~3.5 个工作日 · 已用 ~1h（3 commits）· 剩余 ~28.75h
@@ -440,7 +458,7 @@ Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
 - [x] 每任务 1 commit（commit 字段都填了）
 - [x] 每任务对应 ≥ 1 测试（"测试" 字段填了）
 - [x] 依赖关系 DAG（§ 3 拓扑图无环）
-- [x] 总估时 30.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
+- [x] 总估时 31.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
 
 ---
 
@@ -462,7 +480,7 @@ Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
 - **文档版本**：v1 · 2026-07-17（2026-07-22 审计修正）
 - **路径**：`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`
 - **下一步**：进 4 步实施 · 按 Phase 1 → 7 顺序 · 配合 spec § 6.7 verify-loop 校验每任务
-- **总任务**：32 个 · 总估时 30.5h
+- **总任务**：33 个 · 总估时 31.5h
 - **MVP 范围**：T1-T29（29 任务）· Phase 2 暂不做（T30 除外）
 
 ---
@@ -502,8 +520,9 @@ Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
 | 7 | T23 RSS mock 重写 | 1.5h | 🟢 P2 | 12 fixture 创建 + mock 抓取 + fallback |
 | 8 | T24 E2E 重写 | 2h | 🟢 P2 | TestClient 跑 cron→DB→API→email |
 | 9 | T29 Playwright 实跑 | 1h | 🟢 P2 | 5 scenario 全过 |
+| 10 | T33 AST 空测试阻断器 | 1h | 🔴 P0 | 23 回归测试全绿；对现存空测试返回非零 |
 
-**总修复工时**：~10.5h AI 工作量 · 建议按 § 4 步 TDD（红→绿→refactor）每任务 1 commit
+**总修复工时**：~11.5h AI 工作量 · 建议按 § 4 步 TDD（红→绿→refactor）每任务 1 commit
 
 ### 9.3 验证清单（修复后必跑）
 
@@ -514,6 +533,8 @@ Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
 - [ ] `cd frontend && npx playwright test e2e/digest.spec.ts` 5 scenario 全过
 - [ ] `cd frontend && npx playwright test visual/digest.spec.ts` 视觉对比通过
 - [ ] `curl http://localhost:1200/juejin/tag/AI` 返回有效 RSS
+- [x] `cd backend && ./.venv/bin/python -m pytest tests/test_check_test_quality.py -q` → **23 passed**
+- [ ] `python3 scripts/check_test_quality.py backend/tests` → 修完 T20/T24 后应为 **0 violations**（T33 实测当前为 10、exit 1，阻断器已生效）
 
 ### 9.4 历史 commit 归档
 
@@ -529,5 +550,16 @@ Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
 - [`decisions.md` 决策 1/2](decisions.md) — 决策记录
 - [`docs/rules/milestones.md` V4](../../rules/milestones.md) — V4 状态（"全部完成"应改"核心功能已实现，测试与交付验证修复中"）
 - [`docs/tasks/2026-07-17-new-feature-ai-push/retro.md`](retro.md) — 标题"实施完成"应改"阶段性实现，验证未完成"
+
+### 9.6 Harness 阶段 3 实施证据（T33）
+
+| 证据 | 实际结果 |
+|---|---|
+| TDD 红灯 | 初始 21 case 因检查器不存在而 setup error；补类级 skip case 后先得到 `1 failed, 22 passed` |
+| 专属回归 | `23 passed in 0.11s` |
+| 后端回归 | `680 passed, 3 skipped, 4 xfailed`（含并行中的 T20 工作树） |
+| 真实仓库扫描 | `40 files / 667 tests / 10 violations`，退出码 `1` |
+| 当前 violations | T20 6 个占位标记 + T24 4 个空 E2E |
+| 本阶段未做 | 不改 T20/T24；不接 GitHub Actions；不写最终 verify/retro |
 
 ---
