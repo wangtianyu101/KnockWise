@@ -2,7 +2,7 @@
 title: 数据库设计模板（db-design）
 date: 2026-06-30
 status: v1
-tags: [db-design, 1步, 数据库, 模板]
+tags: [db-design, 2步, 数据库, 模板]
 related:
   - [spec-template.md](spec-template.md) — 上游
   - [api-spec-template.md](api-spec-template.md) — 配套 API
@@ -16,7 +16,7 @@ related:
 >
 > **作者**：**AI 主导**（DBA / 后端 lead review）。
 >
-> **对应 DOD**：见 `docs/DOD.md` §四.5（6 条）。
+> **对应 DOD**：见 `docs/DOD.md` §四.2。
 
 ---
 
@@ -188,14 +188,13 @@ ALTER TABLE users DROP COLUMN push_enabled;
 
 ---
 
-## 6. 技术实现（plan 阶段后填 · ⚠️ 非 1 步必填）
+## 6. 技术实现（步骤 2 plan 拍板后填写）
 
-> **本段不在 1 步必填范围**——技术选型需要 2 步 plan 阶段确定。
+> db-design.md 整份文档属于步骤 2；技术选型需要在 plan 方案拍板后确定。
 >
 > **填写时机**：2 步 plan.md 完成后，回填本段。
 >
-> §1-5 是"业务契约"（表结构、字段、索引、ER 图），这些 1 步定。
-> §6 是"技术实现"（DB 引擎、ORM、迁移工具），这些 plan 后定。
+> §1-5 细化数据契约；§6 定义实现方式，均不得提前塞回步骤 1 的 spec.md。
 
 ### 6.1 数据库选型
 
@@ -239,4 +238,4 @@ ALTER TABLE users DROP COLUMN push_enabled;
 - [spec-template.md](spec-template.md) — 上游：技术规格
 - [plan-template.md](plan-template.md) — **2 步 plan 后填 §6**
 - [api-spec-template.md](api-spec-template.md) — 配套 API 设计
-- `docs/DOD.md` §三.5 — db-design.md DOD 定义
+- `docs/DOD.md` §四.2 — db-design.md DOD 定义

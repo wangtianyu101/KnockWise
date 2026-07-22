@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-check-step.py — 7 步 DOD 校验工具
+check-step.py — 6 步 v2 DOD 校验工具
 
 用法：
   python3 scripts/check-step.py research <file.md>
@@ -8,61 +8,78 @@ check-step.py — 7 步 DOD 校验工具
   python3 scripts/check-step.py plan <file.md>
   python3 scripts/check-step.py tasks <file.md>
   python3 scripts/check-step.py verify <file.md>
-  python3 scripts/check-step.py ship <file.md>
   python3 scripts/check-step.py retro <file.md>
 
 返回：
   退出码 0 = 校验通过
   退出码 1 = 校验失败（打印所有不通过项）
 
-校验规则参考 docs/DOD.md（7 步 × 38 条 DOD）
+校验规则参考 docs/DOD.md（0 调研前置 + 1-6 正式步骤）
 """
 import sys
 import os
 import re
 
 
+# ─── 豁免清单（白名单）───────────────────────────────────────
+# 这些文件不参与 DOD 校验（通常是已归档的旧格式文档或重构专用格式）
+# 维护规则：
+#   - 仅当文件无法/不值得迁移到当前标准格式时加入
+#   - 优先考虑 git mv 到 docs/archive/ 而不是加豁免
+#   - 每次加入要在 commit message 里写明理由
+EXEMPT_SPECS = [
+    # 旧 一/二/三...十 格式（v3.5 之前，已归档）
+    'docs/archive/spec-old-format/2026-06-22-new-feature-ai-push/spec.md',
+    'docs/archive/spec-old-format/2026-06-22-new-feature-question-bank/spec.md',
+    # 重构专用格式（结构与新功能 spec 不同，已归档）
+    'docs/archive/spec-old-format/2026-07-11-refactor-v3-mockup-align/spec.md',
+]
+
+
+def is_exempt(step, filepath):
+    """检查路径是否在豁免清单中"""
+    if step != 'spec':
+        return False
+    # 用 substring 匹配（兼容绝对路径和相对路径）
+    for exempt in EXEMPT_SPECS:
+        if exempt in filepath:
+            return True
+    return False
+
+
 # ─── 0 步 调研 ───────────────────────────────────────────────
 def check_research(content):
     errors = []
 
-    # 1. §0 任务规模自检 6 字段非空
-    #    "无" 是合法的（明确表示"没有"，如"无关联议題"）
-    #    "待定"/"略"/"待写"/"TBD"/"todo" 才是未填
-    fields = ['主词', '修饰词', '主任务类型', '副任务', '涉及文件数', '紧急度', '关联议題', '触发词命中']
-    for field in fields:
-        pattern = rf'\*\*{field}\*\*:\s*(待定|略|待写|TBD|todo)\s*$'
-        if re.search(pattern, content, re.IGNORECASE | re.MULTILINE):
-            errors.append(f'§0 字段 "{field}" 未填（出现 "待定/略/待写"）')
+    mode_match = re.search(
+        r'路径模式[：:]\s*`?(full-6|fix-mini|refactor-6|timebox)`?', content
+    )
+    if not mode_match:
+        errors.append('路径模式缺失或错误（应为 full-6 / fix-mini / refactor-6 / timebox）')
+        return errors
 
-    # 2. 路径模式行存在且匹配
-    if not re.search(r'路径模式:\s*(full-7|fix-mini|refactor-6|timebox)', content):
-        errors.append('路径模式行缺失或格式错误（应匹配 full-7 / fix-mini / refactor-6 / timebox）')
-
-    # 3. 必填段（new-feature 5 段：任务理解/现状扫描/依赖发现/风险评估/输出建议）
-    required_sections = ['任务理解', '现状扫描', '依赖发现', '风险评估', '输出建议']
+    mode = mode_match.group(1)
+    required_by_mode = {
+        'full-6': ['任务理解', '现状扫描', '依赖发现', '风险评估', '输出建议'],
+        'fix-mini': ['任务理解', '复现路径', '影响范围', '根因假设', '最近相关改动', '输出建议'],
+        'refactor-6': ['任务理解', '现状分析', '重构方案', '风险评估', '输出建议'],
+        'timebox': ['影响', '临时止血', '根本原因', '后续时间盒', '沟通'],
+    }
+    required_sections = required_by_mode[mode]
     for section in required_sections:
         if not re.search(rf'##\s+\d+\.\s*{section}', content):
             errors.append(f'必填段缺失: ## N. {section}')
 
-    # 4. "≥ N" 数量满足（简化：只要出现 ≥ 即可）
-    ge_match = re.findall(r'≥\s*(\d+)', content)
-    if not ge_match:
-        errors.append('未找到任何 "≥ N" 量化要求')
+    if mode != 'timebox':
+        for evidence in ['docs/issues.md', 'git log', 'git status']:
+            if evidence not in content:
+                errors.append(f'调研证据缺失: {evidence}')
 
-    # 5. 自检清单全勾
-    unchecked = re.findall(r'-\s*\[\s*\]\s*[^\n]*', content)
-    # 排除证据清单里的 - [ ] 项（证据清单每段 ≥ 1 条，所以前面是 - [ ] 状态）
-    # 简化：只检查"自检清单"段内的
     checklist_match = re.search(r'## 自检清单.*?(?=^##\s|\Z)', content, re.MULTILINE | re.DOTALL)
     if checklist_match:
         checklist_unchecked = re.findall(r'-\s*\[\s*\]', checklist_match.group(0))
         if checklist_unchecked:
             errors.append(f'自检清单还有 {len(checklist_unchecked)} 项未勾选')
-
-    # 6. 证据清单段存在
-    if '## 📎 证据清单' not in content and '## 证据清单' not in content:
-        errors.append('证据清单段缺失（应有 "## 📎 证据清单"）')
 
     return errors
 
@@ -71,24 +88,38 @@ def check_research(content):
 def check_spec(content):
     errors = []
 
-    # 1. 5 段齐全
-    sections = ['用户故事', '验收标准', '边界条件', '数据契约', '测试用例']
+    # 1. 5 段齐全（测试场景/用例 都接受）
+    sections = ['用户故事', '验收标准', '边界条件', '数据契约', '测试(?:用例|场景)']
     for section in sections:
         if not re.search(rf'##\s+\d+\.?\s*{section}', content):
             errors.append(f'5 段缺失: ## N. {section}')
 
-    # 2. GWT ≥ 3 条（Given-When-Then）
-    gwt_pattern = re.findall(r'Given\s+', content)
-    if len(gwt_pattern) < 3:
-        errors.append(f'GWT 不足 3 条（找到 {len(gwt_pattern)} 个 Given）')
+    # 2. Requirement + Scenario（升级：GWT → Requirement+Scenario 双层，2026-07-17）
+    # 2.1 Requirement ≥ 1（### Requirement: ...）
+    requirement_matches = re.findall(r'^###\s+Requirement\s*:', content, re.MULTILINE)
+    if len(requirement_matches) < 1:
+        errors.append(f'Requirement 不足 1 条（找到 {len(requirement_matches)} 个 "### Requirement:"）')
+
+    # 2.2 SHALL ≥ 1（每个 Requirement 必须用 SHALL 强承诺）
+    shall_matches = re.findall(r'\bSHALL\b', content)
+    if len(shall_matches) < 1:
+        errors.append(f'SHALL 不足 1 条（找到 {len(shall_matches)} 个 "SHALL"）—— Requirement 必须用 SHALL 强约束')
+
+    # 2.3 Scenario ≥ 3（#### Scenario: ...）—— 取代旧 Given ≥ 3
+    scenario_matches = re.findall(r'^####\s+Scenario\s*:', content, re.MULTILINE)
+    if len(scenario_matches) < 3:
+        # 向后兼容：旧 GWT 写法也接受（Given ≥ 3）
+        gwt_pattern = re.findall(r'Given\s+', content)
+        if len(gwt_pattern) < 3:
+            errors.append(f'Scenario 不足 3 条（找到 {len(scenario_matches)} 个 "#### Scenario:"；旧 Given 也仅 {len(gwt_pattern)} 个）—— 至少 happy + invalid + edge/failure 各 1')
 
     # 3. 数据契约 ≥ 1 schema
     schema_patterns = ['Pydantic', 'BaseModel', 'Zod', 'interface ', 'type ', 'Schema']
     if not any(re.search(p, content) for p in schema_patterns):
         errors.append('数据契约缺少 schema 关键字（Pydantic/BaseModel/Zod/interface/type/Schema）')
 
-    # 4. 测试场景 ≥ 3 条（在 ## 5 测试用例 段内）
-    test_section = re.search(r'##\s+5\.?\s*测试用例.*?(?=^##\s|\Z)', content, re.MULTILINE | re.DOTALL)
+    # 4. 测试场景 ≥ 3 条（在 ## 5 测试用例 / 测试场景 段内）
+    test_section = re.search(r'##\s+5\.?\s*测试(?:用例|场景).*?(?=^##\s|\Z)', content, re.MULTILINE | re.DOTALL)
     if test_section:
         test_items = re.findall(r'-\s+\[?\s*\]?\s*\*?\*?TC[-_]?\d+', test_section.group(0))
         if len(test_items) < 3:
@@ -97,7 +128,7 @@ def check_spec(content):
             if len(test_items) < 3:
                 errors.append(f'测试场景不足 3 条（找到 {len(test_items)} 个项）')
     else:
-        errors.append('找不到 "## 5. 测试用例" 段')
+        errors.append('找不到 "## 5. 测试用例 / 测试场景" 段')
 
     # 5. §0 调研结论摘要引用
     if not re.search(r'调研.*引用|research\.md|调研报告', content):
@@ -133,14 +164,14 @@ def check_plan(content):
     if decision_count < 1:
         errors.append(f'决策点不足 1 个（找到 {decision_count} 个）')
 
-    # 5. 引用完整
+    # 5. 引用完整；product/design 文档按任务适用性处理。
     refs = ['spec.md', 'research.md']
-    has_product_doc_ref = 'product-doc.md' in content
     missing = [r for r in refs if r not in content]
     if missing:
-        errors.append(f'缺少引用: {", ".join(missing)}（应包含 spec.md + research.md + product-doc.md）')
-    if not has_product_doc_ref:
-        errors.append('缺少 product-doc.md 引用')
+        errors.append(f'缺少引用: {", ".join(missing)}（应包含 spec.md + research.md）')
+    for optional_doc in ['product-doc.md', 'design-spec.md']:
+        if optional_doc not in content:
+            errors.append(f'缺少 {optional_doc} 适用性说明（应引用或标注不适用）')
 
     return errors
 
@@ -227,63 +258,27 @@ def check_implement(content):
 def check_verify(content):
     errors = []
 
-    # 5 层 gate
-    layers = {
-        'L1.*类型': r'L1.*类型|\*\*L1\*\*',
-        'L2.*单元': r'L2.*单元|\*\*L2\*\*',
-        'L3.*集成': r'L3.*集成|\*\*L3\*\*',
-        'L4.*代码审查|reviewer': r'L4.*(代码审查|reviewer|\*\*L4\*\*)',
-        'L5.*运行时|staging': r'L5.*(运行时|staging|\*\*L5\*\*)',
-    }
+    for distributed in ['L1', 'L2', 'L4']:
+        if distributed not in content:
+            errors.append(f'缺少步骤 4 分布式证据引用: {distributed}')
 
-    for name, pattern in layers.items():
-        if not re.search(pattern, content, re.IGNORECASE):
-            errors.append(f'5 层 gate 缺失: {name}')
-
-    # L2 覆盖率 ≥ 80%（用 DOTALL 让 . 匹配换行）
-    if re.search(r'L2', content) and not re.search(r'L2.*?[8-9]\d\s*%|L2.*?coverage.*?[8-9]\d\s*%', content, re.IGNORECASE | re.DOTALL):
-        errors.append('L2 单元测试覆盖率应 ≥ 80%')
-
-    # 每层必须有 PASSED / 通过 / ✅
-    for layer_id in ['L1', 'L2', 'L3', 'L4', 'L5']:
-        layer_section = re.search(rf'{layer_id}.*?(?=L\d|$)', content, re.IGNORECASE | re.DOTALL)
-        if layer_section:
-            if not re.search(r'PASSED|通过|✅|✓', layer_section.group(0)):
-                errors.append(f'{layer_id} 段未标记通过')
+    for layer_id, label in [('L3', '整合测试'), ('L5', 'staging 运行时验证')]:
+        pattern = rf'(?:^|\n)##\s[^\n]*{layer_id}[^\n]*\n(.*?)(?=\n##\s|\Z)'
+        layer_sections = re.findall(pattern, content, re.IGNORECASE | re.DOTALL)
+        if not layer_sections:
+            errors.append(f'缺少 {layer_id} {label}段')
+            continue
+        section_text = layer_sections[-1]
+        has_pass = re.search(r'PASSED|通过|✅|✓', section_text, re.IGNORECASE)
+        if not has_pass:
+            errors.append(f'{layer_id} 段未标记通过')
+        if re.search(r'结果\s*[：:]\s*(?:FAILED|❌|未通过)', section_text, re.IGNORECASE):
+            errors.append(f'{layer_id} 最终结果为失败')
 
     return errors
 
 
-# ─── 6 步 发布 ──────────────────────────────────────────────
-def check_ship(content):
-    errors = []
-
-    # 1. 灰度策略（10%/50%/100%）
-    if not re.search(r'10%|50%|100%', content):
-        errors.append('缺少灰度策略（应有 10%/50%/100%）')
-
-    # 2. 监控 + 告警
-    if not re.search(r'告警|alert|monitoring|监控', content, re.IGNORECASE):
-        errors.append('缺少监控/告警配置')
-
-    # 3. 回滚预案
-    if not re.search(r'回滚|rollback', content, re.IGNORECASE):
-        errors.append('缺少回滚预案')
-
-    # 4. 通报模板
-    if not re.search(r'通报|通知|notification', content, re.IGNORECASE):
-        errors.append('缺少通报模板')
-
-    # 5. ship.md 3 段（部署 + 监控 + 回滚）
-    sections = ['部署', '监控', '回滚']
-    for section in sections:
-        if not re.search(rf'##\s*\d*\.?\s*{section}', content):
-            errors.append(f'ship.md 3 段缺失: ## {section}')
-
-    return errors
-
-
-# ─── 7 步 复盘 ──────────────────────────────────────────────
+# ─── 6 步 复盘 ──────────────────────────────────────────────
 def check_retro(content):
     errors = []
 
@@ -315,8 +310,8 @@ def check_retro(content):
         errors.append('改进项未分配（应有 @xxx 或"负责人: xxx"）')
 
     # 5. 已更新知识库
-    if not re.search(r'CLAUDE\.md|spec|skill|DOD\.md|模板|流程', content):
-        errors.append('未提及知识库更新（CLAUDE.md / spec / skill / DOD.md 之一）')
+    if not re.search(r'CLAUDE\.md|AGENTS\.md|spec|skill|DOD\.md|模板|流程', content):
+        errors.append('未提及知识库更新（CLAUDE.md / AGENTS.md / spec / skill / DOD.md 之一）')
 
     return errors
 
@@ -329,7 +324,6 @@ CHECKS = {
     'tasks': check_tasks,
     'implement': check_implement,
     'verify': check_verify,
-    'ship': check_ship,
     'retro': check_retro,
 }
 
@@ -350,6 +344,11 @@ def main():
         print(f'❌ 未知 step: {step}')
         print(f'   取值: {", ".join(CHECKS.keys())}')
         sys.exit(1)
+
+    # 豁免检查（白名单）
+    if is_exempt(step, filepath):
+        print(f'⏭️  豁免（白名单）: {filepath}')
+        sys.exit(0)
 
     if not os.path.exists(filepath):
         print(f'❌ 文件不存在: {filepath}')

@@ -1,5 +1,5 @@
 #!/bin/sh
-# pre-commit hook for Intervue
+# pre-commit hook for KnockWise
 # 安装: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 # 跳过: PRE_COMMIT_SKIP=1 git commit ...
 
@@ -24,7 +24,13 @@ if [ -n "$backend_changed" ]; then
     echo "⚠️  backend/.venv 不存在,跳过 pytest(首次 clone 后跑 ./scripts/setup.sh)"
   else
     echo "📦 backend 改动 → 跑 pytest..."
-    if ! (cd backend && ./.venv/bin/python -m pytest tests/ --tb=short -q 2>&1 | tail -30); then
+    # 捕获真实退出码：`... | tail` 的退出码取自末端 tail(恒 0),会吞掉 pytest 失败
+    set +e
+    pytest_out=$(cd backend && ./.venv/bin/python -m pytest tests/ --tb=short -q 2>&1)
+    pytest_rc=$?
+    set -e
+    echo "$pytest_out" | tail -30
+    if [ "$pytest_rc" -ne 0 ]; then
       echo ""
       echo "❌ pytest 失败,禁止 commit"
       echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
@@ -40,7 +46,13 @@ if [ -n "$frontend_changed" ]; then
     echo "⚠️  frontend/node_modules 不存在,跳过 tsc(首次 clone 后跑 npm install)"
   else
     echo "🎨 frontend 改动 → 跑 tsc..."
-    if ! (cd frontend && npx tsc --noEmit 2>&1 | tail -30); then
+    # 同 pytest：捕获真实退出码,避免 `| tail` 吞掉 tsc 失败
+    set +e
+    tsc_out=$(cd frontend && npx tsc --noEmit 2>&1)
+    tsc_rc=$?
+    set -e
+    echo "$tsc_out" | tail -30
+    if [ "$tsc_rc" -ne 0 ]; then
       echo ""
       echo "❌ tsc 失败,禁止 commit"
       echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
@@ -64,17 +76,17 @@ if [ -n "$diff_lines" ] && [ "$diff_lines" -gt 500 ] 2>/dev/null; then
   esac
 fi
 
-# ─── 4. 7 步 DOD 校验(对治 DOD 缺失) ─────────────────────────
+# ─── 4. 6 步 v2 DOD 校验(对治 DOD 缺失) ──────────────────────
 task_files=$(echo "$staged_files" | grep -E "^docs/tasks/.*\.md$" || true)
 if [ -n "$task_files" ]; then
   if [ ! -f "scripts/check-step.py" ]; then
     echo ""
     echo "⚠️  检测到 docs/tasks/ 改动,但 scripts/check-step.py 不存在"
-    echo "   TODO: 接入 7 步 DOD 校验(7 步 × 38 条)"
+    echo "   TODO: 接入 6 步 v2 DOD 校验"
     echo "   临时跳过,记得手动验证文档符合 docs/DOD.md"
   else
     echo ""
-    echo "📋 docs/tasks/ 改动 → 跑 7 步 DOD 校验..."
+    echo "📋 docs/tasks/ 改动 → 跑 6 步 v2 DOD 校验..."
     failed=0
     for file in $task_files; do
       step=""
@@ -85,7 +97,6 @@ if [ -n "$task_files" ]; then
         tasks.md)        step="tasks" ;;
         test-cases.md)   step="implement" ;;
         verify.md)       step="verify" ;;
-        ship.md)         step="ship" ;;
         retro.md)        step="retro" ;;
       esac
       if [ -z "$step" ]; then
@@ -98,12 +109,39 @@ if [ -n "$task_files" ]; then
     done
     if [ $failed -ne 0 ]; then
       echo ""
-      echo "❌ 7 步 DOD 校验失败,禁止 commit"
+      echo "❌ 6 步 v2 DOD 校验失败,禁止 commit"
       echo "   完整 DOD 定义见 docs/DOD.md"
       exit 1
     fi
-    echo "✅ 7 步 DOD 校验通过"
+    echo "✅ 6 步 v2 DOD 校验通过"
   fi
+fi
+
+# ─── 5. tasks.md 同步校验(对治问题 #N 任务追踪不更新) ─────
+# 规则(CLAUDE.md § 6.5):实施类 commit (backend/ frontend/ scripts/) 必须同步对应 task 的 tasks.md
+# 例外:纯文档 commit (docs/ memory/ CLAUDE.md) → 不要求
+# 跳过: SKIP_TASKS_SYNC=1 git commit ...
+if [ -n "$backend_changed$frontend_changed" ] && [ -z "$SKIP_TASKS_SYNC" ]; then
+  tasks_changed=$(echo "$staged_files" | grep -E "^docs/tasks/.+/tasks\.md$" || true)
+  if [ -z "$tasks_changed" ]; then
+    echo ""
+    echo "❌ tasks.md 同步校验失败:"
+    echo "   检测到实施类文件改动,但没有 tasks.md 同步"
+    echo ""
+    echo "   改动文件(前 5 条):"
+    echo "$backend_changed$frontend_changed" | grep -E "^(backend|frontend)/" | head -5 | sed 's/^/     /'
+    echo ""
+    echo "   按 CLAUDE.md § 6.5 (及 feedback-immediate-tasks-md-sync memory),必须:"
+    echo "     1. 把对应 task 标 - [x] ✅ DONE — commit \`hash\`"
+    echo "     2. 加实际耗时 vs 估时"
+    echo "     3. 更新 § 6 总估时 + § 7 实施顺序"
+    echo ""
+    echo "   跳过方式(仅用于纯 bug fix / 纯 docs 改动):"
+    echo "     SKIP_TASKS_SYNC=1 git commit -m '...'"
+    echo "     (PRE_COMMIT_SKIP=1 也可跳过全部检查)"
+    exit 1
+  fi
+  echo "✅ tasks.md 同步校验通过"
 fi
 
 echo ""

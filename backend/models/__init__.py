@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for CodeMock.
+"""SQLAlchemy ORM models for KnockWise.
 
 All primary keys are String(36) to match the existing UUID-as-string pattern
 used throughout the API layer (str(uuid4()), str(interview.id), etc.).
@@ -46,7 +46,7 @@ class User(Base):
     github_username = Column(String(128), nullable=True)              # nullable for email-password users
     avatar_url = Column(String(512), nullable=True)
     email = Column(String(256), nullable=True, unique=True)           # unique — used as login credential
-    password_hash = Column(String(256), nullable=True)                # bcrypt hash, nullable for GitHub OAuth users
+    password_hash = Column(String(256), nullable=True)                # PBKDF2-SHA256 (600k iters), nullable for GitHub OAuth users
     display_name = Column(String(128), nullable=True)                 # user-chosen display name
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow)
@@ -541,3 +541,168 @@ class CollectionSubscribe(Base):
         Index("idx_cs_user_active", "user_id", "last_active_at"),
         Index("idx_cs_collection", "collection_id"),
     )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# AI 推送模块 (T1: 2026-07-17 实施)
+# 配套 docs/tasks/2026-07-17-new-feature-ai-push/
+# ── db-design.md §2.1-2.9
+# ─────────────────────────────────────────────────────────────────
+
+
+class DigestSource(Base):
+    """AI 推送信源配置（系统默认 8 + 用户自定义 N）。
+
+    user_id = NULL 表示系统默认源（spec R5 独立性）。
+    category 区分来源类别，type/region 为内容双轴标签。
+    """
+
+    __tablename__ = "digest_sources"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)  # NULL = 系统默认
+    name = Column(String(128), nullable=False)
+    url = Column(String(512), nullable=False)
+    category = Column(String(32), nullable=False, comment="来源类别")
+    type = Column(String(16), nullable=False, index=True, comment="model|application")
+    region = Column(String(16), nullable=False, index=True, comment="domestic|overseas")
+    enabled = Column(Boolean, default=True, nullable=False)
+    is_default = Column(Boolean, default=False, nullable=False, index=True, comment="TRUE=系统默认 8 源")
+    last_fetched_at = Column(DateTime(timezone=True), nullable=True)
+    last_item_count = Column(Integer, default=0, nullable=False)
+    last_error = Column(String(256), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "url", name="uniq_ds_user_url"),
+        Index("idx_ds_user_enabled", "user_id", "enabled"),
+        Index("idx_ds_default_enabled", "is_default", "enabled"),
+        Index("idx_ds_region_type", "region", "type"),
+    )
+
+
+class DigestDaily(Base):
+    """每日日报存档（每用户 + 每天 1 条）。"""
+
+    __tablename__ = "digest_daily"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    date = Column(Date, nullable=False, comment="用户本地时区的日期")
+    vibe = Column(String(256), nullable=True, comment="今日 1-5 条数量标注等")
+    item_ids = Column(JSON, nullable=False, default=list, comment="5 个 item_id（按 rank 顺序）")
+    pushed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "date", name="uniq_dd_user_date"),
+        Index("idx_dd_user_date", "user_id", "date"),
+    )
+
+
+class DigestDailyItem(Base):
+    """日报条目（每条 digest 卡片）。
+
+    type/region 为内容双轴标签（spec R5 决策）。
+    related_item_ids 指向历史同类 digest（spec R9 引用溯源）。
+    """
+
+    __tablename__ = "digest_daily_item"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    daily_id = Column(String(36), ForeignKey("digest_daily.id", ondelete="CASCADE"), nullable=False, index=True)
+    rank = Column(Integer, nullable=False, comment="1-5")
+    title = Column(String(512), nullable=False)
+    summary = Column(Text, nullable=True)
+    quality_score = Column(Float, nullable=False, comment="0.0-1.0 综合打分")
+    type = Column(String(16), nullable=False, index=True, comment="model|application")
+    region = Column(String(16), nullable=False, index=True, comment="domestic|overseas")
+    category = Column(String(32), nullable=False, comment="headline|paper|engineering|opinion")
+    source_id = Column(String(36), ForeignKey("digest_sources.id", ondelete="SET NULL"), nullable=True)
+    source_name = Column(String(128), nullable=False)
+    source_url = Column(String(1024), nullable=False)
+    published_at = Column(DateTime(timezone=True), nullable=True)
+    related_item_ids = Column(JSON, nullable=False, default=list, comment="≤5 个相关历史 item_id")
+    estimated_minutes = Column(Integer, default=3, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("daily_id", "rank", name="uniq_ddi_daily_rank"),
+        Index("idx_ddi_source", "source_id"),
+        Index("idx_ddi_type_region", "type", "region"),
+        Index("idx_ddi_published", "published_at"),
+    )
+
+
+class DigestRead(Base):
+    """阅读记录（spec R10 · duration 喂 LLM prompt）。"""
+
+    __tablename__ = "digest_read"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    item_id = Column(String(36), ForeignKey("digest_daily_item.id", ondelete="CASCADE"), nullable=False, index=True)
+    read_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    duration_sec = Column(Integer, default=0, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "item_id", name="uniq_dr_user_item"),
+        Index("idx_dr_user_read_at", "user_id", "read_at"),
+    )
+
+
+class DigestBookmark(Base):
+    """收藏（spec R10 行为反馈）。"""
+
+    __tablename__ = "digest_bookmark"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    item_id = Column(String(36), ForeignKey("digest_daily_item.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "item_id", name="uniq_db_user_item"),
+        Index("idx_db_user_created", "user_id", "created_at"),
+    )
+
+
+class DigestHide(Base):
+    """屏蔽记录 · 7 天后 -50% 权重（spec R5 hide scenario）。
+
+    topic_keywords 必走白名单过滤防 prompt 注入。
+    """
+
+    __tablename__ = "digest_hide"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    item_id = Column(String(36), ForeignKey("digest_daily_item.id", ondelete="CASCADE"), nullable=False, index=True)
+    reason = Column(String(32), nullable=False, comment="not_interested|low_quality|already_seen")
+    topic_keywords = Column(JSON, nullable=False, default=list, comment="LLM 提取的关键词数组(≤5)")
+    expires_at = Column(DateTime(timezone=True), nullable=False, comment="created_at+7days")
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("idx_dh_user_item", "user_id", "item_id"),
+        Index("idx_dh_user_expires", "user_id", "expires_at"),
+    )
+
+
+class DigestSettings(Base):
+    """用户推送设置（spec R5 + R6 · 1-to-1 with users）。"""
+
+    __tablename__ = "digest_settings"
+
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    push_hour = Column(Integer, default=8, nullable=False, comment="0-23 用户本地时区")
+    push_minute = Column(Integer, default=0, nullable=False, comment="0-59")
+    push_timezone = Column(String(64), default="Asia/Shanghai", nullable=False, comment="IANA 时区名")
+    email_enabled = Column(Boolean, default=True, nullable=False)
+    macos_enabled = Column(Boolean, default=False, nullable=False)
+    interested_tags = Column(JSON, nullable=False, default=list, comment="≤10 个 string")
+    blocked_tags = Column(JSON, nullable=False, default=list, comment="≤10 个 string")
+    daily_count = Column(Integer, default=5, nullable=False, comment="MVP 固定 5")
+    created_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False)

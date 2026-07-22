@@ -1,6 +1,6 @@
-"""Speech-to-Text: faster-whisper (local, offline) + WhisperLive streaming.
+"""Speech-to-Text: openai-whisper (local, offline) + WhisperLive streaming.
 
-Priority: faster-whisper for batch transcription (works everywhere, no network needed).
+Priority: openai-whisper for batch transcription (works everywhere, no network needed).
 WhisperLive is optional for real-time streaming mode.
 """
 
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from core.config import settings
 
-logger = logging.getLogger("codemock.stt")
+logger = logging.getLogger("knockwise.stt")
 
 # HuggingFace mirror for China
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
@@ -25,7 +25,7 @@ MODEL_SIZE = os.environ.get("WHISPER_MODEL", "tiny")  # tiny=75MB, base=145MB, s
 
 
 class SimpleSTT:
-    """Local offline STT using faster-whisper."""
+    """Local offline STT using openai-whisper."""
 
     _instance = None
     _model = None

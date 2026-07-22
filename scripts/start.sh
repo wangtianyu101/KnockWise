@@ -1,8 +1,16 @@
 #!/bin/bash
-# Intervue 一键启动脚本（macOS 本机模式）
+# KnockWise 一键启动脚本（macOS 本机模式）
 #
 # 启动顺序（依赖关系）：
 #   MySQL → Redis → LiveKit → Backend → Frontend
+#
+# 5 个服务的端口 + 启动命令：
+#   MySQL    3306  brew services start mysql              (前提：brew install mysql)
+#   Redis    6379  brew services start redis              (前提：brew install redis)
+#   LiveKit  7880  livekit-server --config ./livekit.yaml --node-ip 127.0.0.1
+#                                                          (前提：brew install livekit)
+#   Backend  8000  cd backend && ./.venv/bin/uvicorn main:app --port 8000 --env-file .env.local
+#   Frontend 3000  cd frontend && npm run dev
 #
 # 用法：
 #   ./scripts/start.sh           # 起全部
@@ -14,13 +22,13 @@
 #
 # 设计要点：
 #   - 幂等：端口已占用就跳过
-#   - 后台：所有服务用 nohup + & 启，日志写到 /tmp/intervue-*.log
-#   - PID 记录：写到 /tmp/intervue-pids.txt，stop.sh 读这个文件
+#   - 后台：所有服务用 nohup + & 启，日志写到 $LOG_DIR/knockwise-*.log
+#   - PID 记录：写到 /tmp/knockwise-pids.txt，stop.sh 读这个文件
 
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PID_FILE="/tmp/intervue-pids.txt"
+PID_FILE="/tmp/knockwise-pids.txt"
 LOG_DIR="/tmp"
 
 # ── 颜色输出 ──────────────────────────────────────
@@ -87,14 +95,14 @@ start_livekit() {
   fi
   cd "$PROJECT_ROOT"
   nohup livekit-server --config ./livekit.yaml --node-ip 127.0.0.1 \
-    > "$LOG_DIR/intervue-livekit.log" 2>&1 &
+    > "$LOG_DIR/knockwise-livekit.log" 2>&1 &
   PID=$!
   record_pid "livekit" "$PID"
   sleep 3
   if is_listening 7880; then
     ok "LiveKit:7880 已起 (PID $PID)"
   else
-    fail "LiveKit 启动失败，看日志: tail $LOG_DIR/intervue-livekit.log"
+    fail "LiveKit 启动失败，看日志: tail $LOG_DIR/knockwise-livekit.log"
     exit 1
   fi
 }
@@ -116,14 +124,14 @@ start_backend() {
   fi
   cd "$PROJECT_ROOT/backend"
   nohup ./.venv/bin/uvicorn main:app --port 8000 --host 0.0.0.0 --env-file .env.local \
-    > "$LOG_DIR/intervue-backend.log" 2>&1 &
+    > "$LOG_DIR/knockwise-backend.log" 2>&1 &
   PID=$!
   record_pid "backend" "$PID"
   sleep 4
   if curl -s -f http://localhost:8000/api/health > /dev/null; then
     ok "Backend:8000 已起 (PID $PID, /api/health 200)"
   else
-    fail "Backend 启动失败，看日志: tail $LOG_DIR/intervue-backend.log"
+    fail "Backend 启动失败，看日志: tail $LOG_DIR/knockwise-backend.log"
     exit 1
   fi
 }
@@ -140,21 +148,21 @@ start_frontend() {
     exit 1
   fi
   cd "$PROJECT_ROOT/frontend"
-  nohup npm run dev > "$LOG_DIR/intervue-frontend.log" 2>&1 &
+  nohup npm run dev > "$LOG_DIR/knockwise-frontend.log" 2>&1 &
   PID=$!
   record_pid "frontend" "$PID"
   sleep 6
   if is_listening 3000; then
     ok "Frontend:3000 已起 (PID $PID)"
   else
-    fail "Frontend 启动失败，看日志: tail $LOG_DIR/intervue-frontend.log"
+    fail "Frontend 启动失败，看日志: tail $LOG_DIR/knockwise-frontend.log"
     exit 1
   fi
 }
 
 # ── 主流程 ──────────────────────────────────────
 TARGET="${1:-all}"
-echo "🚀 Intervue 启动脚本（目标: $TARGET）"
+echo "🚀 KnockWise 启动脚本（目标: $TARGET）"
 echo "─────────────────────────────────────────────────"
 
 # 清空 PID 文件（重新记录）

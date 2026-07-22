@@ -1,6 +1,7 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 sqlalchemy==2.0.36
+greenlet>=3.0.0  # required by sqlalchemy async engine; not auto-installed on py3.12
 aiomysql==0.2.0
 pymysql==1.1.1
 alembic==1.14.0
@@ -17,6 +18,9 @@ dashscope>=1.20.0
 livekit>=1.0.3,<2
 livekit-agents==1.0.0
 livekit-api>=1.0.2,<2
+
+# 语音 STT：voice/stt.py 运行时 `import whisper`（懒加载）· ⚠️ 会拉入 torch（~2GB）
+openai-whisper==20250625
 pypdf==5.1.0
 pdfplumber==0.11.4
 python-dotenv==1.0.1

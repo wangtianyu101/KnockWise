@@ -1,4 +1,4 @@
-"""Followup Tree Engine — the core differentiator of CodeMock.
+"""Followup Tree Engine — the core differentiator of KnockWise.
 
 Loads a question's followup_tree JSON, evaluates the user's answer against
 the tree's branches, and determines the next action:

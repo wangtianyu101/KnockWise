@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,14 +13,21 @@ from core.config import settings
 from core.database import get_db
 from core.dependencies import get_current_user
 from models import User, Interview, Profile, QuestionRecord
-from schemas.interview import InterviewStart, InterviewOut, QuestionRecordOut, AnswerSubmit
+from schemas.interview import (
+    InterviewStart,
+    InterviewOut,
+    InterviewRecentItem,
+    InterviewRecentResponse,
+    QuestionRecordOut,
+    AnswerSubmit,
+)
 from agents.question_agent import question_engine
 from agents.followup_agent import followup_engine
 from agents.evaluate_agent import evaluate_agent
-from services.interview_service import session_manager
+from services.interview_service import session_manager, list_recent_interviews
 from agents.states import create_initial_state
 
-logger = logging.getLogger("codemock")
+logger = logging.getLogger("knockwise")
 
 router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
@@ -104,6 +111,21 @@ def _search_clause(q: str):
         | Interview.round.like(literal(like), escape="\\")
         | Interview.style.like(literal(like), escape="\\")
     )
+
+
+@router.get("/recent", response_model=InterviewRecentResponse)
+async def get_recent_interviews(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = Query(3, ge=1, le=10, description="返回最近 N 条面试，1-10"),
+) -> InterviewRecentResponse:
+    """V3.8 新增 · Dashboard HeroCard 用。
+
+    返回当前用户最近 N 条 completed 面试（radar_data 已包含）。
+    按 started_at DESC 排序，limit 1-10。
+    """
+    items = await list_recent_interviews(db, user.id, limit=limit)
+    return InterviewRecentResponse(items=items, total=len(items))
 
 
 @router.get("")
@@ -632,7 +654,7 @@ async def submit_answer(
             )
         except Exception as e:
             import logging
-            logging.getLogger("codemock.interview").warning(
+            logging.getLogger("knockwise.interview").warning(
                 f"D5 sync failed for record {record_id}: {e}"
             )
 

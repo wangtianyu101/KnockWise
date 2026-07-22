@@ -49,7 +49,7 @@ describe('<GlassCard />', () => {
     const { container } = render(
       <GlassCard onClick={onClick} data-testid="c">x</GlassCard>
     );
-    container.querySelector('[data-testid="c"]')!.click();
+    (container.querySelector('[data-testid="c"]') as HTMLElement).click();
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

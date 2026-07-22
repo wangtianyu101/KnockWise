@@ -58,27 +58,47 @@ related:
 
 ---
 
-## 2. 验收标准 / GWT（机器可验证 · 必填 · ≥ 3 条）
+## 2. 验收标准 / Requirement + Scenario（机器可验证 · 必填 · ≥ 3 条）
 
-### Happy Path（必须有 ≥ 1）
+> 升级说明（2026-07-17）：从纯 GWT 升级为 Requirement (SHALL) + Scenario (GWT) 双层结构。
 
-- **GWT-H1**：Given 用户在 Intervue 项目根目录，When 运行 `intervue workflow start "V3 实时评分"`，Then CLI 输出 `✅ Started run: <uuid8>` 并在 `~/.intervue/state.db` 创建一条新 run 记录
+### Requirement: AI Workflow Engine
+The system SHALL provide a CLI-driven, resumable, 6-step workflow engine for AI-assisted development with state persistence and MCP server support.
 
-- **GWT-H2**：Given 已有 run a1b2c3d4 在 step 0_research，When 运行 `intervue workflow research a1b2c3d4 --topic "..."`，Then 生成 `docs/tasks/<date>-<topic>/research.md` 且 run 状态变为 step 1_spec
+#### Scenario: Happy Path — CLI start
+- **Given** 用户在 Intervue 项目根目录
+- **When** 运行 `intervue workflow start "V3 实时评分"`
+- **Then** CLI 输出 `✅ Started run: <uuid8>` 并在 `~/.intervue/state.db` 创建一条新 run 记录
 
-### Edge Case（必须有 ≥ 1）
+#### Scenario: Happy Path — workflow research step
+- **Given** 已有 run a1b2c3d4 在 step 0_research
+- **When** 运行 `intervue workflow research a1b2c3d4 --topic "..."`
+- **Then** 生成 `docs/tasks/<date>-<topic>/research.md` 且 run 状态变为 step 1_spec
 
-- **GWT-E1**：Given 用户配置的 workflow.yaml 缺 `handler` 字段，When 启动 CLI，Then **fail-fast** 报错 `ConfigError: workflow.steps[3] missing required field 'handler'`，exit code 1
+#### Scenario: Edge — missing handler field
+- **Given** 用户配置的 workflow.yaml 缺 `handler` 字段
+- **When** 启动 CLI
+- **Then** **fail-fast** 报错 `ConfigError: workflow.steps[3] missing required field 'handler'`，exit code 1
 
-- **GWT-E2**：Given 用户注册的 Component manifest.id 不符合正则 `^[a-z][a-z0-9_]*$`，When 注册，Then 报错 `ValidationError` 不入库
+#### Scenario: Edge — invalid Component manifest
+- **Given** 用户注册的 Component manifest.id 不符合正则 `^[a-z][a-z0-9_]*$`
+- **When** 注册
+- **Then** 报错 `ValidationError` 不入库
 
-### Failure Case（必须有 ≥ 1）
+#### Scenario: Failure — corrupted SQLite
+- **Given** SQLite 文件被外部损坏
+- **When** 运行 `intervue workflow status`
+- **Then** 报错 `DatabaseError: ... Try 'intervue workflow repair'` 且 exit code 1
 
-- **GWT-F1**：Given SQLite 文件被外部损坏，When 运行 `intervue workflow status`，Then 报错 `DatabaseError: ... Try 'intervue workflow repair'` 且 exit code 1
+#### Scenario: Failure — MCP port conflict
+- **Given** MCP server 启动时端口冲突
+- **When** 启动
+- **Then** **优雅退出** + 报错含修复建议（`port 8000 in use, try --port 8001`）
 
-- **GWT-F2**：Given MCP server 启动时端口冲突，When 启动，Then **优雅退出** + 报错含修复建议（`port 8000 in use, try --port 8001`）
-
-- **GWT-F3**：Given 工作流跑到 step 4 突然中断（kill -9），When 重启后运行 `intervue workflow resume <run_id>`，Then **从 step 4 继续**，不重跑已完成的 step 0-3
+#### Scenario: Failure — resume after kill
+- **Given** 工作流跑到 step 4 突然中断（kill -9）
+- **When** 重启后运行 `intervue workflow resume <run_id>`
+- **Then** **从 step 4 继续**，不重跑已完成的 step 0-3
 
 ---
 

@@ -2,7 +2,7 @@
 title: 组件设计模板（component-spec）
 date: 2026-06-30
 status: v1
-tags: [component-spec, 1步, 前端组件, 模板]
+tags: [component-spec, 2步, 前端组件, 模板]
 related:
   - [design-spec-template.md](design-spec-template.md) — 上游：设计脑
   - [api-spec-template.md](api-spec-template.md) — 配套 API
@@ -16,7 +16,18 @@ related:
 >
 > **作者**：**AI 主导**（前端 lead / 设计 review）。
 >
-> **对应 DOD**：见 `docs/DOD.md` §四.7（5 条）。
+> **对应 DOD**：见 `docs/DOD.md` §四.2。
+
+---
+
+## 0. 上游设计引用（涉及 UI 时必填）
+
+- **design-spec**：`docs/tasks/<task>/design-spec.md`
+- **HTML mockup**：`docs/tasks/<task>/mockups/<page>.html`
+- **设计索引**：`docs/designs/<topic>/index.md`
+- **用户验收**：<name + date>
+
+> 本文只把已验收页面翻译成组件契约；如需改变页面结构或视觉，先退回步骤 1 修改 design-spec/mockup。
 
 ---
 
@@ -102,7 +113,7 @@ import type { Subscription, TimeWindow } from '@/types/push';
 ```markdown
 - 宽度: 100%（响应式）
 - 高度: 自适应内容
-- 主色: #1890ff
+- 主色: `var(--color-primary, #6366f1)`（继承项目 token）
 - 圆角: 8px（按钮）/ 4px（输入框）
 - 间距: 16px（标签之间）/ 24px（章节之间）
 - 字体: 14px 正文 / 16px 标题
@@ -188,6 +199,8 @@ frontend/components/push/
 - [ ] 交互状态 ≥ 5 种（默认 / hover / loading / success / error）
 - [ ] 边界 case 覆盖异常路径
 - [ ] 测试要点明确
+- [ ] 涉及 UI 时已引用步骤 1 通过验收的 design-spec + HTML mockup + index
+- [ ] 组件视觉规格继承项目 token，不使用模板示例色直接覆盖现有设计系统
 
 > ⚠️ 任何 1 条未满足 → component-spec.md 不算完成
 > ⚠️ TODO: 接入 `scripts/check-component-spec.py`（pre-commit hook）
@@ -205,14 +218,13 @@ frontend/components/push/
 
 ---
 
-## 6. 技术实现（plan 阶段后填 · ⚠️ 非 1 步必填）
+## 6. 技术实现（步骤 2 plan 拍板后填写）
 
-> **本段不在 1 步必填范围**——技术选型需要 2 步 plan 阶段确定。
+> component-spec 整份文档属于步骤 2；技术选型必须在 plan 方案拍板后填写。
 >
 > **填写时机**：2 步 plan.md 完成后，回填本段。
 >
-> §1-5 是"业务契约"（组件清单、Props、State、Events），这些 1 步定。
-> §6 是"技术实现"（组件库、状态管理、样式方案），这些 plan 后定。
+> §0 引用步骤 1 已验收的业务/视觉契约；§1-6 定义步骤 2 的组件实现契约。
 
 ### 6.1 组件库选型
 
@@ -264,6 +276,5 @@ frontend/components/push/
 - [design-spec-template.md](design-spec-template.md) — 上游：设计脑（页面级）
 - [plan-template.md](plan-template.md) — **2 步 plan 后填 §6**
 - [api-spec-template.md](api-spec-template.md) — 配套 API
-- `docs/DOD.md` §三.7 — component-spec.md DOD 定义
+- `docs/DOD.md` §四.2 — component-spec.md DOD 定义
 - [api-spec-template.md](api-spec-template.md) — 配套 API
-- `docs/DOD.md` §三.7 — component-spec.md DOD 定义

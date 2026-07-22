@@ -50,7 +50,7 @@ def _setup_logging(room_id: str):
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(fmt)
 
-    for log in [PIPELINE_LOG, AUDIO_LOG, STT_LOG, TTS_LOG, AGENT_LOG, logging.getLogger("codemock-voice-worker")]:
+    for log in [PIPELINE_LOG, AUDIO_LOG, STT_LOG, TTS_LOG, AGENT_LOG, logging.getLogger("knockwise-voice-worker")]:
         log.setLevel(logging.DEBUG)
         log.handlers = [handler]
         log.propagate = False

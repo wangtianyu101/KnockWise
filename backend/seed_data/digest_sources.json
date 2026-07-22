@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Anthropic News",
+    "url": "https://www.anthropic.com/news/rss.xml",
+    "category": "一手",
+    "type": "model",
+    "region": "overseas"
+  },
+  {
+    "name": "Google DeepMind Blog",
+    "url": "https://deepmind.google/discover/blog/rss.xml",
+    "category": "一手",
+    "type": "model",
+    "region": "overseas"
+  },
+  {
+    "name": "HuggingFace Blog",
+    "url": "https://huggingface.co/blog/feed.xml",
+    "category": "一手",
+    "type": "application",
+    "region": "overseas"
+  },
+  {
+    "name": "DeepSeek Docs News",
+    "url": "https://api-docs.deepseek.com/news/rss.xml",
+    "category": "一手",
+    "type": "model",
+    "region": "domestic"
+  },
+  {
+    "name": "Qwen GitHub Releases",
+    "url": "https://github.com/QwenLM/Qwen3/releases.atom",
+    "category": "一手",
+    "type": "model",
+    "region": "domestic"
+  },
+  {
+    "name": "智谱 GLM GitHub",
+    "url": "https://github.com/THUDM/GLM/releases.atom",
+    "category": "一手",
+    "type": "model",
+    "region": "domestic"
+  },
+  {
+    "name": "量子位",
+    "url": "https://www.qbitai.com/feed",
+    "category": "二手",
+    "type": "application",
+    "region": "domestic"
+  },
+  {
+    "name": "机器之心",
+    "url": "https://www.jiqizhixin.com/rss",
+    "category": "二手",
+    "type": "application",
+    "region": "domestic"
+  }
+]

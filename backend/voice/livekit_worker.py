@@ -8,7 +8,7 @@ from livekit.plugins import openai as openai_plugin
 
 from core.config import settings
 
-logger = logging.getLogger("codemock-voice")
+logger = logging.getLogger("knockwise-voice")
 
 INTERVIEWER_PROMPT = """你是 Alex，一位专业友好的 AI 技术面试官。
 

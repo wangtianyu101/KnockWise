@@ -2,7 +2,7 @@
 title: API 设计模板（api-spec）
 date: 2026-06-30
 status: v1
-tags: [api-spec, 1步, API, 模板]
+tags: [api-spec, 2步, API, 模板]
 related:
   - [spec-template.md](spec-template.md) — 上游
   - [db-design-template.md](db-design-template.md) — 配套 DB
@@ -16,7 +16,7 @@ related:
 >
 > **作者**：**AI 主导**（后端 lead review）。
 >
-> **对应 DOD**：见 `docs/DOD.md` §四.6（5 条）。
+> **对应 DOD**：见 `docs/DOD.md` §四.2。
 
 ---
 
@@ -190,14 +190,13 @@ POST /subscribe
 
 ---
 
-## 6. 技术实现（plan 阶段后填 · ⚠️ 非 1 步必填）
+## 6. 技术实现（步骤 2 plan 拍板后填写）
 
-> **本段不在 1 步必填范围**——技术选型需要 2 步 plan 阶段确定。
+> api-spec.md 整份文档属于步骤 2；技术选型需要在 plan 方案拍板后确定。
 >
 > **填写时机**：2 步 plan.md 完成后，回填本段。
 >
-> §1-5 是"业务契约"（接口清单、Request/Response、错误码），这些 1 步定。
-> §6 是"技术实现"（协议选型、认证方案、限流策略），这些 plan 后定。
+> §1-5 细化接口契约；§6 定义实现方式，均不得提前塞回步骤 1 的 spec.md。
 
 ### 6.1 协议选型
 
@@ -250,6 +249,5 @@ POST /subscribe
 - [spec-template.md](spec-template.md) — 上游：技术规格
 - [plan-template.md](plan-template.md) — **2 步 plan 后填 §6**
 - [db-design-template.md](db-design-template.md) — 配套 DB 设计
-- `docs/DOD.md` §三.6 — api-spec.md DOD 定义
-- `docs/DOD.md` §三.6 — api-spec.md DOD 定义
+- `docs/DOD.md` §四.2 — api-spec.md DOD 定义
 - `docs/api/README.md` — 全局 API 索引（聚合所有 api-spec）

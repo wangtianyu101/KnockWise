@@ -13,9 +13,45 @@
 """
 from __future__ import annotations
 
+import ipaddress
+import socket
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
+
+# ─── Network policy ────────────────────────────────────────
+
+def _is_loopback_address(address) -> bool:
+    if not isinstance(address, tuple) or not address:
+        return True  # Unix-domain sockets and non-IP transports stay available.
+    host = address[0]
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+@pytest.fixture(autouse=True)
+def block_external_network(monkeypatch):
+    """Tests may use loopback services, but must mock every public network call."""
+    real_connect = socket.socket.connect
+    real_connect_ex = socket.socket.connect_ex
+
+    def guarded_connect(sock, address):
+        if not _is_loopback_address(address):
+            pytest.fail(f"external network is disabled in tests: {address!r}")
+        return real_connect(sock, address)
+
+    def guarded_connect_ex(sock, address):
+        if not _is_loopback_address(address):
+            pytest.fail(f"external network is disabled in tests: {address!r}")
+        return real_connect_ex(sock, address)
+
+    monkeypatch.setattr(socket.socket, "connect", guarded_connect)
+    monkeypatch.setattr(socket.socket, "connect_ex", guarded_connect_ex)
 
 
 # ─── DB Mock ──────────────────────────────────────────

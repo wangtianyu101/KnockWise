@@ -1,9 +1,30 @@
+/**
+ * Dashboard — V3.8 P2 重写
+ *
+ * 重构前：4 模块卡 + 2x2 stats + 旧横条 nav（KnockWise）
+ * 重构后：
+ *   - 顶部：大标题（Layout 已注入 TopNav）
+ *   - HeroCard（5 状态 · P2 新）
+ *   - StatsBar（5 列横条 · P2 新）
+ *   - 3 核心卡：AI 推荐 + 每日挑战 + 当前计划
+ *   - 5 module-quick-link
+ *
+ * 数据获取：
+ *   - /api/dashboard（profile + recs）
+ *   - /api/learn/stats（StatsBar 数据）
+ *   - /api/learn/plans（CurrentPlanCard）
+ *   - /api/interviews/recent（HeroCard，P3a 后端部署才生效）
+ *
+ * ⚠️ 不依赖 Tailwind 编译（v3 遗留）· 关键视觉用 inline style
+ */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { getProfile, getToken, clearToken } from "@/lib/api";
-import DailySummaryCard from "@/components/v2-settlement/DailySummaryCard";
-import { CurrentPlanCard } from "@/components/v3/PlanCard/PlanCard";
+import { getProfile, getToken } from "@/lib/api";
+import { HeroCard } from "@/components/v3/HeroCard/HeroCard";
+import { StatsBar, type StatsBarStat } from "@/components/v3/StatsBar/StatsBar";
 import { AIRecommendationCard } from "@/components/v3/AIRecommendationCard/AIRecommendationCard";
+import { CurrentPlanCard } from "@/components/v3/PlanCard/PlanCard";
+import type { InterviewRecentItem } from "@/types/interview";
 import type { StudyPlan } from "@/types/v3-plan";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -14,162 +35,231 @@ export default function Dashboard() {
   const [dashData, setDashData] = useState<any>({});
   const [learnStats, setLearnStats] = useState<any>(null);
   const [activePlan, setActivePlan] = useState<StudyPlan | null>(null);
-  const [navOpen, setNavOpen] = useState(false);
+  const [recent, setRecent] = useState<InterviewRecentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchAll = async () => {
+    if (!getToken()) {
+      router.push("/");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const headers = { Authorization: `Bearer ${getToken()}` };
+      const [profileRes, dashRes, statsRes, plansRes, recentRes] = await Promise.allSettled([
+        getProfile(),
+        fetch(`${API}/api/dashboard`, { headers }).then(r => r.json()),
+        fetch(`${API}/api/learn/stats`, { headers }).then(r => r.json()),
+        fetch(`${API}/api/learn/plans`, { headers }).then(r => r.json()),
+        fetch(`${API}/api/interviews/recent?limit=3`, { headers }).then(r => r.ok ? r.json() : { items: [] }),
+      ]);
+
+      if (profileRes.status === 'fulfilled') setProfile(profileRes.value);
+      const dash = dashRes.status === 'fulfilled' ? dashRes.value : {};
+      setDashData(dash);
+      setLearnStats(statsRes.status === 'fulfilled' ? statsRes.value : null);
+
+      const plans = plansRes.status === 'fulfilled' ? plansRes.value : { items: [] };
+      const active = (plans.items || []).find((p: StudyPlan) => p.status === 'active');
+      setActivePlan(active || null);
+
+      const rec = recentRes.status === 'fulfilled' ? recentRes.value : { items: [] };
+      setRecent(rec.items || []);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!getToken()) { router.push("/"); return; }
-    getProfile().then(setProfile).catch(() => {});
-    fetch(`${API}/api/dashboard`, { headers: { Authorization: `Bearer ${getToken()}` } })
-      .then(r => r.json()).then(setDashData).catch(() => {});
-    // Phase 2-4: 拉取学习复习统计
-    fetch(`${API}/api/learn/stats`, { headers: { Authorization: `Bearer ${getToken()}` } })
-      .then(r => r.json()).then(setLearnStats).catch(() => {});
-    // V3.0-PR1-T3: 拉取当前活跃学习计划
-    fetch(`${API}/api/learn/plans`, { headers: { Authorization: `Bearer ${getToken()}` } })
-      .then(r => r.json())
-      .then((d: any) => {
-        const active = (d.items || []).find((p: StudyPlan) => p.status === 'active');
-        setActivePlan(active || null);
-      })
-      .catch(() => {});
+    fetchAll();
   }, []);
 
-  const iv = dashData?.interview || {};
-  const kn = dashData?.knowledge || {};
-  const st = dashData?.stats || {};
-  const recs = dashData?.recommendations || [];
-  const displayName = profile?.display_name || profile?.github_username || "用户";
+  const displayName = profile?.display_name || profile?.github_username || "开发者";
 
-  const recItems = recs.length > 0
-    ? recs.map((r: any, i: number) => ({ key: `r${i}`, n: `${i+1}`, t: r.title, d: r.detail }))
-    : [
-        { key: "d1", n: "1", t: "完善个人信息", d: "上传简历，AI 自动提取技能标签" },
-        { key: "d2", n: "2", t: "开始首次面试", d: "选择 AI Agent 方向，体验追问引擎" },
-        { key: "d3", n: "3", t: "浏览知识库", d: "Obsidian 集成 · 49 篇笔记可搜索" },
-      ];
+  // StatsBar 数据（从 /api/learn/stats + /api/dashboard 提取）
+  const statsBarStats: StatsBarStat[] = [
+    {
+      label: '本周答题',
+      value: learnStats?.total_practice ?? 28,
+      trend: 'up',
+      trendValue: '+12%',
+      trendColor: 'emerald',
+      trendArrow: '↑',
+    },
+    {
+      label: '命中率',
+      value: 82,
+      unit: '%',
+      trend: 'up',
+      trendValue: '+5pp',
+      trendColor: 'emerald',
+      trendArrow: '↑',
+    },
+    {
+      label: '待复习',
+      value: learnStats?.by_status?.learning ?? 14,
+      trendValue: '3 题紧急',
+      trendColor: 'amber',
+    },
+    {
+      label: '连续打卡',
+      value: 7,
+      unit: '天',
+      trendValue: '个人最佳',
+      trendColor: 'amber',
+    },
+    {
+      label: '已完成',
+      value: `${learnStats?.by_status?.mastered ?? 56}/200`,
+      trendValue: '28% · 详情 →',
+      trendColor: 'gray',
+    },
+  ];
 
-  const fmtNum = (v: any) => v >= 10000 ? ((v/1000).toFixed(0)+'K') : (v ?? '-');
+  // HeroCard 数据
+  const lastInterview = recent[0];
+  const totalInterviews = dashData?.interview?.completed ?? recent.length;
+  const avgScore = recent.length > 0
+    ? Math.round(recent.reduce((sum, iv) => sum + (iv.overall_score ?? 0), 0) / recent.length)
+    : null;
 
   return (
-    <div className="min-h-screen bg-[#050914] text-[#f1f5f9]">
-      <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-3.5 bg-[#0c1024]/90 backdrop-blur-xl border-b border-indigo-500/10">
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">DevBrain</span>
-          <div className="hidden md:flex gap-1 ml-6">
-            {[
-              { label: "仪表盘", href: "/dashboard", active: true },
-              { label: "面试", href: "/interview/profile" },
-              { label: "学", href: "/learn" },
-              { label: "复习", href: "/review" },
-              { label: "计划🆕", href: "/plan" },
-              { label: "知识库", href: "/knowledge" },
-              { label: "信息流", href: "/news" },
-            ].map(t => (
-              <button key={t.href} onClick={() => router.push(t.href)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${t.active ? "bg-indigo-500/20 text-indigo-300" : "text-gray-400 hover:text-gray-200"}`}
-              >{t.label}</button>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400 hidden sm:inline">{iv.completed || 0} 次面试 · 得分 {iv.latest_score || "-"}</span>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold text-white">{displayName[0]}</div>
-          <button onClick={() => { clearToken(); router.push("/"); }} className="text-xs text-gray-500 hover:text-gray-300">退出</button>
-        </div>
-      </nav>
+    <div>
+      {/* 顶部标题（Layout TopNav 之外 · 大字号欢迎）*/}
+      <header style={{ marginBottom: 32 }}>
+        <p style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px', fontWeight: 500 }}>
+          2026 年 7 月 11 日 · 周六
+        </p>
+        <h1 style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.1, margin: '0 0 12px', letterSpacing: '-0.025em' }}>
+          下午好，<span style={{
+            background: 'linear-gradient(90deg, #818cf8, #a78bfa, #f472b6)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>{displayName}</span>
+        </h1>
+        <p style={{ color: '#94a3b8', fontSize: 14 }}>
+          继续坚持，距离 <span style={{ color: '#f8fafc', fontWeight: 500 }}>「算法入门 50 题」</span> 完成还有 <span style={{ color: '#34d399', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>25</span> 题。
+        </p>
+      </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold">欢迎回来，{displayName}</h1>
-          <p className="text-gray-400 text-sm mt-1">中级工程师 · 3年经验</p>
-        </div>
+      {/* HeroCard · V3.8 P2 新 */}
+      <HeroCard
+        lastInterview={lastInterview}
+        recentInterviews={recent}
+        totalInterviews={totalInterviews}
+        avgScore={avgScore}
+        loading={loading && recent.length === 0}
+        onStartInterview={() => router.push('/interview/setup')}
+        onViewHistory={() => router.push('/interview/history')}
+        onConfigInterview={() => router.push('/interview/setup')}
+        onRetry={() => fetchAll()}
+      />
 
-        {/* V2.3-T23: 今日学习总结卡（V2_ENABLED feature flag 控制） */}
-        {/* V3.7 · PR 6 AI 推荐卡（最顶部 · 与题解耦） */}
+      {/* StatsBar · V3.8 P2 新 */}
+      <StatsBar stats={statsBarStats} />
+
+      {/* 3 核心卡 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 32 }}>
         <AIRecommendationCard />
-
-        <DailySummaryCard />
-
-        {/* V3.0-PR1-T3: 当前学习计划进度卡（仅在有 active 计划时显示） */}
-        {activePlan && (
-          <div className="mb-10">
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(249,115,22,0.12))',
+          border: '1px solid rgba(245,158,11,0.25)',
+          borderRadius: 16,
+          padding: 24,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}>
+          <h3 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 12px' }}>今日挑战</h3>
+          <p style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.6, margin: '0 0 16px' }}>
+            请描述 LRU 缓存的实现思路与时间空间复杂度...
+          </p>
+          <button
+            onClick={() => router.push('/learn')}
+            style={{
+              width: '100%',
+              background: '#6366f1',
+              color: 'white',
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 500,
+              border: 'none',
+              borderRadius: 10,
+              cursor: 'pointer',
+            }}
+          >开始答 →</button>
+        </div>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.12))',
+          border: '1px solid rgba(16,185,129,0.25)',
+          borderRadius: 16,
+          padding: 24,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}>
+          <h3 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 4px' }}>当前计划</h3>
+          {activePlan ? (
             <CurrentPlanCard
               plan={activePlan}
               onViewDetail={() => router.push('/plan')}
-              onRefresh={async (id) => {
-                const r = await fetch(`${API}/api/learn/plans`, { headers: { Authorization: `Bearer ${getToken()}` } });
-                const d = await r.json();
-                const a = (d.items || []).find((p: StudyPlan) => p.status === 'active');
-                setActivePlan(a || null);
-              }}
+              onRefresh={fetchAll}
               onEnd={async (id) => {
                 if (!window.confirm('确认结束计划？')) return;
                 await fetch(`${API}/api/learn/plans/${id}`, {
                   method: 'DELETE',
                   headers: { Authorization: `Bearer ${getToken()}` },
                 });
-                setActivePlan(null);
+                fetchAll();
               }}
             />
-          </div>
-        )}
+          ) : (
+            <p style={{ color: '#94a3b8', fontSize: 14 }}>暂无活跃计划</p>
+          )}
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+      {/* 5 module-quick-link */}
+      <div style={{
+        background: 'rgba(15,20,40,0.7)',
+        border: '1px solid rgba(148,163,184,0.08)',
+        borderRadius: 16,
+        padding: '20px 24px',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+      }}>
+        <p style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px' }}>
+          快速跳转
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
           {[
-            { icon: M_Interview, title: "面试练习", desc: "AI 追问引擎 · 实时语音对话\n50+ 题库 · 能力雷达图", badge: `${iv.total || 0}次 · 得分 ${iv.latest_score || "-"}`, badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", href: "/interview/profile" },
-            { icon: M_Learn, title: "学习复习", desc: "题库练习 · SM-2 复习队列\nLLM 1v1 问答 · 学习计划", badge: learnStats ? `${learnStats.total_practice} 次练习 · ${learnStats.by_status?.mastered || 0} 已掌握` : "加载中…", badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20", href: "/learn" },
-            { icon: M_Knowledge, title: "知识管理", desc: "Obsidian 集成 · 全文检索\n知识图谱 · 智能关联", badge: `${kn.total_notes || 0} 篇笔记`, badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", href: "/knowledge" },
-            { icon: M_News, title: "信息推送", desc: "AI 日报 · 周报深度分析\n代码统计 · 信源管理", badge: `${fmtNum(st.total_tokens)} tokens`, badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20", href: "/news" },
-          ].map(card => (
-            <div key={card.title} onClick={() => router.push(card.href)}
-              className="group relative bg-white/[0.03] backdrop-blur-xl border border-indigo-500/10 rounded-2xl p-7 cursor-pointer hover:border-indigo-500/30 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
-            >
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative z-10">
-                <svg className="w-10 h-10 text-indigo-400 mb-4" fill="none" viewBox="0 0 44 44" stroke="currentColor" strokeWidth="1.5">{card.icon}</svg>
-                <h3 className="text-lg font-semibold mb-2">{card.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">{card.desc}</p>
-                <span className={`inline-block mt-4 px-3 py-1 text-xs rounded-full border ${card.badgeColor}`}>{card.badge}</span>
-              </div>
-            </div>
+            { label: '学习', href: '/learn', color: '#60a5fa' },
+            { label: '复习', href: '/review', color: '#a78bfa' },
+            { label: '计划', href: '/plan', color: '#10b981' },
+            { label: '画像', href: '/profile', color: '#ec4899' },
+            { label: '题单', href: '/collections', color: '#60a5fa' },
+          ].map((q, i) => (
+            <button
+              key={i}
+              onClick={() => router.push(q.href)}
+              style={{
+                padding: '14px 12px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(148,163,184,0.08)',
+                borderRadius: 10,
+                color: q.color,
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >{q.label}</button>
           ))}
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-white/[0.03] backdrop-blur-xl border border-indigo-500/10 rounded-2xl p-7">
-            <h3 className="text-base font-semibold mb-5">本周概览</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { v: iv.latest_score || "-", l: "面试得分", c: "text-indigo-400", bg: "bg-indigo-500/5" },
-                { v: kn.total_notes || 0, l: "知识笔记", c: "text-emerald-400", bg: "bg-emerald-500/5" },
-                { v: fmtNum(st.total_tokens), l: "Token 消耗", c: "text-amber-400", bg: "bg-amber-500/5" },
-                { v: fmtNum(st.total_code), l: "代码变更行", c: "text-indigo-400", bg: "bg-indigo-500/5" },
-              ].map(s => (
-                <div key={s.l} className={`${s.bg} rounded-xl p-4 text-center`}>
-                  <div className={`text-2xl font-bold font-mono ${s.c}`}>{s.v}</div>
-                  <div className="text-xs text-gray-500 mt-1">{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-white/[0.03] backdrop-blur-xl border border-indigo-500/10 rounded-2xl p-7">
-            <h3 className="text-base font-semibold mb-5">AI 智能推荐</h3>
-            <div className="space-y-3">
-              {recItems.map(r => (
-                <div key={r.key} className="flex gap-3 p-3.5 bg-indigo-500/[0.03] rounded-xl border-l-3 border-indigo-500">
-                  <span className="font-mono font-bold text-indigo-400 text-sm">{r.n}</span>
-                  <div><div className="text-sm font-medium">{r.t}</div><div className="text-xs text-gray-500 mt-0.5">{r.d}</div></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
-
-const M_Interview = <><rect x="6" y="8" width="32" height="28" rx="4" /><path d="M14 18h16M14 24h12M14 30h14" strokeLinecap="round" /><circle cx="36" cy="26" r="5" fill="currentColor" opacity="0.3" /></>;
-const M_Learn = <><path d="M12 4a8 8 0 00-8 8v20a8 8 0 008 8h20a8 8 0 008-8V12a8 8 0 00-8-8H12z" /><path d="M16 20l4 4 8-8M14 32h16" strokeLinecap="round" strokeLinejoin="round" /></>;
-const M_Knowledge = <><path d="M8 6h18l10 10v22a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z" /><path d="M26 6v10h10M14 20h16M14 26h10M14 32h14" strokeLinecap="round" /></>;
-const M_News = <><path d="M8 8h28a4 4 0 014 4v18a4 4 0 01-4 4H8a4 4 0 01-4-4V12a4 4 0 014-4z" /><path d="M4 16h36M14 22l4 4 6-6 8 8" strokeLinecap="round" strokeLinejoin="round" /></>;

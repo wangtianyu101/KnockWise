@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import async_session
 from models import QuestionProgress, QuestionProgressArchive
 
-log = logging.getLogger("codemock.archive")
+log = logging.getLogger("knockwise.archive")
 
 ARCHIVE_AFTER_DAYS = 365  # mastered > 1Y 视为冷
 BATCH_SIZE = 1000

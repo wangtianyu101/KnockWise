@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import UUID
 
-log = logging.getLogger("codemock.obsidian_sediment")
+log = logging.getLogger("knockwise.obsidian_sediment")
 
 VAULT_ROOT = Path.home() / "Obsidian" / "coding"
 DAILY_DIR = "learning"

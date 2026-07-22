@@ -22,7 +22,7 @@ from models import User, Question
 from services.question_sync_service import build_default_sources, sync_questions
 from services.question_quality_service import get_sync_history
 
-log = logging.getLogger("codemock.api.admin")
+log = logging.getLogger("knockwise.api.admin")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 

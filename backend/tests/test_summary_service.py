@@ -45,7 +45,7 @@ class TestSummaryServiceSkeleton:
 
     def test_logger_initialized(self):
         assert hasattr(svc, "log")
-        assert svc.log.name == "codemock.summary"
+        assert svc.log.name == "knockwise.summary"
 
     def test_cache_ttl_constant(self):
         """决策 2A: cache TTL = 3600s (1h)"""

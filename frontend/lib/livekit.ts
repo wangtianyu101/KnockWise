@@ -7,7 +7,7 @@ export async function getLiveKitToken(roomName: string, participantName: string)
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/interviews/livekit-token`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("codemock_token")}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("knockwise_token") || localStorage.getItem("codemock_token")}` },
     body: JSON.stringify({ room_name: roomName, participant_name: participantName }),
   });
 

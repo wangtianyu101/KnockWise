@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import type {
   QuestionListItem,
-  QuestionProgressOut,
+  QuestionProgress,  // 2026-07-22 audit 修复 · 实际导出名（无 Out 后缀）
   MasteryStatus,
   QuestionSource,
   QAChatInput,
@@ -28,36 +28,54 @@ describe('types/learn.ts', () => {
     });
   });
 
-  describe('QuestionProgressOut', () => {
+  describe('QuestionProgress', () => {
     it('必填字段存在', () => {
-      const p: QuestionProgressOut = {
+      const p: QuestionProgress = {
         id: 'p1',
+        user_id: 'u1',
+        question_id: 'q1',
         status: 'new',
         practice_count: 0,
         correct_count: 0,
         bookmarked: false,
+        source: 'seed',
+        last_review_at: null,
+        review_count: 0,
         ease_factor: 2.5,
         interval_days: 0,
+        first_practiced_at: null,
         next_review_at: null,
         last_practiced_at: null,
+        user_answer: null,
+        notes_path: null,
+        created_at: '2026-07-22T00:00:00Z',
+        updated_at: '2026-07-22T00:00:00Z',
       };
       expect(p.id).toBe('p1');
       expect(p.ease_factor).toBe(2.5);
     });
 
     it('可选字段可空', () => {
-      const p: QuestionProgressOut = {
+      const p: QuestionProgress = {
         id: 'p1',
+        user_id: 'u1',
+        question_id: 'q1',
         status: 'mastered',
         practice_count: 10,
         correct_count: 8,
         bookmarked: true,
+        source: 'seed',
+        last_review_at: null,
+        review_count: 10,
         ease_factor: 2.6,
         interval_days: 30,
+        first_practiced_at: '2026-06-22T00:00:00Z',
         next_review_at: null,
         last_practiced_at: null,
         user_answer: null,
         notes_path: null,
+        created_at: '2026-06-22T00:00:00Z',
+        updated_at: '2026-07-22T00:00:00Z',
       };
       expect(p.user_answer).toBe(null);
     });

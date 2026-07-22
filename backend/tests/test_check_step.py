@@ -14,6 +14,10 @@ _spec = importlib.util.spec_from_file_location("check_step", _scripts_path)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
 check_tasks = _mod.check_tasks
+check_research = _mod.check_research
+check_plan = _mod.check_plan
+check_verify = _mod.check_verify
+CHECKS = _mod.CHECKS
 
 
 # ─── 回归测试：bold-tolerant regex ──────────────────────
@@ -129,3 +133,94 @@ class TestCheckTasksBoldTolerance:
             return  # skip if not yet created
         errors = check_tasks(v2_tasks.read_text(encoding="utf-8"))
         assert errors == [], f"V2 tasks.md should pass now, got {errors}"
+
+
+class TestSixStepWorkflowV2:
+    """回归测试：校验器必须与 6 步 v2 保持一致。"""
+
+    def test_research_accepts_full_6(self):
+        content = """
+> 路径模式：`full-6`
+## 1. 任务理解
+已确认。
+## 2. 现状扫描
+已读 `docs/issues.md`，找到 3 个相关文件，已跑 `git log -10` 和 `git status`。
+## 3. 依赖发现
+列出调用方。
+## 4. 风险评估
+🔴 风险一；🟡 风险二。
+## 5. 输出建议
+走完整 6 步。
+"""
+        assert check_research(content) == []
+
+    def test_research_rejects_full_7(self):
+        errors = check_research("> 路径模式：`full-7`")
+        assert any("full-6" in error for error in errors)
+
+    def test_research_accepts_other_v2_path_modes(self):
+        cases = {
+            "fix-mini": ["任务理解", "复现路径", "影响范围", "根因假设", "最近相关改动", "输出建议"],
+            "refactor-6": ["任务理解", "现状分析", "重构方案", "风险评估", "输出建议"],
+            "timebox": ["影响", "临时止血", "根本原因", "后续时间盒", "沟通"],
+        }
+        for mode, sections in cases.items():
+            body = [f"> 路径模式：`{mode}`"]
+            body.extend(f"## {index}. {section}\n已填写" for index, section in enumerate(sections, 1))
+            if mode != "timebox":
+                body.append("证据：docs/issues.md；git log -10；git status")
+            errors = check_research("\n".join(body))
+            assert errors == [], f"{mode} should pass, got {errors}"
+
+    def test_plan_allows_explicitly_inapplicable_product_docs(self):
+        content = """
+上游：research.md + spec.md；product-doc.md：不适用；design-spec.md：不适用
+## 1. 推荐方案
+**推荐**: 方案 A
+## 2. 方案对比
+方案 A
+方案 B
+## 3. 风险评估
+🔴 风险一
+🟡 风险二
+🟢 风险三
+## 4. 决策点
+决策 1：使用现有模式
+"""
+        assert check_plan(content) == []
+
+    def test_verify_accepts_distributed_evidence_plus_l3_l5(self):
+        content = """
+## 0. 上游证据
+L1 类型检查：✅；L2 单元测试：✅；L4 review：PASS
+## L3 整合测试
+结果：PASSED ✅
+## L5 staging 运行时验证
+结果：PASSED ✅
+"""
+        assert check_verify(content) == []
+
+    def test_verify_rejects_missing_l5(self):
+        content = """
+## 0. 上游证据
+L1：✅；L2：✅；L4：PASS
+## L3 整合测试
+结果：PASSED ✅
+"""
+        errors = check_verify(content)
+        assert any("L5" in error for error in errors)
+
+    def test_verify_rejects_explicit_failed_result(self):
+        content = """
+## 0. 上游证据
+L1：✅；L2：✅；L4：PASS
+## L3 整合测试
+结果：FAILED ❌
+## L5 staging 运行时验证
+结果：PASSED ✅
+"""
+        errors = check_verify(content)
+        assert any("L3 最终结果为失败" in error for error in errors)
+
+    def test_ship_is_not_a_workflow_step(self):
+        assert "ship" not in CHECKS

@@ -1,4 +1,4 @@
-"""Unit tests for CodeMock core components: states, questions, followup, seed data.
+"""Unit tests for KnockWise core components: states, questions, followup, seed data.
 
 Run: python -m pytest tests/ -v
 """

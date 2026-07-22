@@ -152,7 +152,7 @@ import time
 import logging
 from enum import Enum
 
-logger = logging.getLogger("codemock-turn")
+logger = logging.getLogger("knockwise-turn")
 
 class TurnState(Enum):
     LISTENING = "listening"        # AI 在听

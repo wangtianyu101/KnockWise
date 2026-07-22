@@ -37,7 +37,7 @@ from core.cache import cache
 
 from core.cache import cache
 
-log = logging.getLogger("codemock.summary")
+log = logging.getLogger("knockwise.summary")
 
 CACHE_TTL = 3600  # 1 hour (决策 2A)
 DASHBOARD_CACHE_PREFIX = "summary:dashboard:"

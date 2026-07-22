@@ -153,7 +153,7 @@ export default function ReportPage() {
         {/* Actions */}
         <div className="flex gap-4 pt-4">
           <button
-            onClick={() => { localStorage.removeItem("codemock_setup"); router.push("/setup"); }}
+            onClick={() => { localStorage.removeItem("knockwise_setup"); localStorage.removeItem("codemock_setup"); router.push("/setup"); }}
             className="flex-1 py-3 rounded-xl font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-purple-500/20 transition-all"
           >
             再来一次

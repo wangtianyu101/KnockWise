@@ -34,7 +34,7 @@ from services.obsidian_service import obsidian
 from services.obsidian_sediment_service import ObsidianSedimentService
 from pathlib import Path
 
-log = logging.getLogger("codemock.api.v2")
+log = logging.getLogger("knockwise.api.v2")
 
 router = APIRouter(prefix="/api/v2", tags=["v2-settlement"])
 

@@ -59,7 +59,7 @@ export default function VoiceRoom({ interviewId, onSpeech, disabled, onTranscrib
       const ext = blob.type.includes("webm") ? "webm" : blob.type.includes("wav") ? "wav" : "webm";
       formData.append("file", blob, `recording.${ext}`);
 
-      const token = localStorage.getItem("codemock_token");
+      const token = localStorage.getItem("knockwise_token") || localStorage.getItem("codemock_token");
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/interviews/transcribe`,
         {

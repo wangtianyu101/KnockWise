@@ -25,7 +25,7 @@ log = logging.getLogger("cli.sync_questions")
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Intervue 题目同步 CLI · PR 3")
+    parser = argparse.ArgumentParser(description="KnockWise 题目同步 CLI · V3.8 P3b")
     parser.add_argument("--dry-run", action="store_true", help="只统计不入库")
     parser.add_argument("--collection", type=str, default=None, help="关联到精选题单 ID（如 agent_foundation）")
     parser.add_argument("--source", type=str, choices=["local", "github", "http", "all"], default="all", help="指定数据源（默认 all）")

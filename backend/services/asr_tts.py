@@ -19,7 +19,7 @@ from typing import Optional
 
 from core.config import settings
 
-logger = logging.getLogger("codemock.asr_tts")
+logger = logging.getLogger("knockwise.asr_tts")
 
 
 class ASRTTSService:

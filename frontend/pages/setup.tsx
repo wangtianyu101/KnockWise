@@ -26,7 +26,8 @@ export default function SetupInterview() {
       ...config,
       company: config.company === "其他" ? config.custom_company : config.company,
     };
-    localStorage.setItem("codemock_setup", JSON.stringify(finalConfig));
+    localStorage.setItem("knockwise_setup", JSON.stringify(finalConfig));
+    localStorage.removeItem("codemock_setup");
     router.push("/interview");
   };
 

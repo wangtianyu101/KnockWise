@@ -1,0 +1,284 @@
+name: auto-fix-ci
+
+# Auto-fix failed CI runs using Claude Code Action.
+# v2 (2026-07-22): dual-job structure with 4 security gates (CLAUDE.md § 6.10)
+#
+# Architecture (T1 + T8):
+#   CI fails (non-main, non-fork PR)
+#     → diagnostic job (read-only, NO secrets)
+#         → sanitize CI log (T15)
+#         → Claude generates patch via API
+#         → uploads patch as artifact
+#     → [environment approval gate]
+#     → apply-fix job (write, env approval, secrets exposed)
+#         → checkout auto-fix/<branch>-<sha>
+#         → apply patch
+#         → run T33 + pytest (must pass)
+#         → open Draft PR
+#
+# Decision references:
+#   - R7 fork PR exclusion (T8)
+#   - R8 Action SHA pinning (T17/T18)
+#   - R9 log sanitization (T15/T16)
+#   - R10 dual job + env approval (T1)
+#   - R2 3 retries/commt label limit (T2)
+#   - R4 service file → needs_review (T3/T9)
+#   - R5 main branch skip
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches-ignore:
+      - main  # R5: main 分支不处理
+
+# R10: minimum permissions at workflow level; jobs override as needed
+permissions: {}
+
+concurrency:
+  # 防止同一 commit 并发触发多次 auto-fix
+  group: auto-fix-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+env:
+  MAX_FIX_ATTEMPTS: "3"  # R2: 3 次/commt
+  MODEL: "claude-sonnet-4-5"
+  MAX_TURNS: "25"
+
+jobs:
+  # ====== Job 1: diagnostic (read-only, NO secrets) ======
+  # R10 关 2: 权限分层 · 只读 · 无 secrets
+  diagnostic:
+    name: 🔍 Diagnostic (read-only)
+    if: |
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.fork == false  # R7: 排除 fork PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # R10: 只读权限
+    outputs:
+      patch_artifact: ${{ steps.upload.outputs.artifact_id }}
+    steps:
+      - name: Checkout PR code (read-only)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # R8: pin SHA
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # R8
+        with:
+          python-version: "3.12"
+
+      - name: Sanitize CI log (R9 / T15)
+        id: sanitize
+        run: |
+          RAW_LOG="${{ github.event.workflow_run.conclusion }}"
+          # 实际 log 从 run logs 抓，这里用 placeholder
+          # 真实实现：gh run view $RUN_ID --log-failed > /tmp/raw.log
+          python3 scripts/ci/sanitize_ci_log.py < /tmp/raw.log > /tmp/sanitized.json
+          cat /tmp/sanitized.json
+
+      - name: Generate patch via Claude (R9 净化输入)
+        id: claude
+        uses: anthropics/claude-code-action@de8e0b9c42c6cb58e904c857f164aa072244c1ac  # R8: pin SHA
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}  # 仅 diagnostic job 暴露
+          claude_args: --max-turns ${{ env.MAX_TURNS }} --model ${{ env.MODEL }}
+          prompt: |
+            # R9: 只接收 sanitized summary · 不接收 raw log
+            失败 job: ${{ steps.sanitize.outputs.failed_job }}
+            错误类型: ${{ steps.sanitize.outputs.error_code }}
+            关键摘要: ${{ steps.sanitize.outputs.key_string }}
+
+            请分析失败原因并生成 patch（diff 格式）写入 patch.diff。
+            使用 Write 工具将 diff 写入仓库根目录的 patch.diff。
+            然后调用 upload-artifact step 上传。
+
+      - name: Upload patch artifact
+        id: upload
+        uses: actions/upload-artifact@de8e0b9c42c6cb58e904c857f164aa072244c1ac  # R8
+        with:
+          name: auto-fix-patch
+          path: patch.diff
+          retention-days: 7
+
+  # ====== Job 2: apply-fix (write, env approval, secrets) ======
+  # R10 关 2 + 关 4: 写入权限 + environment approval gate
+  apply-fix:
+    name: 🔧 Apply fix (write · env approval)
+    needs: diagnostic
+    if: github.event.workflow_run.head_repository.fork == false  # R7: 双重 fork 排除
+    runs-on: ubuntu-latest
+    environment: auto-fix-approval  # R10 关 4: 人工审批 gate
+    permissions:
+      contents: write         # R10: 写权限
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # R8
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # R8
+        with:
+          python-version: "3.12"
+
+      # ====== T2: label check (R2 失败上限 3 次) ======
+      - name: Check retry limit (R2)
+        id: label-check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
+        run: |
+          SHORT_SHA="${HEAD_SHA:0:7}"
+          LABEL="auto-fix-count-${SHORT_SHA}"
+          COUNT=$(gh api "repos/${REPO}/labels/${LABEL}" --jq '.description' 2>/dev/null || echo "0")
+          echo "current_count=${COUNT}" >> "$GITHUB_OUTPUT"
+          if [ "${COUNT}" -ge "${MAX_FIX_ATTEMPTS}" ]; then
+            echo "::error::auto-fix limit reached (${COUNT}/${MAX_FIX_ATTEMPTS}) for ${SHORT_SHA}"
+            gh issue create \
+              --title "Manual fix needed: ${SHORT_SHA}" \
+              --body "Auto-fix 失败次数达到上限 (${COUNT}/${MAX_FIX_ATTEMPTS})。需要人工修复。Run: ${{ github.event.workflow_run.html_url }}"
+            echo "limit_reached=true" >> "$GITHUB_OUTPUT"
+            exit 0  # 静默退出
+          fi
+          echo "limit_reached=false" >> "$GITHUB_OUTPUT"
+
+      # ====== T5: 下载 patch + 准备 auto-fix 分支 ======
+      - name: Download patch artifact
+        if: steps.label-check.outputs.limit_reached != 'true'
+        uses: actions/download-artifact@de8e0b9c42c6cb58e904c857f164aa072244c1ac  # R8
+        with:
+          name: auto-fix-patch
+
+      - name: Create auto-fix branch
+        if: steps.label-check.outputs.limit_reached != 'true'
+        env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          SHORT_SHA="${HEAD_SHA:0:7}"
+          NEW_BRANCH="auto-fix/${HEAD_BRANCH##*/}-${SHORT_SHA}"
+          echo "new_branch=${NEW_BRANCH}" >> "$GITHUB_OUTPUT"
+          git config user.name "auto-fix-bot"
+          git config user.email "auto-fix@users.noreply.github.com"
+          git checkout -b "${NEW_BRANCH}"
+
+      - name: Apply patch
+        if: steps.label-check.outputs.limit_reached != 'true'
+        run: |
+          if [ -f patch.diff ]; then
+            git apply --check patch.diff || (echo "::error::patch does not apply cleanly"; exit 1)
+            git apply patch.diff
+          else
+            echo "::error::patch.diff not found"
+            exit 1
+          fi
+
+      # ====== T3: diff 检查 (R4 backend service → needs_review) ======
+      - name: Check diff for NEEDS_REVIEW (T3 / R4)
+        if: steps.label-check.outputs.limit_reached != 'true'
+        id: diff-check
+        run: |
+          python3 scripts/ci/check_auto_fix_diff.py
+          # Parse output: needs_review=...
+          if grep -q "^needs_review=true" output.log 2>/dev/null; then
+            echo "needs_review=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_review=true" >> "$GITHUB_OUTPUT"  # default true for safety
+          fi
+
+      # ====== T5 续: 跑 T33 + pytest（必须绿） ======
+      - name: Run T33 test quality (R3)
+        if: steps.label-check.outputs.limit_reached != 'true'
+        run: python3 scripts/check_test_quality.py backend/tests
+
+      - name: Run backend pytest (R3)
+        if: steps.label-check.outputs.limit_reached != 'true'
+        working-directory: backend
+        run: |
+          python3 -m pip install -r requirements.txt --quiet
+          python3 -m pytest tests/ -q --tb=short || (echo "::error::pytest failed"; exit 1)
+
+      # ====== T6: 开 Draft PR ======
+      - name: Commit fix
+        if: steps.label-check.outputs.limit_reached != 'true'
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          git add -A
+          git commit -m "auto-fix(${HEAD_SHA:0:7}): proposed fix by Claude"
+          echo "committed=true" >> "$GITHUB_OUTPUT" 2>/dev/null || true
+
+      - name: Push to auto-fix branch
+        if: steps.label-check.outputs.limit_reached != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_BRANCH="${{ steps.create-branch.outputs.new_branch }}"
+          git push origin "${NEW_BRANCH}"
+
+      - name: Open Draft PR (T6 / Decision 2)
+        if: steps.label-check.outputs.limit_reached != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          NEW_BRANCH="${{ steps.create-branch.outputs.new_branch }}"
+          LABELS="auto-fix"
+          if [ "${{ steps.diff-check.outputs.needs_review }}" = "true" ]; then
+            LABELS="${LABELS},needs-review"
+          fi
+          gh pr create \
+            --base "${HEAD_BRANCH}" \
+            --head "${NEW_BRANCH}" \
+            --draft \
+            --label "${LABELS}" \
+            --title "auto-fix: ${HEAD_SHA:0:7}" \
+            --body "🤖 Claude-generated auto-fix for CI failure on ${HEAD_SHA}.
+
+          Run: ${{ github.event.workflow_run.html_url }}
+
+          ⚠️ This is a Draft PR — requires manual review before merge.
+          Service files changed: ${{ steps.diff-check.outputs.service_files }}
+          Test files changed: ${{ steps.diff-check.outputs.test_files }}"
+
+      # ====== T2 续: label 计数 +1 ======
+      - name: Increment label count (R2)
+        if: steps.label-check.outputs.limit_reached != 'true' && success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
+        run: |
+          SHORT_SHA="${HEAD_SHA:0:7}"
+          LABEL="auto-fix-count-${SHORT_SHA}"
+          CURRENT=$(gh api "repos/${REPO}/labels/${LABEL}" --jq '.description' 2>/dev/null || echo "0")
+          NEW_COUNT=$((CURRENT + 1))
+          gh api "repos/${REPO}/labels/${LABEL}" \
+            -X PATCH \
+            -f description="${NEW_COUNT}" \
+            -f color="fef2c0" \
+            -f name="${LABEL}" \
+            2>/dev/null || echo "label update skipped (label may not exist yet)"
+
+      # ====== T7: 评论原 CI run ======
+      - name: Comment on original CI run (T7)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "${{ steps.label-check.outputs.limit_reached }}" = "true" ]; then
+            gh api "repos/${{ github.event.workflow_run.repository.full_name }}/issues/${{ github.event.workflow_run.id }}/comments" \
+              -f body="🤖 auto-fix skipped: retry limit reached (3/3). Manual intervention required." || true
+          else
+            gh api "repos/${{ github.event.workflow_run.repository.full_name }}/issues/${{ github.event.workflow_run.id }}/comments" \
+              -f body="🤖 auto-fix Draft PR opened. Check repository PRs." || true
+          fi

@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from models import QASession, Question, UserQuestion
 
-log = logging.getLogger("codemock.qa")
+log = logging.getLogger("knockwise.qa")
 
 
 # ════════════════════════════════════════════════════════════

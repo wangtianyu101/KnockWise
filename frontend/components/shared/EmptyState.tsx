@@ -1,6 +1,5 @@
 /**
  * EmptyState 共享组件 — V1 closure 🟡 #4（5.3.4 空状态占位图升级）
- *
  * 之前：antd `<Empty />` 简单占位，无插画 + 无 CTA
  * 现在：4 种 type 插画 (knowledge | progress | data | vault) + 标题 + 描述 + 可选 CTA
  *
@@ -8,6 +7,7 @@
  *   <EmptyState type="knowledge" title="暂无笔记" description="答 3 道题后..." />
  *   <EmptyState type="progress" title="今天没学习" ctaText="开始学习" onCta={...} />
  */
+import type { JSX } from "react"; // 2026-07-22 audit 修复 · React 19 JSX namespace 不在全局
 import React from "react";
 
 type EmptyType = "knowledge" | "progress" | "data" | "vault";

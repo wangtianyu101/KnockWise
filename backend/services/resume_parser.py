@@ -19,7 +19,7 @@ import logging
 import re
 from typing import Optional
 
-logger = logging.getLogger("codemock.resume_parser")
+logger = logging.getLogger("knockwise.resume_parser")
 
 # Canonical tech list. LLM is constrained to pick from this list when
 # possible; new terms it surfaces fall into "other" and the user can

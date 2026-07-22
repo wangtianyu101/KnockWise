@@ -37,6 +37,8 @@ _MIGRATIONS: list[tuple[str, str, str]] = [
     ("profiles", "mastered_topics", "ALTER TABLE profiles ADD COLUMN mastered_topics JSON NOT NULL DEFAULT (JSON_ARRAY())"),
     ("profiles", "learning_trajectory", "ALTER TABLE profiles ADD COLUMN learning_trajectory JSON NOT NULL DEFAULT (JSON_OBJECT())"),
     ("profiles", "last_active_at", "ALTER TABLE profiles ADD COLUMN last_active_at DATETIME NULL"),
+    # AI 推送模块 (T1: 2026-07-17 实施) - Profile 扩字段 (db-design.md §2.10)
+    ("profiles", "digest_stats", "ALTER TABLE profiles ADD COLUMN digest_stats JSON NOT NULL DEFAULT (JSON_OBJECT('total_reads', 0, 'total_bookmarks', 0, 'total_minutes', 0, 'last_pushed_at', NULL))"),
 ]
 
 
@@ -70,7 +72,7 @@ async def _run_migrations():
     "duplicate column" error — every dialect surfaces that as a clear message.
     """
     import logging
-    log = logging.getLogger("codemock.migration")
+    log = logging.getLogger("knockwise.migration")
     for _table, _col, ddl in _MIGRATIONS:
         try:
             async with engine.begin() as conn:
@@ -129,7 +131,7 @@ async def _run_phase1a_optimizations():
       - 已存在则跳过
     """
     import logging
-    log = logging.getLogger("codemock.migration")
+    log = logging.getLogger("knockwise.migration")
 
     # 1) 分区
     if await _is_partitioned("question_progress"):

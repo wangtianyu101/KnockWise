@@ -131,7 +131,7 @@ async def upload_resume(
             ocr_text, ocr_pages = await extract_text_from_pdf_via_ocr(pdf_bytes)
         except Exception as e:
             import logging
-            logging.getLogger("codemock.profile").warning(f"OCR fallback failed: {e}")
+            logging.getLogger("knockwise.profile").warning(f"OCR fallback failed: {e}")
             ocr_text = ""
 
         if not ocr_text.strip():
@@ -157,7 +157,7 @@ async def upload_resume(
         # Save the file but return what we have so the user can fill the
         # form manually. Don't fail the upload — we got something.
         save_pdf_to_disk(pdf_bytes, user.id, settings.upload_dir)
-        logging.getLogger("codemock.profile").warning(f"resume LLM extraction failed: {e}")
+        logging.getLogger("knockwise.profile").warning(f"resume LLM extraction failed: {e}")
         return {
             "extracted": None,
             "resume_text": text[:8000],

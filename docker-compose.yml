@@ -3,9 +3,9 @@ services:
     image: mysql:8.4
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: codemock
-      MYSQL_USER: codemock
-      MYSQL_PASSWORD: codemock
+      MYSQL_DATABASE: knockwise
+      MYSQL_USER: knockwise
+      MYSQL_PASSWORD: knockwise
     ports:
       - "3306:3306"
     volumes:
@@ -39,6 +39,18 @@ services:
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml
 
+  rsshub:
+    image: diygod/rsshub:2024-03-28
+    ports:
+      - "1200:1200"
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+    # Phase 4 · AI 推送 RSSHub fallback (T30 · 决策 1)
+    # 直连信源失败时通过 http://localhost:1200/<route> 二次抓取
+    # 验证: curl http://localhost:1200/juejin/tag/AI
+    # 路由参考: https://docs.rsshub.app/
+
   backend:
     build:
       context: ./backend
@@ -46,16 +58,18 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: mysql+aiomysql://codemock:codemock@mysql:3306/codemock
+      DATABASE_URL: mysql+aiomysql://knockwise:knockwise@mysql:3306/knockwise
       REDIS_URL: redis://redis:6379/0
       WHISPER_LIVE_URL: ws://whisper-live:9090
       LIVEKIT_URL: ws://livekit:7880
+      RSSHUB_URL: http://rsshub:1200
     volumes:
       - ./backend:/app
       - ./uploads:/app/uploads
     depends_on:
       - mysql
       - livekit
+      - rsshub
 
   frontend:
     build:

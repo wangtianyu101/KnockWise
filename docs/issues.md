@@ -3,12 +3,62 @@
 > 记录已识别的设计缺陷、技术债务、待讨论议题。**这是动态文档** —— 遇到新发现随时加。
 >
 > 状态图例：📋 待讨论 · 🚧 进行中 · ✅ 已解决 · ❌ 不会做 · ⚠️ 已知限制
+>
+> **唯一主账**：任务 `tasks.md` / `retro.md` 或代码 `TODO` 中出现的长期遗留项，必须同步登记到本文；其他文件只能引用，不能成为第二份状态源。
+>
+> **最近清账**：2026-07-21 · 关闭动作按 [`issue-closure-template.md`](templates/issue-closure-template.md) 核验。
+>
+> **2026-07-22 决策更新**（同步自 [`research.md` § 八](tasks/2026-07-21-issues-audit/research.md#八用户决策清单不属调研产出需用户拍板)）：
+> - ✅ **议题 A + E** 联合实施：service 真调 `graph.ainvoke` + `evaluate_agent` / `report_agent` 用 `with_structured_output`（不升级 LangGraph 框架）
+> - 🟡 **议题 B** 默认按职责拆（lifecycle/runtime/query）· 待用户最终确认
+> - ✅ **议题 C** 全力全双工（路径 2）：三路径全替换 + transcript+语音 UI + LiveKit built-in VAD
+> - 🟡 **议题 D + F** 暂缓，与 🔴 组并行不冲突
+> - 🔴 **2026-07-22 新增债务 9**：V4 AI 推送模块存在 **41 个测试空壳被 pytest 计为通过**（详见三、债务 9）· 用户原话「先改两个 P0」
+> - 🟡 **2026-07-22 新增任务 · CI 失败自动修复**（[`tasks/2026-07-22-new-feature-ci-autofix/`](tasks/2026-07-22-new-feature-ci-autofix/research.md)）：v2 安全审查完成（research.md v2 + decisions.md 10/10 全拍 · CLAUDE.md § 6.10 4 道关全部对齐）· 进 1 步写 spec.md（10 Requirement）
+
+---
+
+## 决策更新（2026-07-22）
+
+> 📌 **决策主账**（按任务独立 · CLAUDE.md § 6.9）：
+> - 审计任务：[`docs/tasks/2026-07-21-issues-audit/decisions.md`](tasks/2026-07-21-issues-audit/decisions.md)（议题 A/B/C/D/F · 1-10/15-17）
+> - V4 AI 推送：[`docs/tasks/2026-07-17-new-feature-ai-push/decisions.md`](tasks/2026-07-17-new-feature-ai-push/decisions.md)（V4 决策 1/2 = 原审计 13/14 · 已迁）
+> - **CI 失败自动修复（2026-07-22 v2）**：[`docs/tasks/2026-07-22-new-feature-ci-autofix/decisions.md`](tasks/2026-07-22-new-feature-ci-autofix/decisions.md)（决策 1-10 全拍 = 方案 1 + Draft PR + 3 次/commt + job 白名单加固 + 外部 check + $20/月 + Action pin SHA + 双 job + fork 排除 + 日志净化 · 含安全审查 4 道关）
+>
+> 本节是简表镜像 · 详细记录请看对应 decisions.md
+
+| # | 决策项 | 选择 | 状态 |
+|---|---|---|---|
+| 1 | 议题 C 语音架构 | ✅ 全力全双工 | ✅ 已决策 |
+| 2 | 议题 B 拆分路径 | 🟡 按职责拆（默认） | 🟡 待最终确认 |
+| 3 | 债务 4 Alembic | ⏸ 保留为未来迁移 | ⏸ 暂缓 |
+| 4 | 债务 5 密码哈希 | ⏸ 接受 600K pbkdf2 | ⏸ 暂缓 |
+| 5 | 同步 issues.md 偏差 | ✅ 是（5 处） | ✅ 已完成 |
+| 6 | 启动 § 2 计划 | ⏸ 等用户指令 | ⏸ 待定 |
+| 7 | 议题 C 实施范围 | ✅ 全部语音路径（Q1=2） | ✅ 已决策 |
+| 8 | 议题 C UI 形态 | ✅ transcript+语音（Q2=2） | ✅ 已决策 |
+| 9 | 议题 C VAD 策略 | ✅ LiveKit built-in（Q3=1） | ✅ 已决策 |
+| 10 | 进 § 1 规格 | ✅ spec.md + design-spec.md + mockup | ✅ 已决策 |
+| 11 | V4 假绿灯处置（债务 9） → [V4 决策 1](tasks/2026-07-17-new-feature-ai-push/decisions.md) | 🔴 **立即修** | 🔴 已决策（执行中） |
+| 12 | 债务 3 数字偏差（29 → 41） → [V4 决策 2](tasks/2026-07-17-new-feature-ai-push/decisions.md) | 🔴 **同步修** | 🔴 已决策（执行中） |
+| 13 | CI auto-fix 选方案 → [CI 决策 1](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 方案 1（Claude Code Action + SHA 约束） | ✅ 已决策 |
+| 14 | CI auto-fix commit 模式（v2 修订）→ [CI 决策 2](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ Draft PR（v2 · 修订自推原分支） | ✅ 已决策 |
+| 15 | CI auto-fix 失败上限（v2 修订）→ [CI 决策 3](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 3 次/commt（v2 · 修订自 2 次） | ✅ 已决策 |
+| 16 | CI auto-fix job 白名单（v2 加固）→ [CI 决策 4](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 含 backend 限 typecheck/coverage + backend service 必走 Draft PR | ✅ 已决策 |
+| 17 | CI auto-fix 单测协同（v2 修订）→ [CI 决策 5](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 外部 check（T33 + pytest 实际绿 · v2 修订自自我豁免） | ✅ 已决策 |
+| 18 | CI auto-fix API 费用 → [CI 决策 6](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ $20/月 | ✅ 已决策 |
+| 19 | 🆕 CI auto-fix Action pin SHA（v2 新增）→ [CI 决策 7](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 完整 40 字符 SHA（非 @beta） | ✅ 已决策 |
+| 20 | 🆕 CI auto-fix 双 job 权限分层（v2 新增）→ [CI 决策 8](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ diagnostic（read-only）+ apply-fix（env approval） | ✅ 已决策 |
+| 21 | 🆕 CI auto-fix Fork PR 排除（v2 新增）→ [CI 决策 9](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 不处理 fork PR | ✅ 已决策 |
+| 22 | 🆕 CI auto-fix 日志净化（v2 新增）→ [CI 决策 10](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 仅传 job 名 + 错误类型 + 截断字符串 | ✅ 已决策 |
 
 ---
 
 ## 一、设计议题（待深入讨论）
 
 ### 议题 A — 会话状态机：LangGraph StateGraph 写了但没用上
+
+**状态**：✅ **2026-07-22 已决策**（与议题 E 联合实施）· 进 § 1 规格 · spec.md 已起草
 
 **现状**：`backend/agents/interview_graph.py` 定义了完整的 StateGraph 编译产物，但 `backend/services/interview_service.py:80-150` 实际走的是**直接调用** `question_engine` / `followup_engine` / `evaluate_agent`，绕开了 graph 的状态转移逻辑。
 
@@ -26,9 +76,17 @@
 
 ---
 
-### 议题 B — `interview.py` 803 行的拆分
+### 议题 B — `interview.py` 873 行的拆分
 
-**现状**：`backend/api/interview.py` 单文件 803 行，承担了 start / list / next-question / submit-answer / complete / favorite / delete / records 全部端点。
+**状态**：🟡 **2026-07-22 默认决策**：按职责拆（lifecycle/runtime/query） · 待用户最终确认 · spec.md 已起草
+
+**现状**：`backend/api/interview.py` 单文件 873 行，承担了 13 个端点（议题描述列了 8 个，漏算 5 个）：
+- Lifecycle：POST / + POST /complete + POST /{id}/favorite + DELETE /{id}
+- Runtime：POST /{id}/next-question + POST /records/{id}/answer + POST /voice/respond + POST /transcribe + POST /livekit-token
+- Query：GET / + GET /recent + GET /{id} + GET /{id}/records
+- Other：2 个内联 Pydantic 模型（VoiceRespondRequest / LiveKitTokenRequest）
+
+`grep -rn "from api.interview import" backend/api/` 仅命中 main.py —— **无反向依赖，拆分零摩擦**。
 
 **影响**：
 - 改动一处容易影响别处
@@ -46,11 +104,15 @@
 
 ### 议题 C — 语音架构：3 套并存的最终形态
 
+**状态**：✅ **2026-07-22 已决策**：全力全双工（路径 2）+ 全部语音路径替换（`/interview/room` + `/interview/setup` + `/interview.tsx`）+ transcript+语音 UI（上下分栏）+ LiveKit built-in VAD/turn-taking · spec.md 已起草
+
 **现状**：
 - `/interview.tsx` → `VoiceRoom.tsx`（旧 PTT + WebSocket）
 - `/interview/setup.tsx` → `/interview/room.tsx` → `VoiceRecord.tsx`（新 PTT）
 - `LiveKitVoice.tsx` 组件存在但**没有任何页面用**
-- `voice/livekit_worker.py` 在每次 start interview 时启动，但**没有客户端连**
+- `voice/livekit_worker.py`（61 行）**从未被代码调用** —— 实际被 `_start_voice_worker` spawn 的是 `backend/voice/interview_room.py`（300+ 行），前者是 dead code
+- `_start_voice_worker` 在 `start_interview` 时无条件启动 LiveKit worker，但前端 `/interview/room` 走 VoiceRecord（WebSocket ASR/TTS）**从不连 LiveKit 房间** → worker 永远 `wait_for_participant()` 阻塞直到 `/complete`
+- `frontend/lib/livekit.ts` helper + `POST /api/interviews/livekit-token` 端点都是孤儿代码
 
 **影响**：
 - 维护 3 套组件的认知成本
@@ -68,7 +130,13 @@
 
 ### 议题 D — 跨模块数据流：AI 推荐如何真正打通
 
-**现状**：`recommendations_service.py` 已经能从 `blind_spots` 推"补充学习"建议，但跟 `knowledge_service`（Obsidian）、`news_service`（日报）没有真正的内容联动 —— 推荐的"相关笔记"是占位文字。
+**状态**：📋 待核验（已有后续模块实施，但尚未逐条对照本议题关闭条件）
+
+**现状**：`recommendations_service.py` 主路径已真实集成 Obsidian + News（不再是占位）：
+- L14 `from services.obsidian_service import obsidian` · L73 `obsidian.search(spot, limit=3)` 把 `name` / `path` 拼进 `title` / `link`
+- L15 `from services.news_service import news_service` · L126 `news_service.get_code_stats(days=7)` 生成 stats 卡
+- 但 L87-92 **fallback 仍是占位文案**（obsidian 召回为空时插入硬编码「补充学习「{weak_spots[0]}」」+「知识库中暂无相关笔记，建议添加」）
+- `backend/api/analytics.py:236-281` 暴露独立 `/recommendations` 端点，**不调 `recommendations_service`**，自己写一套 blind_spot 计数逻辑（Counter → `{topic, label, frequency, priority}`）—— **两套并行实现并存**
 
 **影响**：
 - "AI 副脑"的差异化定位目前只体现在 dashboard 卡片上
@@ -84,6 +152,8 @@
 ---
 
 ### 议题 E — AI Agent 框架：现在的"假 LangGraph"要不要换
+
+**状态**：✅ **2026-07-22 已决策**：与议题 A 联合实施 · `evaluate_agent` / `report_agent` 用 `with_structured_output` · 不升级 LangGraph 2.x / `create_agent` · spec.md 已起草
 
 **现状**：
 - `interview_graph.py` 编译了图但运行时绕开
@@ -105,11 +175,17 @@
 
 ### 议题 F — 可观测性：零 trace / metrics / structured log
 
+**状态**：📋 待核验（已有相关设计，尚未验证全链路 trace / metrics / error 聚合）
+
 **现状**：
-- 所有日志走 `logging.getLogger("codemock.xxx")` + print
-- 没有 trace 关联（一次 request 跨多服务/agent 怎么串起来）
-- 没有 metrics（LLM 调用次数、token 消耗、STT 延迟、报告生成耗时）
-- 没有 error 聚合（Sentry / GlitchTip 都没接）
+- 73 处 `logger.{info,error,warning,debug}` 调用，绝大多数仍走 stdlib 默认 Formatter（纯文本）
+- T15-T19 commit `96566d8` 在 `backend/utils/logger.py` 落了脚手架：
+  - `setup_logger()` JSON formatter（ts/level/trace_id/logger/msg/exc）· `DigestMetrics`（push_total/push_failed/fetch_failures/push_latency_ms）· 模块级 `digest_logger` / `digest_metrics` 实例
+- **全代码库零调用方** —— grep `from utils.logger` / `digest_metrics.` / `digest_logger.` 全 backend 0 命中（"抽屉里的工具盒"）
+- `request_id` / `X-Request` / `correlation_id` 全仓 0 命中（除 logger.py 自己定义外）
+- trace_id 是**进程级单值**（模块全局 `_trace_id`），并发请求会互相覆盖 —— 即便接 middleware 也是 race condition，关闭前必修
+- `RateLimitMiddleware` 类存在但未注册 · slowapi `app.state.limiter` 但未加 `SlowAPIMiddleware`
+- `sentry-sdk` / `glitchtip` / `langfuse` / `opentelemetry-*` 全部 0 命中
 
 **影响**：
 - 上线后出问题只能靠用户报
@@ -127,27 +203,7 @@
 
 ## 二、已发现 bug（待修复）
 
-### Bug 9 — SM-2 测试与函数签名不一致 🔥 NEW 2026-06-25
-
-**位置**：`backend/tests/test_sm2.py` vs `backend/services/learning_progress_service.py:52`
-
-**症状**：
-- `pytest tests/test_sm2.py` → **10 failed, 82 passed**
-- 错误：`TypeError: calculate_next_srs() got an unexpected keyword argument 'repetition_count'`
-
-**根因**：
-- 函数签名用 `review_count`（参数名 + dict key + DB 字段名）
-- 测试用 `repetition_count`（参数名 + dict key）
-- 不匹配
-
-**修复方向**：
-- ✅ 改测试 → 用 `review_count`（与函数/DB 一致，无迁移）
-- ❌ 改函数 → 要 DB 迁移 + 影响所有调用方
-
-**影响文件**：
-- `backend/tests/test_sm2.py`（改测试）
-
-**优先级**：🔴 高（阻塞 pre-commit hook）
+当前无已登记且完成证据不足的 Bug。新 Bug 必须写明复现路径、影响、优先级和对应回归测试。
 
 ---
 
@@ -173,6 +229,132 @@ DELETE FROM user_questions WHERE user_id = ?;
 ```
 
 **优先级**：低（上线前要写）
+
+---
+
+### 债务 9 — V4 AI 推送模块存在 41 个测试空壳被 pytest 计为通过 🔴 P0 NEW
+
+**位置**：以下 5 个文件全部位于 V4（`docs/tasks/2026-07-17-new-feature-ai-push/`）模块
+
+**审计来源**：[`KnockWise-测试真实性基线-2026-07-21.md`](~/Documents/Codex/2026-07-21/ai-agent-1-agent-agent-2/outputs/KnockWise-测试真实性基线-2026-07-21.md)（2026-07-21 Codex 双 agent 静态 AST 审计）· 本机 `find backend/tests -name "test_*.py" | wc -l` 递归实测 = **41**（与审计一致）
+
+**背景**：commit `9251fd6` 提交时这些测试在 commit message 就被定义为 **"test stub"**（标题：`test+frontend: T20-T24 + T26 测试 stub + 5 核心组件`），但随后 `tasks.md` / `retro.md` / `milestones.md` 全部标为 ✅ DONE，形成"假绿灯"状态。
+
+**空壳分布**（41 个空壳 + 0 真实测试）：
+
+| 文件 | 测试数 | 全部空壳 | 备注 |
+|---|---:|---:|---|
+| `backend/tests/api/test_digest_api.py` | 16 | 16 | 15 个纯 `pass` + 1 个 `import + 注释 + pass` |
+| `backend/tests/e2e/test_digest_push.py` | 4 | 4 | 全 `pass` |
+| `backend/tests/services/test_digest_llm.py` | 4 | 4 | 全 `pass` |
+| `backend/tests/services/test_digest_service_unit.py` | 12 | 12 | 全 `pass` + 与真实 Digest 测试**重复** |
+| `backend/tests/services/test_rss_fetch.py` | 5 | 5 | 全 `pass` · 12 源 fixture 找不到 |
+| **合计** | **41** | **41** | pytest 会全计为通过 |
+
+**额外 3 个弱测试**（不在 41 个内，但建议复核）：
+- `test_interview_filters.py::test_status_filter_is_applied` → 准备 Mock 但不调用接口，可认定为假绿灯
+- `test_archive_service.py::test_logs_count_when_archived` → 只验"没崩"
+- `test_cache.py::test_close_idempotent` → 用"不抛异常"表达幂等
+
+**影响**：
+- V4 模块的 "32 个 Tasks 全部完成" 声明不成立（tasks.md T20-T24 / T28-T31 全部 ✅ DONE 但实际无效）
+- milestones.md V4 "全部完成" 是统计幻觉
+- retro.md "49+ 测试类" 数字混淆（测试类 / 测试函数 / 空壳测试 混算）
+- verify.md (`docs/tasks/2026-07-17-new-feature-ai-push/verify.md`) **不存在** · 验证阶段未真正完成
+- 邮件真实集成在 retro.md 自己的改进项中仍写"待补"
+- 后端当前无 pytest 运行环境（`backend/.venv` 不存在），无法现场验证修复效果
+
+**修复路径**（建议按 § 4 步分批，每任务 1 commit）：
+1. **T20 重写**：16 endpoint × happy + invalid + edge 用 `TestClient` + fixture 跑通（约 48 case）
+2. **T21 拆分**：删除 `test_digest_service_unit.py` 12 个空壳（与真实测试重复），让 `test_digest_service.py` 12 case + `test_digest_composite_score.py` 23 + `test_digest_push_daily.py` 5 + `test_digest_select_top_n.py` 8 作为真实单测基线
+3. **T22 重写**：4 个 LLM mock 测试用 `unittest.mock` 拦截 `ChatOpenAI.ainvoke` + 验证 prompt 含用户偏好 + scope 过滤词
+4. **T23 重写**：5 个 RSS mock + 12 源 fixture（实际创建 `backend/tests/fixtures/rss/*.xml`）
+5. **T24 重写**：4 个 E2E 用 `TestClient` 跑 `cron → DB → API → email` 全链路（可 mock email）
+6. **T28 视觉测试**：创建 `frontend/tests/visual/digest.spec.ts`（spec § 6.7 verify-loop）
+7. **T29 E2E**：5 个 Playwright scenario 实跑（已编写但未执行）
+8. **T30 RSSHub**：创建 `scripts/deploy-rsshub.sh` + `docker-compose.yml` RSSHub service + `curl http://localhost:1200/juejin/tag/AI` 验证
+9. **T31 metrics**：将 `backend/utils/logger.py` 内的 `DigestMetrics` 搬出到独立 `backend/utils/metrics.py` 并暴露接口
+
+**验证手段**：
+- 重建 `backend/.venv` 后 `pytest backend/tests --collect-only` 收集所有测试
+- `pytest backend/tests/api/test_digest_api.py -v` 跑 16 endpoint 测试
+- 跑完用 `pytest --tb=short --cov=backend/services/digest_service --cov-report=term-missing` 输出覆盖率
+
+**优先级**：🔴 **P0（高优工程债务）**——直接影响 V4 模块的可信度与"完成度"声明
+
+**2026-07-22 进展**：
+- 紧急修复链反应：8/9 完成（T21/T22/T23/T24/T28/T30/T31 重写或创建）· T29 文件已实化待实跑
+- T33 AST 空测试阻断器上线（`scripts/check_test_quality.py` + 24 回归测试 · 6 violations 实时阻断 exit 1）
+- T34 三 Gate CI 上线（GitHub Actions quality/typecheck/build · 1 branch protection required policy 待配）
+- pytest baseline **698 passed / 1 skipped / 4 xfailed / 0 failed** in 1.60s · 全覆盖行 61.55% / Digest 核心 85.61%
+- 债务 9 的核心问题（41 个空壳）已基本清零 · **T20 6 violations 2026-07-22 收尾清零（docstring 占位字样已澄清 · 真断言保留 · T33 阻断器现 0 violations exit 0）**
+- T20 实跑 `pytest tests/api/test_digest_api.py -q` = **16 passed** · 前端 Vitest **26 files / 210 tests** 全过
+- 详见 [`docs/tasks/2026-07-21-issues-audit/baseline.md`](tasks/2026-07-21-issues-audit/baseline.md)（baseline 完整记录）
+
+**2026-07-22 阶段五复核（最新状态 · 🚧 未关闭）**：
+
+- 空测试治理已通过：44 files / 681 AST tests / 0 violations；后端 698 passed / 1 skipped / 4 xfailed；Digest coverage 85.61% / 82%。
+- 但原修复路径 3（T22）未完成：`test_digest_llm.py` 不存在，Digest 路径没有 `ainvoke` 契约。
+- 原修复路径 5（T24）未达到 E2E 边界：测试直接调用 service，并 Mock DB/ORM/偏好/RSS；Email 仍为 `NotImplementedError`。
+- 原修复路径 7（T29）实跑结果为 5 failed / 0 passed；`/ai/today` 仍是 EmptyState，bookmarks/settings 缺 QueryClientProvider。
+- 前端 Vitest 210 passed，但 typecheck 有 12 条 diagnostics，Next build 失败；后端优雅停机另发现 `asyncio` 未导入。
+- 完整证据与 V5-01～V5-08 关闭条件见 [`verify.md`](tasks/2026-07-17-new-feature-ai-push/verify.md)。不得再以“8/9 已完成”解释为 Harness 项目闭环。
+
+**修复工时估算（阶段五复核：未闭环）**：原估 ~10.5h；空测试治理已完成，但 V5-01～V5-08 仍需重新拆分估时与实施。
+
+**关联决策**：decisions.md 决策 11 + 12 + 13（2026-07-22 新增）
+**关联文档**：
+- [`docs/tasks/2026-07-21-issues-audit/baseline.md`](tasks/2026-07-21-issues-audit/baseline.md)（2026-07-22 baseline · 698/1/4/0）
+- [`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`](tasks/2026-07-17-new-feature-ai-push/tasks.md) § 9.1/§ 9.6/§ 9.7（双时间线对照 + T33/T34 实施证据）
+- [`docs/tasks/2026-07-17-new-feature-ai-push/retro.md`](tasks/2026-07-17-new-feature-ai-push/retro.md)（标题"实施完成"仍待改为"阶段性实现，验证未完成"）
+- [`docs/rules/milestones.md`](rules/milestones.md) V4 状态（"全部完成"应改"核心功能已实现，测试与交付验证修复中"）
+
+---
+
+### 债务 10 — V1/V3 旧模块审计发现 183 真实测试失败 ✅ 已验证修复（2026-07-23）
+
+**位置**：audit v1/v2 报告（2026-07-21 / 2026-07-22）记录以下模块当时失败：
+- `test_summary_service.py`（dashboard / weekly sync / generate_narrative）
+- `test_study_plan_service.py`（progress aggregation / delete plan）
+- 其他 V1/V3 既有模块
+
+**审计来源**：[`docs/tasks/2026-07-23-audit-183-failures/research.md`](tasks/2026-07-23-audit-183-failures/research.md)（2026-07-23 实测审计）
+
+**背景**：
+- audit v1/v2 报告后端 `pytest` 实测 `183 failed, 494 passed, 4 xfailed`（681 collect）
+- 当时 `backend/.venv` 缺失 + greenlet / openai-whisper 隐性依赖未装 + 无 `.env.local` + 可能 DB migration 未 init
+- 183 failed 集中在 `summary_service` / `study_plan_service` · 这些测试高度依赖 DB session fixture
+- 推测根因：测试环境瞬时状态问题（不是代码 bug）
+
+**修复情况**：✅ **2026-07-23 已验证 0 fail**
+
+实测：
+```bash
+cd backend && ./.venv/bin/python -m pytest --tb=no -q
+# 703 tests collected
+# 695 passed, 4 skipped, 4 xfailed, 22 warnings in 1.83s
+# 0 failed
+```
+
+单跑原本失败的文件验证：
+```bash
+cd backend && ./.venv/bin/python -m pytest tests/test_summary_service.py tests/test_study_plan_service.py -v
+# 48 passed, 1 warning in 0.54s
+# 0 failed
+```
+
+**根因**：环境设置累积（commit `ee5dbd8` 加 greenlet/whisper + 用户本地 `.env.local` 创建 + DB migration 初始化）· 不是代码 bug · **未做代码修复**（不需要修）
+
+**状态变更**：2026-07-22 登记 🔴 P0 → 2026-07-23 立即标 ✅ 已修复（无需代码改动）
+
+**教训**：
+- 审计报告（test environment 状态）有"半衰期" · 环境累积后现象可能自然消失
+- 重新实测是必要的 · 不能只看历史报告
+- 类似审计应附"实测时间 + 环境状态"元信息
+
+**关联决策**：用户拍板"选项 B：登记 + 立即关闭"（2026-07-23）
+**关联文档**：
+- [`docs/tasks/2026-07-23-audit-183-failures/research.md`](tasks/2026-07-23-audit-183-failures/research.md)（完整调研 + 验证步骤）
 
 ---
 
@@ -212,16 +394,23 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ---
 
-### 债务 3 — 测试覆盖几乎为零 ⚠️
+### 债务 3 — 测试覆盖需要持续量化 ⚠️
 
-**位置**：`backend/tests/` 目录存在但稀疏
+**状态**：🚧 改善中
 
-**现状**：从 `git log` 看项目里几乎没有单元测试，E2E 全靠手动 curl。
+**位置**：`backend/tests/` + `frontend/__tests__/`
+
+**现状（2026-07-22 数字修正）**：递归统计 `find backend/tests -name "test_*.py" -type f | wc -l` = **41 个**（含 `api/` `e2e/` `schemas/` `services/` 4 个子目录），顶层 `ls backend/tests/test_*.py | wc -l` = 29 个 —— 之前 29 数字是顶层漏算。**前端 25 个 Vitest 文件不变**（实测 `find frontend -name "*.test.*" -not -path "*/node_modules/*" | wc -l`）。
+
+⚠️ **关联债务 9**：V4 AI 推送模块的 5 个文件含 **41 个确定空壳测试**（纯 `pass`），pytest 会全计为通过。这部分"覆盖"是虚假绿光，详见三、债务 9。
+
+注：`pyproject.toml` 无 coverage 配置；`requirements.txt:29` 列了 `pytest-cov>=6.0.0` 但未启用；无 `.coverage` / `htmlcov` 文件。
 
 **建议优先级**：
 1. 核心 service 单测（`interview_service.process_answer`、`report_agent.generate_report`）
 2. API contract 测试（OpenAPI snapshot）
 3. E2E happy path 1-2 个
+4. **修复债务 9**：V4 41 个空壳测试重写
 
 **优先级**：中（重构前必做，否则改完没信心）
 
@@ -241,13 +430,14 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ### 债务 5 — 邮箱 + 密码哈希用 stdlib `hashlib.pbkdf2_hmac` 而非 bcrypt/argon2 ⚠️
 
-**位置**：`backend/api/auth.py` 注册路径
+**位置**：`backend/api/auth.py:38,46` 注册 / 校验路径
 
-**现状**：注释说"零依赖"所以选 stdlib。PBKDF2 是 OK 的，但 PBKDF2-SHA256 调 600K 次的官方建议很多库还没跟进。
+**现状（2026-07-21 清账）**：`_hash_password` / `_verify_password` 已使用 **PBKDF2-SHA256 iterations=600_000**（OWASP 2023 推荐值，原议题的"调到 600000+"建议已落实）。仅剩"非 argon2/bcrypt（内存硬度不足）"一点仍成立。
+> 关联虚假注释：`backend/models/__init__.py:49` 注释写 `# bcrypt hash`，实际是 pbkdf2 —— 应改注释（见新增发现，非本议题必修项）。
 
-**建议**：换 argon2-cffi（更现代、内存硬度好），或显式把 PBKDF2 iterations 调到 600000+。
+**建议**：若上线前要进一步硬化，换 argon2-cffi（内存硬度更好）；否则接受 600K pbkdf2 现状并修正误导注释即可。
 
-**优先级**：低（生产前要改）
+**优先级**：低（600K 已达标，仅算法选择与注释订正）
 
 ---
 
@@ -290,6 +480,7 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 | React StrictMode 双触发防护 | 2026-06-17 | commit `interview/room.tsx` `interview.tsx` |
 | 文档英文名 → 中文名 + 合并重构方案 | 2026-06-18 | `docs/` git mv |
 | Alembic 启动 ALTER 自动跑 | 2026-06-17 | `core/database.py:_MIGRATIONS` |
+| Bug 9：SM-2 测试参数 `repetition_count` → `review_count` | 2026-06-25 | commit `7a5a21e` · commit 记录 92 passed；2026-07-21 代码复核一致，当前环境无 pytest 未重复执行 |
 
 ---
 
@@ -315,4 +506,4 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 **影响文件**：
 - `backend/tests/test_sm2.py`（改）
-- `docs/40-追踪/目前缺陷.md`（本文档登记）
+- `docs/issues.md`（本文档登记）

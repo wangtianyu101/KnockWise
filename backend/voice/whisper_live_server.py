@@ -22,7 +22,7 @@ from core.config import settings
 
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
-logger = logging.getLogger("codemock.whisper-live")
+logger = logging.getLogger("knockwise.whisper-live")
 MODEL_DIR = Path(settings.upload_dir) / "whisper_models"
 MODEL_SIZE = os.environ.get("WHISPER_MODEL", "tiny")  # tiny=75MB, base=145MB
 

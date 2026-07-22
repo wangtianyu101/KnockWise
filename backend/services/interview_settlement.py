@@ -20,7 +20,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-log = logging.getLogger("codemock.interview_settlement")
+log = logging.getLogger("knockwise.interview_settlement")
 
 
 async def trigger_settle_after_interview(

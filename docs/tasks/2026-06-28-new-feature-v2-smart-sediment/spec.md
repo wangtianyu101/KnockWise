@@ -67,26 +67,34 @@ related:
 
 ---
 
-## 2. 验收标准 / GWT（机器可验证，必填）
+## 2. 验收标准 / Requirement + Scenario（机器可验证，必填）
 
-### 2.1 US-1：画像沉淀
+> 升级说明（2026-07-17）：从纯 GWT 升级为 Requirement (SHALL) + Scenario (GWT) 双层结构。
+> - Requirement 层：系统承诺（SHALL 强约束）
+> - Scenario 层：验收用例（沿用 GWT，向后兼容）
+
+### Requirement: Profile Settlement
+The system SHALL persist user's learning profile after each practice answer and handle concurrent settlements safely.
 
 - **GWT-1 (happy)**：Given 用户答完 1 道 score=4 的题（topic=网络层），When `ProfileSettlementService.settle_after_practice(user_id, qid, 4)` 被触发，Then `Profile.weak_topics` 出现 `{topic: "网络层", error_rate: 0.X, count: 1}`，且 `last_active_at` 更新到当前时间
 - **GWT-2 (edge: 答对 master)**：Given 用户答对同一 topic 第 2 次（`practice_count >= 2` 且 `mastered_count == 1`），When settlement 触发，Then 该 topic 从 `weak_topics` 移到 `mastered_topics`
 - **GWT-3 (failure: 并发覆盖)**：Given 两个答题请求同时触发 settlement，When 两个 service 并发跑，Then 后写者用乐观锁检测（`updated_at` 比对），冲突时**重试 1 次**而不是覆盖
 
-### 2.2 US-2：Obsidian 写笔记
+### Requirement: Obsidian Sediment
+The system SHALL write daily learning notes to the Obsidian vault with graceful degradation on missing vault.
 
 - **GWT-4 (happy)**：Given vault 存在（`~/Obsidian/coding/` 目录在），When `ObsidianSedimentService.write_daily(date, content)` 触发，Then 文件 `~/Obsidian/coding/learning/YYYY-MM-DD.md` 出现，content 包含 YAML frontmatter（date / topics / question_count）
 - **GWT-5 (failure: vault 缺失)**：Given vault 不存在（`~/Obsidian/coding/` 不在），When write_daily 触发，Then 返回 `None`，log warning `"Obsidian vault not found"`，**不**抛异常，**不**阻塞上游业务
 
-### 2.3 US-3：Dashboard 总结
+### Requirement: Dashboard Summary
+The system SHALL generate a daily learning summary with LLM degradation and 1h Redis cache.
 
 - **GWT-6 (happy)**：Given 用户昨天答了 8 道题、掌握 2 个新 topic，When `SummaryService.dashboard(user_id)` 被 `/api/dashboard/summary` 端点调用，Then 返回 `{title: "今日学习总结", body: "昨天你答了 8 道题，掌握 2 个新 topic...", yesterday_count: 8, mastered: [...], weak_shift: [...]}`
 - **GWT-7 (failure: LLM 降级)**：Given LLM 调用失败（DeepSeek 504），When `SummaryService.daily()` 触发，Then **降级返回规则生成版**（不调 LLM，模板填数字），HTTP 200，body 含 `_fallback: true` 标记
 - **GWT-8 (edge: 缓存命中)**：Given 同一用户在 1h 内第 2 次调 `dashboard`，When service 检查 Redis `summary:profile:{user_id}` 存在，Then **跳过 LLM 调用**直接返回缓存（5x 加速，成本降为 0）
 
-### 2.4 跨边界 GWT
+### Requirement: Settlement Failure Isolation
+The system SHALL isolate settlement failures from the main business flow without affecting API responses.
 
 - **GWT-9 (failure: 触发失败不阻塞主业务)**：Given 用户答完题，When `ProfileSettlementService.settle_after_practice` 内部抛异常（DB 断连），Then `api/learn.py:answer` 端点**仍返回 200**（主业务不受影响），错误 log 到 `[settlement_failed]` 日志
 
