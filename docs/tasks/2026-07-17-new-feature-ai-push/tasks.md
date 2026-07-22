@@ -202,13 +202,19 @@
   - commit: `8fe0f39 test(digest): T22 删 test_digest_llm.py 测不存在代码`
   - 产出: ✅ **0 假绿灯 · 4 stub 删除** · pytest 660 collect / 660 pass / 0 fail / 4 xfail（vs 之前 664/664/0/4）· 若未来 digest 真的用 LLM 再补 spec + 测试
 
-- [ ] T23: ⚠️ STUB — audit 2026-07-21（详见 § 9）
-  - 文件: `backend/tests/services/test_rss_fetch.py`
-  - 测试: ⚠️ **5 个测试全 `pass` · 0 真实 case** · 12 源 fixture **未找到**
+- [x] T23: ✅ DONE — commit pending 重写（5 真实 case · RSS 2.0 + Atom 1.0 + 重试 + 部分失败）
+  - 文件: `backend/tests/services/test_rss_fetch.py`（重写 · 75 行）
+  - 测试: ✅ **5 真实 case 全 pass**（3 解析 + 1 重试 + 1 多源并行）
+    - `test_anthropic_rss_parses` — RSS 2.0 解析 · RFC 822 日期 → ISO 8601
+    - `test_github_atom_parses` — Atom 1.0 解析 · `<link href=>` 属性取值
+    - `test_qbitai_parses` — 中文 RSS · CDATA 内容 · `+0800` 时区
+    - `test_retry_recovers_from_transient_failure` — 前 2 次失败第 3 次成功 · 替代原 rsshub_fallback（RSSHub fallback 路径未实现 · T30 部署后才有）
+    - `test_partial_failure_continues` — 8 源中 2 失败 · 6 成功 · 失败源 error 非空 + items 空
   - 依赖: T5
-  - 估时: 1h → 实际需重写 + 创建 fixtures
-  - commit: `test(rss): 12 源 mock 抓取 + RSSHub fallback` — **未真实实施**
-  - 产出: ⚠️ **0 fixture files · 0 真实 mock · 5 空壳 stub**
+  - 估时: 30 min（vs 估时 1.5h · 提前）
+  - commit: `test(rss): T23 重写 5 真实 case · 覆盖 RSS/Atom/重试/并行` — **待 commit**
+  - 产出: ✅ **0 stub** · 5 真实断言 · pytest 660 collect / 660 pass / 0 fail / 4 xfail（vs 之前 660/660/0/4 · 净效果 stub→真实 · 总数不变因为 stub 也算 pass）
+  - 注: fixture 用 inline XML 字符串（不走文件系统）· 无新增 fixture 文件
 
 - [ ] T24: ⚠️ STUB — audit 2026-07-21（详见 § 9）
   - 文件: `backend/tests/e2e/test_digest_push.py`
