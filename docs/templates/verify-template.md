@@ -1,135 +1,87 @@
 ---
 title: 验证文档模板（verify）
 date: 2026-06-30
-status: v1
-tags: [verify, 5步, 验证, 5层gate, 模板]
+updated: 2026-07-21
+status: v2
+tags: [verify, 5步, L3, L5, 模板]
 related:
-  - [test-cases-template.md](test-cases-template.md) — 上游
-  - [tasks-template.md](tasks-template.md) — 上游
+  - [test-cases-template.md](test-cases-template.md)
+  - [tasks-template.md](tasks-template.md)
 ---
 
 # 验证文档模板（verify.md）
 
-> **一句话**：5 层 gate 全过才进 6 步发布——**多层证据证明 task 真的完成**。
+> **一句话**：步骤 5 只完成 L3 整合测试和 L5 staging；L1/L2/L4 已在步骤 4 分布式完成。
 >
-> **产出时机**：5 步验证阶段（所有实现后必填）。
+> **作者**：AI 主导证据收集，人确认运行结果。
 >
-> **作者**：**AI 主导**（人 review L4）。
->
-> **对应 DOD**：见 `docs/DOD.md` §七（5 层 gate 各 1 条）。
+> **对应 DOD**：`docs/DOD.md` §七。
 
----
+## 0. 上游证据（必填）
 
-## L1 类型检查（必填）
+| 分布式活动 | 证据位置 | 结果 |
+|---|---|---|
+| L1 类型检查 | `<command / log / commit>` | ✅ / ❌ |
+| L2 单元测试 | `<command / test-cases.md>` | `<N passed / coverage>` |
+| L4 review / verifier | `<review / verifier result>` | PASS / FAIL |
 
-```markdown
-- [ ] tsc / mypy 0 error
-- **命令**: `cd backend && ./.venv/bin/python -m mypy services/`
-- **结果**: PASSED ✅
-- **耗时**: <X 秒
-```
+> 本段只引用步骤 4 已产生的证据，不在步骤 5 重新制造五层 gate。
 
-**工具**：TypeScript（tsc）/ Python（mypy）
+## L3 整合测试（必填）
 
----
+- **范围**：<API contract / 数据库事务 / 跨模块 / E2E>
+- **命令**：`<可复现命令>`
+- **环境**：<local integration / test>
+- **结果**：PASSED / FAILED
+- **耗时**：<X 秒>
 
-## L2 单元测试（必填）
+### 场景
 
-```markdown
-- [ ] pytest 全部通过
-- [ ] 覆盖率 ≥ 80%
-- **命令**: `cd backend && ./.venv/bin/python -m pytest tests/ --cov=services --cov-report=term-missing`
-- **结果**:
-  - passed: <X>
-  - failed: 0
-  - 覆盖率: <Y>%
-- **耗时**: <Z> 秒
-```
+| 场景 | 期望 | 实际 | 证据 | 结论 |
+|---|---|---|---|---|
+| <场景 1> | <期望> | <实际> | `<log / response>` | ✅ / ❌ |
+| <场景 2> | <期望> | <实际> | `<log / response>` | ✅ / ❌ |
 
-**覆盖率要求**（见 CLAUDE.md §1.8）：
-- 核心 service ≥ 80%
-- 非核心 service 不强制
+## L5 staging 运行时验证（必填）
 
----
+- **环境**：<staging / 本机完整服务；不得只写单元测试环境>
+- **启动方式**：`./scripts/start.sh`
+- **验证人**：<姓名>
+- **日期**：YYYY-MM-DD
+- **结果**：PASSED / FAILED
 
-## L3 集成测试（必填）
+### 真实路径
 
-```markdown
-- [ ] E2E / API contract 通过
-- **命令**: `cd backend && ./.venv/bin/python -m pytest tests/integration`
-- **结果**:
-  - passed: <X>
-  - failed: 0
-- **耗时**: <Y> 秒
-```
+| 用户路径 | 操作步骤 | 期望 | 实际 | 截图/日志 | 结论 |
+|---|---|---|---|---|---|
+| <路径 1> | <1...2...> | <期望> | <实际> | `<path>` | ✅ / ❌ |
 
-**测试范围**：
-- API contract（端到端调用）
-- 数据库事务
-- 外部依赖（mock）
+## 失败与残留风险（必填）
 
----
+- **失败项**：<无 / 具体项>
+- **未覆盖项**：<无 / 具体项及原因>
+- **残留风险**：<风险 + owner + 后续动作>
 
-## L4 代码审查（必填）
+> 无法运行、依赖缺失或没有证据时必须写 FAILED/BLOCKED，不得写成通过。
 
-```markdown
-- [ ] human review diff 完成
-- **审查人**: <姓名>
-- **审查日期**: YYYY-MM-DD
-- **审查范围**:
-  - <commit 1>: <摘要>
-  - <commit 2>: <摘要>
-- **结论**: ✅ 通过 / ⚠️ 建议修改 / ❌ 拒绝
-- **关键反馈**:
-  - <反馈 1>
-  - <反馈 2>
-```
+## 用户验收（必填）
 
-**审查 checklist**：
-- [ ] 代码符合 spec.md
-- [ ] 命名清晰
-- [ ] 测试覆盖
-- [ ] 无明显 bug
-- [ ] 边界 case 处理
+- **结论**：✅ 验证完成 / ❌ 退回步骤 4
+- **确认人**：<name>
+- **确认日期**：YYYY-MM-DD
 
----
+## 🎯 硬性 DOD
 
-## L5 运行时验证（必填）
+- [ ] 已引用步骤 4 的 L1/L2/L4 证据
+- [ ] L3 整合测试通过且有可复现命令
+- [ ] L5 staging 真实路径通过且有日志/截图/浏览器证据
+- [ ] 期望与实际逐项记录，失败没有被隐藏
+- [ ] 用户明确确认验证完成
 
-```markdown
-- [ ] staging 跑通
-- [ ] 截图 / 日志存档
-- **环境**: staging / pre-prod
-- **验证人**: <姓名>
-- **验证日期**: YYYY-MM-DD
+> 任一项未满足，verify.md 不算完成，不能进入步骤 6 复盘。
 
-### 验证场景
-1. 场景 1: <描述>
-   - 步骤: 1. ... 2. ...
-   - 期望: <应该看到>
-   - 实际: <实际看到>
-   - 截图: <路径或链接>
+## 相关文档
 
-2. 场景 2: ...
-```
-
----
-
-## 🎯 硬性 DOD（verify.md 5 层 gate 全过）
-
-- [ ] **L1 类型检查**：tsc / mypy 0 error
-- [ ] **L2 单元测试**：pytest 通过 + 覆盖率 ≥ 80%
-- [ ] **L3 集成测试**：E2E / API contract 通过
-- [ ] **L4 代码审查**：human review 完成
-- [ ] **L5 运行时验证**：staging 跑通
-
-> ⚠️ 任何 1 层没过 → verify.md 不算完成，不能进 6 步发布
-> ⚠️ 工具校验：`python3 scripts/check-step.py verify <file>`
-
----
-
-## 📚 相关文档
-
-- [test-cases-template.md](test-cases-template.md) — 上游：测试用例
-- [tasks-template.md](tasks-template.md) — 上游：任务拆分
-- `docs/DOD.md` §七 — 5 步验证 DOD 完整定义
+- [test-cases-template.md](test-cases-template.md)
+- [tasks-template.md](tasks-template.md)
+- `docs/DOD.md` §七

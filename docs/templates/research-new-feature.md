@@ -1,6 +1,7 @@
 # 调研模板 · 新功能
 
 > 触发词：`调研 新功能：<topic>` 或 `调研 设计：<topic>` 或 `调研 feature：<topic>`
+> 路径模式：`full-6`
 > 时间预算：30-60 min
 > 必填段：1, 2, 3, 4, 5（全部必填）
 
@@ -25,7 +26,7 @@
 - `frontend/pages/<...>.tsx` — <作用>
 - `frontend/components/<...>.tsx` — <作用>
 
-### 2.2 相关议題（来自 `docs/40-追踪/目前缺陷.md`）
+### 2.2 相关议題（来自 `docs/issues.md`）
 - [A-1, F-3 ...]（无则写"无"）
 - 如议題沉积超过 30 天未推进 → 标注 ⚠️
 
@@ -62,7 +63,7 @@ git log --oneline -10 -- <相关路径>
 | 类似功能已有但不一致 | 🟡 | 决定是统一还是并存 |
 | 涉及 schema 变更 | 🔴 | 必走迁移流程 + 备份 |
 | 涉及多个 agent / branch | 🟡 | 强调研 + 走 1.7 分支 |
-| 议題沉积影响判断 | 🟡 | 必读 `目前缺陷.md` |
+| 议題沉积影响判断 | 🟡 | 必读 `docs/issues.md` |
 | 估时偏差 > 50% | 🟡 | 拆更小的 task |
 
 ## 5. 输出建议（必填）
@@ -128,6 +129,6 @@ git log --oneline -10 -- <相关路径>
 - [ ] 风险评估 ≥ 3 条带等级
 - [ ] 输出建议给完整 6 步路径
 - [ ] 关键决策点 ≥ 1
-- [ ] 已读 `docs/40-追踪/目前缺陷.md`
+- [ ] 已读 `docs/issues.md`
 - [ ] 已跑 `git log -10` + `git status`
 - [ ] 步 1 写 spec.md 时按 [spec-template.md](spec-template.md) §2 用 Requirement+Scenario 结构

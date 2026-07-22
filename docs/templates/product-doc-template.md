@@ -14,7 +14,7 @@ related:
 >
 > **产出时机**：1 步规格阶段（**仅 new-feature 必填**，bug/refactor/p0 不写）。
 >
-> **对应 DOD**：见 `docs/DOD.md` §三.0（4 条）。
+> **对应 DOD**：见 `docs/DOD.md` §三.1。
 >
 > **作者**：**人主导**（产品经理 / 项目负责人），AI 辅助。
 >
@@ -180,8 +180,8 @@ spec.md 5 段里**70% 是产品 + 30% 是技术**，但产品部分**散落**在
 
 - `spec-template.md` — 下游：技术脑（AI 主导翻译）
 - `design-spec-template.md` — 下游：设计脑（设计主导翻译，可选）
-- `docs/DOD.md` §三.0 — product-doc.md DOD 完整定义
-- 7 步工作流 · 全局流程.md — 产品 + 设计 + 技术 三脑的关系
+- `docs/DOD.md` §三.1 — product-doc.md DOD 完整定义
+- 6 步工作流 · 全局流程.md — 产品 + 设计 + 技术三脑的关系
 
 ---
 

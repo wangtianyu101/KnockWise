@@ -14,7 +14,7 @@ related:
 >
 > **产出时机**：1 步规格阶段（new-feature 必填，bug/refactor 可选）。
 >
-> **对应 DOD**：见 `docs/DOD.md` §三（6 条）。
+> **对应 DOD**：见 `docs/DOD.md` §三.3。
 >
 > **上游**：research.md（0 步）+ product-doc.md（人主导的产品脑）
 >
@@ -266,7 +266,7 @@ class PushNotification(BaseModel):
 - `component-spec-template.md` — **2 步技术层**：组件 Props/State 实现
 - `plan-template.md` — 2 步：多方案对比 + 推荐
 - `test-cases-template.md` — 4 步整合产出
-- `docs/DOD.md` §三 — 1 步规格 DOD 完整定义
+- `docs/DOD.md` §三.3 — 1 步规格 DOD 完整定义
 
 ---
 

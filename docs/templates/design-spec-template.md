@@ -19,6 +19,8 @@ related:
 > **上游**：product-doc.md（产品意图）
 >
 > **下游**：spec.md（技术脑翻译设计为实现）
+>
+> **UI 子流程**：页面地图完成后，按 [`../rules/design-mockup-workflow.md`](../rules/design-mockup-workflow.md) 生成 ASCII + HTML + index，用户验收后再进入步骤 2。
 
 ---
 
@@ -150,7 +152,7 @@ related:
 
 ```markdown
 ### 5.1 颜色
-- 主色：#1890ff（蓝色，用于主要按钮）
+- 主色：`var(--color-primary, #6366f1)`（继承项目 token）
 - 辅助色：#52c41a（绿色，用于成功）
 - 警告色：#faad14（黄色，用于警告）
 - 错误色：#f5222d（红色，用于错误）
@@ -169,8 +171,8 @@ related:
 - 24px（章节间距，段落之间）
 
 ### 5.4 组件库
-- UI 库：Ant Design 5
-- 图标：Ant Design Icons
+- UI 库：Ant Design 6 + 项目 shared/v3 组件
+- 图标：Lucide / 现有项目图标体系
 - 字体：系统默认字体
 
 ### 5.5 圆角 / 阴影
@@ -192,7 +194,7 @@ related:
 | 画线框图（视觉判断） | 列用户旅程（从产品文档提炼） |
 | 决定交互细节（UX 决策） | 列出页面地图 |
 | 定视觉规范（品牌一致性） | 校验状态机完整性 |
-| 出视觉稿（Figma） | 生成线框草图（初稿） |
+| 审阅 HTML 视觉稿并拍板 | 生成 ASCII + HTML mockup 初稿 |
 
 **核心**：**视觉判断归人，结构化内容 AI 辅助**。
 
@@ -205,6 +207,8 @@ related:
 - [ ] ≥ 1 个页面线框图（ASCII 或图片引用）
 - [ ] 交互细节 ≥ 5 种状态（默认 / hover / loading / success / error）
 - [ ] 视觉规范 5 方面齐全（颜色 / 字体 / 间距 / 组件库 / 圆角阴影）
+- [ ] 涉及页面时，HTML mockup 与 `docs/designs/<topic>/index.md` 已生成、可打开且进入 git
+- [ ] 已继承项目现有视觉 token / 导航 / 组件体系，未另起一套风格
 
 > ⚠️ 任何 1 条未满足 → design-spec.md 不算完成
 > ⚠️ TODO: 接入 `scripts/check-design-spec.py`（pre-commit hook）
@@ -232,7 +236,7 @@ related:
 - `product-doc-template.md` — 上游：产品脑（人主导）
 - `spec-template.md` — 下游：技术脑（AI 主导）
 - `docs/DOD.md` §三.2 — design-spec.md DOD 定义
-- `7步工作流最终版/全局流程.md` — 三脑关系总览
+- `7步工作流最终版/全局流程.md` — 6 步 v2 三脑关系总览（目录名保留历史命名）
 
 ---
 
@@ -281,8 +285,8 @@ related:
 | 失败 | toast "重试" |
 
 ### 5. 视觉规范
-- 主色：#1890ff
+- 主色：`var(--color-primary, #6366f1)`
 - 字体：14px 正文 / 16px 标题
 - 间距：16px
 - 圆角：4px（标签）/ 8px（按钮）
-- 组件库：Ant Design 5
+- 组件库：Ant Design 6 + 项目 shared/v3 组件

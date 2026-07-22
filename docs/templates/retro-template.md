@@ -2,7 +2,7 @@
 title: 复盘文档模板（retro）
 date: 2026-06-30
 status: v1
-tags: [retro, 7步, 复盘, 模板]
+tags: [retro, 6步, 复盘, 模板]
 related:
   - [verify-template.md](verify-template.md) — 上游
   - `docs/DOD.md` — 沉淀到哪里
@@ -12,11 +12,11 @@ related:
 
 > **一句话**：沉淀经验成下次能用的资产——**AI 无跨会话记忆，retro 是唯一通路**。
 >
-> **产出时机**：7 步复盘阶段（所有任务完成后必填）。
+> **产出时机**：6 步复盘阶段（verify 完成后自动起草，用户确认后完成）。
 >
 > **作者**：**AI 主导**（人 review 改进项分配）。
 >
-> **对应 DOD**：见 `docs/DOD.md` §九（5 条）。
+> **对应 DOD**：见 `docs/DOD.md` §八。
 
 ---
 
@@ -121,5 +121,5 @@ related:
 ## 📚 相关文档
 
 - [verify-template.md](verify-template.md) — 上游：验证报告
-- `docs/DOD.md` §九 — 7 步复盘 DOD 完整定义
+- `docs/DOD.md` §八 — 6 步复盘 DOD 完整定义
 - `docs/issues.md` — 议題追踪（retro 中发现的新议題）

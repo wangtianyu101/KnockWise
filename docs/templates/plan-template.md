@@ -14,9 +14,9 @@ related:
 >
 > **产出时机**：2 步计划阶段（new-feature / refactor 必填，bug 可选）。
 >
-> **对应 DOD**：见 `docs/DOD.md` §四（5 条）。
+> **对应 DOD**：见 `docs/DOD.md` §四.1。
 >
-> **上游**：spec.md + product-doc.md + research.md
+> **上游**：research.md + spec.md；product-doc.md / design-spec.md 按适用性引用或明确标注“不适用”
 >
 > **下游**：tasks.md（第 3 步拆分）
 
@@ -113,9 +113,9 @@ related:
 ```
 0 调研 → 1 规格（已完成）→ 2 计划（本步）
               ↓
-       3 拆分（tasks.md） → 4 实现（TDD）→ 5 验证（5 层 gate）
+       3 拆分（tasks.md） → 4 实现（TDD + L1/L2/L4）→ 5 验证（L3 + L5）
               ↓
-       6 发布（灰度 + 监控）→ 7 复盘
+       6 复盘（retro.md）
 ```
 
 ---
@@ -126,7 +126,7 @@ related:
 - [ ] 推荐方案明确（不是"建议 A 或 B"二选一）
 - [ ] 风险点带等级（🔴/🟡/🟢）+ 缓解措施
 - [ ] 决策点 ≥ 1（用什么库 / 模式 / 缓存策略）
-- [ ] 引用完整（spec.md + product-doc.md + research.md 路径全列）
+- [ ] 引用完整（research.md + spec.md；product/design 文档已引用或标注不适用）
 
 > ⚠️ 任何 1 条未满足 → plan.md 不算完成
 > ⚠️ 工具校验：`python3 scripts/check-step.py plan <file>`
@@ -137,4 +137,4 @@ related:
 
 - [spec-template.md](spec-template.md) — 上游：技术规格
 - [tasks-template.md](tasks-template.md) — 下游：任务拆分
-- `docs/DOD.md` §四 — 2 步计划 DOD 完整定义
+- `docs/DOD.md` §四.1 — 2 步计划 DOD 完整定义
