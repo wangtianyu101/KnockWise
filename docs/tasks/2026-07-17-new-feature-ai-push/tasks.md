@@ -262,13 +262,13 @@
 
 ### 阶段 G · DevOps + 文档（3h）
 
-- [ ] T30: ⚠️ 缺失 — audit 2026-07-21（详见 § 9）
-  - 文件: ⚠️ **`scripts/deploy-rsshub.sh` 不存在**（本机 `ls` 验证）· compose 未发现 rsshub 配置
-  - 测试: `curl http://localhost:1200/juejin/tag/AI` — **未验证**
+- [x] T30: ✅ DONE — commit pending 部署（RSSHub Docker + 验证脚本）
+  - 文件: ✅ **`scripts/deploy-rsshub.sh` 已创建**（4 子命令：up/status/stop/logs）· ✅ **`docker-compose.yml` 加 rsshub service**（diygod/rsshub:2024-03-28 · 端口 1200 · backend 注入 `RSSHUB_URL`）
+  - 测试: ⚠️ **未实跑**（当前 sandbox 无 Docker daemon）· `bash -n scripts/deploy-rsshub.sh` 通过 · `docker compose config` 验证 YAML 合法 + depends_on 链路正确
   - 依赖: —
-  - 估时: 1h → 实际需创建
-  - commit: `chore(devops): RSSHub Docker 部署` — **未实施**
-  - 产出: ⚠️ **缺失 · 需创建 deploy 脚本 + compose RSSHub service + 验证 1200 端口**
+  - 估时: 30 min（vs 估时 1h · 提前）
+  - commit: `devops(rsshub): T30 RSSHub Docker 部署脚本 + compose service` — **待 commit**
+  - 产出: ✅ **完整 deploy 脚本**（自动等就绪 + curl 验证 juejin/tag/AI）· ✅ **compose service 配置**（含 RSSHUB_URL 注入到 backend）· ⚠️ 实际部署验证需 Docker 环境
 
 - [x] T31: ✅ DONE — commit `df30cfa` 拆分（DigestMetrics logger.py → metrics.py）
   - 文件: ✅ **`backend/utils/metrics.py` 已创建**（从 `utils/logger.py` 搬出 DigestMetrics 类 + digest_metrics 实例）
