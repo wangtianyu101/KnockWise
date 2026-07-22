@@ -1,361 +1,153 @@
 ---
-title: 7 步 DOD 完成定义总表
+title: 6 步工作流 DOD 完成定义总表
 date: 2026-06-27
-status: v1
-tags: [DOD, 7步流程, 完成定义]
+updated: 2026-07-21
+status: v2
+tags: [DOD, 6步流程, 完成定义]
 ---
 
-# 7 步 DOD 完成定义总表
+# 6 步工作流 DOD 完成定义总表
 
-> **一句话**：每步都必须满足 DOD 才能进下一步。
+> 每一步必须同时满足：**文档 DOD 全过 + 用户明确验收**，才能进入下一步。
 >
-> **核心原则**：**可验证 + 可量化 + 可拒绝 + 可追溯**。
+> 0 是调研前置，正式步骤为 1–6；旧“6 发布”已取消，PR/commit 即交付。
 >
-> **适用**：所有 AI Coding 协作流程。每步结束前对照本表自查，全过才能进下一步。
+> L1 类型检查、L2 单元测试、L4 review 分布在步骤 4；步骤 5 只汇总 L3 整合与 L5 staging。
 
----
+## 一、路径与产物总览
 
-## 一、DOD 总览（38 条）
-
-| 步 | DOD 条数 | 关键量化指标 | 默认校验方式 |
+| 类型 | 路径模式 | 默认路径 | 条件产物 |
 |---|---|---|---|
-| 0 调研 | 6 条 | 6 字段非空、≥ N | `scripts/check-research.py`（TODO） |
-| 1 规格 | 6 条 | GWT ≥ 3, 测试场景 ≥ 3 | 人 review + AI 自检 |
-| 2 计划 | 5 条 | 方案 ≥ 2, 决策点 ≥ 1 | 人 review |
-| 3 拆分 | 5 条 | ≤ 1h 任务, 偏差 ≤ 30% | 人 review + AI 自检 |
-| 4 实现 | 5 条 | 覆盖率 ≥ 80% | pre-commit hook + AI 自检 |
-| 5 验证 | 5 条 | 5 层 gate 各 1 条 | 工具 + 人 |
-| 6 发布 | 5 条 | 灰度 + 回滚 + 监控 | 工具 + 人 |
-| 7 复盘 | 5 条 | 改进已分配, 已更新知识库 | 人 review |
-| **合计** | **38 条** | — | — |
-
----
-
-## 二、0 步 调研 DOD（6 条）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/research.md`
-> **校验**：TODO `scripts/check-research.py`
-
-```markdown
-## 🎯 硬性 DOD（调研报告完成必须全过）
-
-- [ ] §0 任务规模自检 6 个字段全部非空（无"待定"/"略"/"无"）
-- [ ] 路径模式行存在且匹配模板（如 new-feature = full-7）
-- [ ] 必填段全部填写（无"待定"/"略"/"待写"）
-- [ ] "≥ N" 数量满足最低要求
-- [ ] 自检清单全部勾选 ✅
-- [ ] 证据清单每段 ≥ 1 条引用
-
-> ⚠️ 任何 1 条未满足 → 调研报告不算完成
-> ⚠️ TODO: 接入 `scripts/check-research.py`（pre-commit hook）
-```
-
----
-
-## 三、1 步 规格 DOD（6 条 spec.md + 4 条 product-doc.md）
-
-### 三.0 product-doc.md（产品脑 · 4 条 · 仅 new-feature 必填）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/product-doc.md`
-> **作者**：**人主导**（产品经理 / 项目负责人）
-> **校验**：人 review + AI 辅助
-
-```markdown
-## 🎯 硬性 DOD（product-doc.md 完成必须全过）
-
-- [ ] 5 段齐全（问题定义 / 目标用户 / 价值主张 / MVP 范围 / 成功指标）
-- [ ] 成功指标 ≥ 1 个量化数字（不能是"做得好"）
-- [ ] MVP 范围明确"包含 + 不包含"
-- [ ] 价值主张双向（用户价值 + 商业价值）
-
-> ⚠️ 任何 1 条未满足 → product-doc.md 不算完成
-> ⚠️ TODO: 接入 `scripts/check-product-doc.py`（pre-commit hook）
-```
-
-### 三.1 spec.md（技术脑 · 6 条）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/spec.md`
-> **作者**：**AI 主导**（人审核）
-> **校验**：人 review + AI 自检
-> **模板**：[`docs/templates/spec-template.md`](templates/spec-template.md) / [`docs/templates/product-doc-template.md`](templates/product-doc-template.md) / [`docs/templates/design-spec-template.md`](templates/design-spec-template.md)
-
-```markdown
-## 🎯 硬性 DOD（spec.md 完成必须全过）
-
-- [ ] 5 段齐全（用户故事 / GWT / 边界 / 数据契约 / 测试用例）
-- [ ] GWT ≥ 3 条（happy + edge + failure 各 ≥ 1）
-- [ ] 数据契约 ≥ 1 schema（Pydantic / Zod / TypeScript interface）
-- [ ] 测试场景 ≥ 3 条（happy + edge + failure 各 ≥ 1）
-- [ ] §0 上游引用齐全（research.md + product-doc.md）
-- [ ] 用户故事已验收（人签字 / 写在文档里 "已验收：<name> <date>"）
-
-> ⚠️ 任何 1 条未满足 → spec.md 不算完成，不能进 2 步
-> ⚠️ TODO: 接入 `scripts/check-spec.py`（pre-commit hook）
-```
-
-### 三.2 design-spec.md（设计脑 · 5 条 · 仅 UI 改动时）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/design-spec.md`
-> **作者**：**人主导**（设计师）
-> **校验**：人 review
-
-```markdown
-## 🎯 硬性 DOD（design-spec.md 完成必须全过）
-
-- [ ] 5 段齐全（用户旅程 / 页面地图 / 页面线框 / 交互细节 / 视觉规范）
-- [ ] ≥ 1 个完整用户旅程
-- [ ] ≥ 1 个页面线框图（ASCII 或图片引用）
-- [ ] 交互细节 ≥ 5 种状态（默认 / hover / loading / success / error）
-- [ ] 视觉规范 5 方面齐全（颜色 / 字体 / 间距 / 组件库 / 圆角阴影）
-
-> ⚠️ 任何 1 条未满足 → design-spec.md 不算完成
-> ⚠️ TODO: 接入 `scripts/check-design-spec.py`（pre-commit hook）
-```
-
-### 三.3 db-design.md（技术层 · 6 条 · 仅 schema 变更）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/db-design.md`
-> **作者**：**AI 主导**（DBA review）
-> **校验**：人 review
-> **模板**：[`docs/templates/db-design-template.md`](templates/db-design-template.md)
-
-```markdown
-## 🎯 硬性 DOD（db-design.md 完成必须全过）
-
-- [ ] 表结构变更清单完整（新增 / 修改 / 删除）
-- [ ] 每个表字段齐全（类型 + 约束 + 默认 + 业务不变量）
-- [ ] 索引设计覆盖高频查询
-- [ ] ER 图清晰（mermaid 或 ASCII）
-- [ ] 迁移 SQL 完整（forward + backward 都可执行）
-- [ ] 数据影响评估（行数 + 迁移 + 备份）
-
-> ⚠️ 任何 1 条未满足 → db-design.md 不算完成
-```
-
-### 三.4 api-spec.md（技术层 · 5 条 · 仅 API 改动）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/api-spec.md`
-> **作者**：**AI 主导**（后端 lead review）
-> **校验**：人 review
-> **模板**：[`docs/templates/api-spec-template.md`](templates/api-spec-template.md)
-
-```markdown
-## 🎯 硬性 DOD（api-spec.md 完成必须全过）
-
-- [ ] 接口清单完整（method + path + 作用 + 认证）
-- [ ] 每个接口 3 段齐全（Request / Response / 错误码）
-- [ ] 错误码 ≥ 4 类（400 / 401 / 409 / 500）
-- [ ] 通用规范明确（认证 / 限流 / 版本 / 错误格式）
-- [ ] 测试要点覆盖核心场景
-
-> ⚠️ 任何 1 条未满足 → api-spec.md 不算完成
-```
-
-### 三.5 component-spec.md（技术层 · 5 条 · 仅新组件）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/component-spec.md`
-> **作者**：**AI 主导**（前端 review）
-> **校验**：人 review
-> **模板**：[`docs/templates/component-spec-template.md`](templates/component-spec-template.md)
-
-```markdown
-## 🎯 硬性 DOD（component-spec.md 完成必须全过）
-
-- [ ] 组件清单完整（每个组件 type + 复用范围 + 依赖）
-- [ ] 每个组件 5 段齐全（Props / State / Events / 依赖 / 视觉规格）
-- [ ] 交互状态 ≥ 5 种（默认 / hover / loading / success / error）
-- [ ] 边界 case 覆盖异常路径
-- [ ] 测试要点明确
-
-> ⚠️ 任何 1 条未满足 → component-spec.md 不算完成
-```
-
----
-
-## 四、2 步 计划 DOD（5 条）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/plan.md`
-> **校验**：人 review
-
-```markdown
-## 🎯 硬性 DOD（计划完成必须全过）
-
-- [ ] 方案 ≥ 2 个（不是 1 个方案 = 没对比 = 不能算"计划"）
-- [ ] 推荐方案明确（不是"建议 A 或 B"二选一，必须明确推荐 1 个）
-- [ ] 风险点带等级（🔴/🟡/🟢）+ 缓解措施（不能空挂"注意风险"）
-- [ ] 决策点 ≥ 1（用什么库 / 模式 / 缓存策略 / 限流 / 重试）
-- [ ] 引用完整（spec.md + product-doc.md + research.md 路径全列）
-
-> ⚠️ 任何 1 条未满足 → plan.md 不算完成
-```
-
----
-
-## 五、3 步 拆分 DOD（5 条）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/tasks.md`
-> **校验**：人 review + AI 自检
-
-```markdown
-## 🎯 硬性 DOD（任务拆分完成必须全过）
-
-- [ ] 每个任务 ≤ 1h AI 工作量（粒度约束，防"代码先行"）
-- [ ] 每个任务 1 个 commit（不混合多任务）
-- [ ] 每个任务对应 ≥ 1 测试用例（来自 spec §5）
-- [ ] 任务依赖关系明确（无环 / 拓扑序）
-- [ ] 总估时 vs 实际偏差 ≤ 30%（事后验证，闭环）
-
-> ⚠️ 任何 1 条未满足 → tasks.md 不算完成
-```
-
----
-
-## 六、4 步 实现 DOD（5 条）
-
-> **产出物**：git commits + `docs/tasks/<date>-<type>-<topic>/test-cases.md`
-> **校验**：pre-commit hook + AI 自检
-> **模板**：[`docs/templates/test-cases-template.md`](templates/test-cases-template.md)
-
-```markdown
-## 🎯 硬性 DOD（每个 task 内必须全过）
-
-- [ ] TDD 红→绿（先写失败测试 → 跑确认红 → 写实现 → 跑确认绿）
-- [ ] 1 个 commit 对应 1 个 task（commit message 含 task 编号）
-- [ ] pre-commit hook 通过（tsc + pytest 全绿）
-- [ ] 核心 service 覆盖率 ≥ 80%（CLAUDE.md §1.8 清单）
-- [ ] 整合产出 test-cases.md（4 步后所有任务的测试汇总）
-
-> ⚠️ 任何 1 条未满足 → 实现不算完成
-```
-
----
-
-## 七、5 步 验证 DOD（5 层 gate）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/verify.md`
-> **校验**：工具 + 人
-
-```markdown
-## 🎯 硬性 DOD（5 层 gate 全过）
-
-- [ ] **L1 类型检查**：tsc / mypy 0 error
-- [ ] **L2 单元测试**：pytest 通过 + 覆盖率 ≥ 80%
-- [ ] **L3 集成测试**：E2E / API contract 测试通过
-- [ ] **L4 代码审查**：human review diff 完成（reviewer 签字）
-- [ ] **L5 运行时验证**：staging 跑通 + 截图 / 日志存档
-
-> ⚠️ 任何 1 层没过 → verify.md 不算完成，不能进 6 步发布
-```
-
----
-
-## 八、6 步 发布 DOD（5 条）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/ship.md`
-> **校验**：工具 + 人
-
-```markdown
-## 🎯 硬性 DOD（发布方案完成必须全过）
-
-- [ ] 灰度策略明确（10% → 50% → 100% + 时间窗口 + 升级条件）
-- [ ] 监控 + 告警就位（latency / error rate / 业务指标 + 告警阈值）
-- [ ] 回滚预案就位（触发条件 + 一键回滚命令 + 责任人）
-- [ ] 通报模板发出（团队 / 老板 / 受影响方 / 客服）
-- [ ] ship.md 含 3 段（部署 + 监控 + 回滚，缺一不可）
-
-> ⚠️ 任何 1 条未满足 → 发布不算完成
-```
-
----
-
-## 九、7 步 复盘 DOD（5 条）
-
-> **产出物**：`docs/tasks/<date>-<type>-<topic>/retro.md`
-> **校验**：人 review
-
-```markdown
-## 🎯 硬性 DOD（复盘完成必须全过）
-
-- [ ] retro.md 5 段齐全（数据 / 做对的 / 做错的 / 下次改进 / 沉淀到哪）
-- [ ] 工作量数据记录（实际小时 / commit 数 / 任务数）
-- [ ] 返工次数 ≥ 0（如果有返工必须分析原因并写进"做错的"）
-- [ ] 改进项已分配（具体到人或任务，不能是"下次注意"这种空话）
-- [ ] 已更新知识库（CLAUDE.md / spec 模板 / skill / DOD.md 之一）
-
-> ⚠️ 任何 1 条未满足 → 任务不算真正完成，闭环断裂
-```
-
----
-
-## 十、使用说明
-
-### 10.1 每步结束前自查
-
-```
-完成 0 步调研 → 对照本文 §二 自查 6 条 → 全过才能进 1 步
-完成 1 步规格 → 对照本文 §三 自查 6 条 → 全过才能进 2 步
-...
-```
-
-### 10.2 DOD 缺失的后果
-
-| DOD 缺失 | 后果 |
-|---|---|
-| 0 步没 DOD | AI 调研敷衍，进度无保障 |
-| 1 步没 DOD | spec 漂移，AI 自由发挥 |
-| 2 步没 DOD | 方案没对比，直接干 |
-| 3 步没 DOD | 任务太粗，代码先行 |
-| 4 步没 DOD | 实现质量无保障 |
-| 5 步没 DOD | 上线后挂掉 |
-| 6 步没 DOD | 灰度 / 回滚 / 监控缺失 |
-| 7 步没 DOD | 经验流失，下次重犯 |
-
-### 10.3 工具校验 TODO
-
-- `scripts/check-research.py`（0 步）
-- `scripts/check-spec.py`（1 步）
-- `scripts/check-plan.py`（2 步）
-- `scripts/check-tasks.py`（3 步）
-- `scripts/check-implement.py`（4 步）
-- `scripts/check-verify.py`（5 步）
-- `scripts/check-ship.py`（6 步）
-- `scripts/check-retro.py`（7 步）
-
-集成到 `scripts/pre-commit` 第 4 段，根据改动文件类型跑对应校验。
-
-### 10.3.1 文档模板列表（15 个）
-
-| 模板 | 说明 | 步 |
+| 新功能 | `full-6` | 0→1→2→3→4→5→6 | product-doc 必填；UI 时 design/component；schema/API 按变更填写 |
+| Bug | `fix-mini` | 0→4→6 | 回归测试必填；大型或跨模块 Bug 可升级 full-6 |
+| 重构 | `refactor-6` | 0→1→2→3→4→5→6 | product-doc/design-spec 默认不写；不得改变业务行为 |
+| P0 | `timebox` | T+30m→T+2h→T+24h→T+48h→T+72h | 先止血，24h 内补主账与回归测试 |
+
+| 步骤 | 核心产物 | 进入下一步的人工 gate |
 |---|---|---|
-| `docs/templates/research-new-feature.md` | new-feature 调研 | 0 |
-| `docs/templates/research-bug.md` | bug 调研 | 0 |
-| `docs/templates/research-refactor.md` | refactor 调研 | 0 |
-| `docs/templates/research-p0.md` | P0 紧急调研 | 0 |
-| `docs/templates/product-doc-template.md` | 1 步产品脑（人主导） | **1** |
-| `docs/templates/design-spec-template.md` | 1 步设计脑（设计师主导） | **1** |
-| `docs/templates/spec-template.md` | 1 步技术脑（AI 主导，纯业务契约） | **1** |
-| `docs/templates/db-design-template.md` | 2 步数据库设计（技术详细化） | **2** |
-| `docs/templates/api-spec-template.md` | 2 步 API 设计（技术详细化） | **2** |
-| `docs/templates/component-spec-template.md` | 2 步组件设计（技术详细化） | **2** |
-| `docs/templates/plan-template.md` | 2 步方案文档 | **2** |
-| `docs/templates/tasks-template.md` | 3 步任务拆分（实施文档·细化） | 3 |
-| `docs/templates/test-cases-template.md` | 4 步整合测试用例 | 4 |
-| `docs/templates/verify-template.md` | 5 步验证文档（5 层 gate） | 5 |
-| `docs/templates/retro-template.md` | 7 步复盘文档 | 7 |
-| `scripts/check-step.py` | 7 步 DOD 校验工具（pre-commit 自动跑） | — |
+| 0 调研 | `research.md` | 用户确认任务理解、范围和路径模式 |
+| 1 规格 | `product-doc.md` / `design-spec.md` / `spec.md` | 用户验收产品与设计决策 |
+| 2 计划 | `plan.md` + 条件技术文档 | 用户选择推荐方案并拍板决策点 |
+| 3 拆分 | `tasks.md` | 用户确认粒度、依赖和实施顺序 |
+| 4 实现 | commits + tests + `test-cases.md` | 用户 review；每个 commit 通过 verifier |
+| 5 验证 | `verify.md` | 用户确认 L3 + L5 证据 |
+| 6 复盘 | `retro.md` + 规则沉淀 | 用户确认改进项和沉淀位置 |
 
-### 10.4 DOD 演进规则
+## 二、0 步调研 DOD
 
-- 新增 1 条 DOD：必须先有 ≥ 1 个真实失败案例（"因为没这条 DOD，XX 出过问题"）
-- 删除 1 条 DOD：必须先证明这条永远可满足（"这条从来没失败过"）
-- 修改 1 条 DOD：必须给出量化数字（覆盖率从 70% 改成 80% 的理由）
+- [ ] 路径模式明确且为 `full-6` / `fix-mini` / `refactor-6` / `timebox`
+- [ ] 用自己的话复述任务，用户确认理解正确
+- [ ] 已读 `docs/issues.md`、`git log -10`、`git status`
+- [ ] 找到至少 3 个相关文件；P0 可先止血、T+2h 内补齐
+- [ ] 依赖影响和至少 2 个风险点均有证据与缓解措施
+- [ ] 产物落在 `docs/tasks/<date>-<type>-<topic>/research.md`
 
----
+## 三、1 步规格 DOD
 
-## 📚 相关文档
+### 3.1 product-doc.md（仅新功能必填）
 
-- [README.md](README.md) — 文档地图
-- [CLAUDE.md](../CLAUDE.md) — 6 步流程定义（含 0 步调研 5 模板）
-- `~/obsidian/coding/AI代码工具使用心得/全局流程.md` — 7 步流程总览
-- `~/obsidian/coding/AI代码工具使用心得/调研体系.md` — 0 步规则全集
-- `docs/tasks/<date>-<type>-<topic>/retro.md` — 复盘后可能更新本表
+- [ ] 问题、目标用户、价值、MVP、成功指标五段齐全
+- [ ] MVP 同时写“包含”和“不包含”
+- [ ] 至少一个可量化成功指标和合格线
+- [ ] 用户价值与项目价值均明确，关键产品决策由人确认
+
+### 3.2 design-spec.md（涉及 UI/UX 时必填）
+
+- [ ] 用户旅程、页面地图、线框、交互状态、视觉规范齐全
+- [ ] 默认、hover、loading、success、error 状态均覆盖
+- [ ] 继承现有项目视觉 token、导航、组件与图标体系
+- [ ] 用户已审阅页面结构和关键交互
+
+### 3.3 spec.md（full-6 / refactor-6 必填）
+
+- [ ] 用户故事、Requirement+Scenario、边界、数据契约、测试场景齐全
+- [ ] Requirement ≥1 且使用 SHALL
+- [ ] Scenario ≥3，覆盖 happy、invalid、edge/failure
+- [ ] 八类边界：空值、异常、并发、时序、安全、性能、兼容、国际化
+- [ ] 引用 research；新功能同时引用 product-doc/design-spec 的适用项
+- [ ] 文档写有用户验收人和日期
+
+## 四、2 步计划与技术详细化 DOD
+
+### 4.1 plan.md
+
+- [ ] 至少两个真实可选方案，包含优缺点、兼容性、工作量和测试影响
+- [ ] 明确推荐一个方案及证据，不写模糊二选一
+- [ ] 风险带等级和缓解动作
+- [ ] 至少一个需要用户拍板的决策点，并记录最终选择
+- [ ] 引用 research/spec；product/design 文档按适用性引用或标注不适用
+
+### 4.2 条件技术文档
+
+| 文件 | 触发条件 | 最低要求 |
+|---|---|---|
+| `db-design.md` | schema/索引/迁移变化 | ER 图、字段约束、索引、forward/rollback、数据影响 |
+| `api-spec.md` | 新增或修改 API | 接口清单、Request/Response、错误码、认证、测试要点 |
+| `component-spec.md` | 新增或重构 UI 组件 | Props/State/Events、复用关系、边界、测试、页面 wireframe |
+
+涉及 UI 时还必须完成 [`rules/design-mockup-workflow.md`](rules/design-mockup-workflow.md) 的三层设计产物；具体时机见该规则。
+
+## 五、3 步拆分 DOD
+
+- [ ] 每个任务 ≤1h AI 工作量，可独立验收
+- [ ] 每个任务对应一个 commit 边界
+- [ ] 每个任务映射到 spec Requirement/Scenario 和至少一个测试
+- [ ] 依赖关系无环且实施顺序明确
+- [ ] 有总估时；实施后记录实际耗时、commit 和偏差
+
+## 六、4 步实现 DOD
+
+- [ ] 每个代码任务按红→绿→refactor 执行，并保留失败/通过证据
+- [ ] 新函数有 happy path，异常与边界有测试；Bug 有回归测试
+- [ ] L1 类型检查和 L2 单元测试通过；核心 service 覆盖率目标 ≥80%
+- [ ] 一个 task 对应一个 commit，commit message 包含任务编号
+- [ ] commit 前先回写 `tasks.md` 的状态、实际耗时和 commit 历史
+- [ ] 每个 commit 按 `CLAUDE.md §6.7` 运行独立 verifier；FAIL 必须修正或上报
+- [ ] 阶段结束整合 `test-cases.md`
+
+## 七、5 步验证 DOD
+
+- [ ] 引用步骤 4 已完成的 L1/L2/L4 证据，不重复把它们当独立 gate
+- [ ] **L3 整合测试**：关键 API contract / E2E / 跨模块路径通过
+- [ ] **L5 staging**：真实运行路径通过，有命令、日志、截图或浏览器证据
+- [ ] 期望与实际逐场景记录；失败项不得写成通过
+- [ ] 用户明确确认验证完成
+
+> 任何一项未满足，`verify.md` 不算完成，不能进入复盘。
+
+## 八、6 步复盘 DOD
+
+- [ ] 数据完整：计划/实际耗时、任务数、commit 数、返工次数
+- [ ] 做对与做错各至少一条，做错包含现象、根因和影响
+- [ ] 调研偏差逐条修正
+- [ ] 改进项有负责人、截止日期和沉淀位置
+- [ ] 经验已写入 `CLAUDE.md` / `AGENTS.md` / DOD / 模板 / skill / `docs/issues.md` 至少一处
+
+## 九、遗留项关闭 DOD（收尾动作，不是步骤）
+
+- [ ] 用户明确要求关闭，而非仅提到“议题 / issue”
+- [ ] 按 [`templates/issue-closure-template.md`](templates/issue-closure-template.md) 逐条核验
+- [ ] 有可复现的代码、测试、文档或数据证据
+- [ ] 仍需改代码时已重新分类，不强行关闭
+- [ ] `docs/issues.md` 与相关 tasks/retro 状态同步
+
+## 十、自动校验
+
+```bash
+python3 scripts/check-step.py research <research.md>
+python3 scripts/check-step.py spec <spec.md>
+python3 scripts/check-step.py plan <plan.md>
+python3 scripts/check-step.py tasks <tasks.md>
+python3 scripts/check-step.py implement <test-cases.md>
+python3 scripts/check-step.py verify <verify.md>
+python3 scripts/check-step.py retro <retro.md>
+```
+
+`ship` 已从 v2 删除；生产部署项目应另建部署 runbook，不得重新塞回本工作流。
+
+## 十一、演进规则
+
+- 新增 DOD：必须有真实失败案例
+- 删除 DOD：必须证明已被其他 gate 稳定覆盖
+- 修改量化指标：必须记录原因和影响
+- 规则、模板、`check-step.py`、pre-commit 必须在同一变更中同步

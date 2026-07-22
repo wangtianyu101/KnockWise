@@ -49,7 +49,7 @@
 - **测试累计**：737 passed（154 V1 + V3.7 既有 + 73 P1-P3b + 9 P3a + 30 logger 同步）
 - **L5 staging 实地验证**：真 dev server · 17 page HTTP 200 · KnockWise 残留 0 处 · Sidebar 5 流程跑通
 - **P5 playwright 推迟**（用户拍 A）— 不阻塞 V3.8 完成 · 留作未来 regression protection
-- 详见 [`../tasks/2026-07-11-refactor-v3-mockup-align/`](../tasks/2026-07-11-refactor-v3-mockup-align/)（research / product-doc / design-spec / spec / plan / tasks / verify · 11 文件）
+- 详见 [`../archive/spec-old-format/2026-07-11-refactor-v3-mockup-align/`](../archive/spec-old-format/2026-07-11-refactor-v3-mockup-align/)（research / product-doc / design-spec / spec / plan / tasks / verify · 11 文件）
 
 ## V4 · AI 推送模块 (2026-07-19 实施完成)
 
@@ -80,4 +80,4 @@
 
 ## 后续待办（待用户决策）
 
-详见 CLAUDE.md § 八.4 待用户决策。
+长期遗留项统一见 [`../issues.md`](../issues.md)；具体任务的暂缓项和实施状态以对应 `docs/tasks/<task>/tasks.md` 为准。本文件只记录跨任务里程碑，不复制动态待办。

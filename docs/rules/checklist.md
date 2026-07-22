@@ -1,106 +1,114 @@
-# 各阶段交付物清单
+# 6 步工作流阶段交付物清单
 
-> **来源**：原 CLAUDE.md § 三（2026-07-17 拆出）
-> **触发**：进入 1 步设计 / 4 步实施 / 5 步验证 阶段时读
+> **版本**：v2 · 2026-07-21
+>
+> **权威完成定义**：[`../DOD.md`](../DOD.md)。本文件只回答“每一步要交什么”，不再保留旧 5/7 步阶段编号。
 
-## 阶段 1：设计文档
-- 写在 `docs/`，中文文件名
-- 包含：目标、范围、**全局架构图**、模块边界、用户旅程、业务规则
-- **不做**：具体代码、库选型最后一步、页面 mockup、SQL、API 详细
+## 0 调研
 
-## 阶段 1.5：架构图规则（强制）
-
-**所有设计类 / 技术类文档必须先画全局图**，再写细节。
-
-1. 文档开头（第一节内）必须有 **全局架构图**（ASCII / mermaid），让读者 30 秒内 get 整体
-2. 每个大功能 / 子系统章节开头有 **局部架构图** + **用户流图** / **状态机** / **决策树**
-3. 图要清晰可读（box-drawing 字符 + 标签）
-4. 出现顺序：**全局 → 子模块 → 细节**
-
-> 反例：上来就贴 SQL 表结构 / endpoint 列表 → ❌
-> 正例：先画系统怎么连、用户怎么走 → ✅
-
-## 阶段 1.6：产品 vs 技术分文件（强制）
-
-**设计文档只放产品内容**。技术细节分流到对应文件：
-
-| 内容 | 放哪 |
+| 项目 | 要求 |
 |---|---|
-| 功能架构 / 用户旅程 / 业务规则 / 边缘场景 | 设计文档（产品） |
-| 数据库表 / SQL / 索引 / 迁移 | `技术文档.md` 或 `xxx-技术设计.md` |
-| API endpoint / Request/Response | `接口文档.md`（增量加） |
-| Service 方法签名 / 错误码 | `技术文档.md` 或 `xxx-技术设计.md` |
-| UI 草图 / 流程图 / 组件清单 | 阶段 4 单独出 |
+| 产物 | `docs/tasks/<date>-<type>-<topic>/research.md` |
+| 路径模式 | new-feature=`full-6`；bug=`fix-mini`；refactor=`refactor-6`；P0=`timebox` |
+| 基线 | `docs/issues.md` + `git log -10` + `git status` + 至少 3 个相关文件 |
+| 内容 | 任务理解、现状、依赖、风险、建议路径 |
+| 人工 gate | 用户确认复述、scope 和路径模式 |
 
-**判断标准**：如果一段内容是"程序员看的"（SQL、API、代码签名）→ 移出设计文档。
+## 1 规格：业务契约与三脑交汇
 
-## 1.7 非新功能分支（必走路径）
+| 文档 | 触发条件 | 主导 | 内容边界 |
+|---|---|---|---|
+| `product-doc.md` | 仅新功能 | 人 | 为什么做、给谁、MVP、成功指标 |
+| `design-spec.md` | 涉及 UI/UX | 人/设计 | 用户旅程、页面、交互、视觉，不写组件实现 |
+| `spec.md` | full-6/refactor-6 | AI 起草、人验收 | Requirement+Scenario、边界、数据契约、测试场景 |
 
-| 类型 | 路径 | 关键约束 |
+### 规格阶段必须遵守
+
+- 业务决策由人做，AI 只能提炼、补缺和列选项。
+- `spec.md` 是机器可读业务契约，不放 ORM、迁移工具、UI 库等技术选型。
+- 涉及 UI 时，先按 [`design-mockup-workflow.md`](design-mockup-workflow.md) 完成可审阅设计，再进入技术组件定义。
+- 用户明确验收后才能进入步骤 2。
+
+## 2 计划与技术详细化
+
+| 文档 | 触发条件 | 必需内容 |
 |---|---|---|
-| **新功能** | 0 → 1 → 2 → 3 → 4 → 5 → 6 | 完整流程 |
-| **Bug 修复** | 登记 [`docs/issues.md`](../issues.md) → fix commit → 回归测试 | 必须有测试（见 [`testing-rules.md`](testing-rules.md)） |
-| **重构** | 登记议題 → 引用议題编号 commit → 测试通过 | 不改业务行为 |
-| **议題关闭** | 直接执行调研结论 | commit 标题含议題编号（如 `fix(A)`） |
-| **P0 紧急修复** | 例外：即时修 + 24h 内补登记 | 必须补回归测试 + `docs/issues.md` |
+| `plan.md` | full-6/refactor-6 | ≥2 方案、单一推荐、风险、决策记录、估时 |
+| `db-design.md` | schema/索引/迁移变化 | ER、字段约束、索引、forward/rollback、数据影响 |
+| `api-spec.md` | 新增/修改 API | 接口清单、Request/Response、错误码、认证、测试 |
+| `component-spec.md` | 新增/重构组件 | Props/State/Events、复用、边界、测试；引用已验收 mockup |
 
-> **关闭例外面口子**：第二节"绝对不能动"原"修复 bug"例外太宽，本节明确化分类。
+### 计划阶段必须遵守
 
-## 1.8 阶段 4 完成定义（DOD · 实施完毕必过）
+- `plan.md` 先给方案，再由用户拍板；不得直接实施推荐方案。
+- 技术文档只在触发条件满足时创建，不用空模板凑齐四份。
+- UI 技术详细化必须继承步骤 1 已验收的页面与视觉系统，不重新设计产品。
 
-> ⚠️ v2 重命名：原"阶段 6 完成定义"在新框架中改为"阶段 4 完成定义"（实施在新框架是步骤 4）。
+## 3 拆分
 
-- [ ] 所有 phase 的设计文档 / 技术文档 / 页面文档都已 commit
-- [ ] [`docs/issues.md`](../issues.md) 相关议題状态已更新（📋 → 🚧 → ✅）
-- [ ] pre-commit hook 通过（tsc + pytest 全绿）
-- [ ] **核心 service 测试覆盖率 ≥ 80%**（见下方清单）
-- [ ] 5 验证通过（verify.md L3 整合 + L5 staging 跑通）
-- [ ] 用户口头确认（或明确说"verify 完成"）
+产物：`tasks.md`。
 
-**不满足 DOD = 阶段 4 未完成**，不得进入下一个需求。
+- 每个任务 ≤1h AI 工作量。
+- 每个任务一个 commit 边界。
+- 每个任务映射 Requirement/Scenario 和测试。
+- 写清依赖、实施顺序、文件范围、估时。
+- 用户验收粒度后才能开始步骤 4。
 
-### 核心 service 清单（必须 ≥ 80% 覆盖率）
+## 4 实现
 
-| service | 路径 | 重要性 |
+产物：代码、自动化测试、commits、`test-cases.md`、持续更新的 `tasks.md`。
+
+### 每个 task 循环
+
+1. 先写失败测试并确认红灯。
+2. 写最小实现并确认绿灯。
+3. refactor，跑相关测试与类型检查。
+4. 回写 `tasks.md` 状态、实际耗时和 commit 历史。
+5. 一个 task 一个 commit。
+6. 启动独立 verifier，对照 spec/plan、跑测试并实测行为。
+7. FAIL 则修复并重新验证；不收敛时报告用户。
+
+### 分布式质量活动
+
+- L1：类型检查。
+- L2：单元测试与覆盖率。
+- L4：用户 review + 独立 verifier。
+
+## 5 验证
+
+产物：`verify.md`。
+
+- 引用步骤 4 的 L1/L2/L4 证据。
+- L3：整合测试、API contract、关键 E2E。
+- L5：在 staging 或本机完整服务上跑真实用户路径。
+- 每个场景记录期望、实际、日志/截图和结论。
+- 用户明确说验证完成后，自动起草步骤 6 的 retro。
+
+## 6 复盘
+
+产物：`retro.md` + 至少一处长期规则更新。
+
+- 量化计划/实际耗时、任务、commit、返工。
+- 记录做对、做错、根因和影响。
+- 修正 research 阶段的事实偏差。
+- 改进项写负责人、截止日期、沉淀位置。
+- 更新 `CLAUDE.md` / `AGENTS.md` / DOD / 模板 / skill / `docs/issues.md`。
+- 用户确认改进项后任务闭环。
+
+## 非完整路径
+
+| 类型 | 默认路径 | 关键约束 |
 |---|---|---|
-| `interview_service` | `backend/services/interview_service.py` | 🔥 核心（面试生命周期） |
-| `learning_progress_service` | `backend/services/learning_progress_service.py` | 🔥 核心（SM-2 算法） |
-| `question_bank_service` | `backend/services/question_bank_service.py` | 🔥 核心（题库） |
-| `qa_service` | `backend/services/qa_service.py` | 🔥 核心（问答） |
-| `recommendations_service` | `backend/services/recommendations_service.py` | 🔥 核心（推荐） |
-| `study_plan_service` | `backend/services/study_plan_service.py` | 🔥 核心（学习计划） |
+| Bug | 0 `fix-mini` → 4 回归修复 → 6 | 大型/跨模块 Bug 升级 full-6 |
+| 重构 | 0→1→2→3→4→5→6 | 不写 product-doc，默认不写 design-spec；不改业务行为 |
+| P0 | timebox | 先止血，24h 内补 `docs/issues.md` 和回归测试 |
+| 遗留项关闭 | 收尾核验，不是实施路径 | 按 [`../templates/issue-closure-template.md`](../templates/issue-closure-template.md)；需改代码则重新分类 |
 
-**非核心 service**（不强制 80%）：`obsidian_service` / `news_service` / `resume_parser` / `archive_service` / `seed_service` / `asr_tts` / `agora`
+## 通用禁止项
 
-**测量命令**：
-```bash
-cd backend && ./.venv/bin/python -m pytest tests/ \
-  --cov=services --cov-report=term-missing
-```
-
-## 阶段 2：设计文档验证
-- 自查清单（见 `docs/面试题库设计.md` 内的"验证清单"小节）
-- 输出：✅ 通过 / ⚠️ 需修改 / ❌ 推翻
-
-## 阶段 3：设计文档详细化
-- 补：每个 API 的 Request/Response 样例
-- 补：每个数据表的字段类型 + 索引 + 约束
-- 补：每个 service 的方法签名
-- 补：错误码、异常分支
-- 补：数据迁移 SQL
-
-## 阶段 4：页面规划
-- ASCII 草图（每个页面一张）
-- 用户操作流程
-- 组件清单
-- 状态机（如适用）
-- 不写代码
-
-## 阶段 5：统一通过
-- 等用户说"通过"
-- 用户可能要求改某一步，回到对应阶段重做
-
-## 阶段 6：开始实施
-- 用户说"开始实施" 才动
-- 按阶段 3 详细化的设计落地
-- 实施中如发现设计有误，**先停下报用户**，再决定改设计还是改代码
+- 未经用户明确指令跨步骤。
+- 为了“文档齐全”生成不适用的空文件。
+- 在步骤 1 提前锁定技术库、SQL 或具体实现。
+- 把测试无法运行写成通过。
+- 完成 task 后不更新 `tasks.md`。
+- 只在 task/retro/TODO 记录长期问题而不登记 `docs/issues.md`。
