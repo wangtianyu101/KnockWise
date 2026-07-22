@@ -13,7 +13,7 @@
 """
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
@@ -174,6 +174,31 @@ class TestFetchOneRetry:
         assert call_count["n"] == 3
         assert len(result["items"]) == 1
 
+    @pytest.mark.asyncio
+    async def test_rsshub_fallback_after_direct_retries(self):
+        """直连连续失败后只调用一次配置的 RSSHub route。"""
+        service = DigestService()
+        src = make_source(name="机器之心", url="https://www.jiqizhixin.com/rss")
+        fallback_url = "http://localhost:1200/jiqizhixin"
+
+        async def fetch(url):
+            if url == fallback_url:
+                return [{"title": "fallback item", "url": "https://example.com/item"}]
+            raise httpx.ConnectError("direct source down")
+
+        with patch.object(service, "_fetch_and_parse", side_effect=fetch) as mock_fetch, \
+             patch.object(service, "_update_source_after_fetch", AsyncMock()) as mock_update, \
+             patch.object(service, "_rsshub_fallback_url", return_value=fallback_url), \
+             patch("asyncio.sleep", AsyncMock()):
+            result = await service._fetch_one_with_retry(db=AsyncMock(), source=src)
+
+        assert result["error"] is None
+        assert result["items"][0]["title"] == "fallback item"
+        assert mock_fetch.await_count == 4  # 3 direct + 1 RSSHub
+        mock_update.assert_awaited_once_with(
+            ANY, src.id, success=True, count=1, error=None
+        )
+
 
 # ── Tests · 并行抓取层（fetch_all_sources）─────────────────────────────
 
@@ -212,3 +237,32 @@ class TestFetchAllSources:
         assert len(failed) == 2
         assert "ConnectError" in failed[0]["error"]
         assert all(r["items"] == [] for r in failed)
+
+    @pytest.mark.asyncio
+    async def test_duplicate_articles_are_removed_across_sources(self):
+        """同一 canonical URL 在多个源出现时只保留第一次。"""
+        service = DigestService()
+        sources = [make_source(id="src-1"), make_source(id="src-2")]
+        duplicated = {
+            "title": "Same launch",
+            "url": "https://example.com/post?utm_source=rss",
+            "summary": "same",
+            "published_at": None,
+        }
+
+        async def fetch_one(_db, source):
+            item = dict(duplicated)
+            if source.id == "src-2":
+                item["url"] = "https://example.com/post"
+            return {
+                "source_id": source.id,
+                "source_name": source.name,
+                "items": [item],
+                "error": None,
+            }
+
+        with patch.object(service, "_list_enabled_sources", AsyncMock(return_value=sources)), \
+             patch.object(service, "_fetch_one_with_retry", side_effect=fetch_one):
+            results = await service.fetch_all_sources(AsyncMock())
+
+        assert sum(len(result["items"]) for result in results) == 1

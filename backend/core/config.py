@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     redis_cache_ttl_default: int = 300  # 5 min default
     redis_enabled: bool = True
 
+    # RSSHub fallback (AI digest)
+    rsshub_url: str = "http://localhost:1200"
+
     class Config:
         env_file = (".env", ".env.local")
 

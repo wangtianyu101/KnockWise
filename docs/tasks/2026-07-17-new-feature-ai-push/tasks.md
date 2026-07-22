@@ -341,6 +341,33 @@
   - 结论: ❌ L3/L5 未通过；LLM contract 缺失、E2E Mock 越界、frontend type/build 与 5 个用户场景失败
   - 边界: 本阶段只记录证据，不修业务代码；关闭条件见 `verify.md` V5-01～V5-08
 
+### 阶段 K · Harness 修复回路（步骤 4 · 4h）
+
+- [x] T36: ✅ DONE — commit 待回写 · shutdown + RSSHub fallback + 跨源去重
+  - 文件: `backend/{main.py,core/config.py,services/digest_service.py}` + `backend/tests/{test_main_shutdown.py,services/test_rss_fetch.py}`
+  - 测试: ✅ **20 passed**；红灯 3 failed → 绿灯
+  - 依赖: T35 / V5-04 / V5-07
+  - 估时: 1h → 实际约 25 min
+  - 边界: RSSHub 仅对有明确 route 的来源 fallback；官方源继续 fail closed
+
+- [ ] T37: Digest LLM contract + Email provider boundary
+  - 文件: `backend/services/{digest_llm_service.py,email_service.py,digest_service.py}` + 对应 tests
+  - 测试: prompt / JSON parse / fallback / timeout / scope + provider retry / single call
+  - 依赖: T36 / V5-01 / V5-03
+  - 估时: 1h
+
+- [ ] T38: Scheduler → Service → MySQL → API → Email 真 E2E
+  - 文件: `backend/tests/e2e/test_digest_push.py` + 必要 API/Service 接线
+  - 测试: 真实 Scheduler/ORM/MySQL/API；仅 Mock RSS/LLM/Email/Clock
+  - 依赖: T37 / V5-02
+  - 估时: 1h
+
+- [ ] T39: Frontend type/build + Digest Playwright 5 scenario
+  - 文件: frontend 类型错误、QueryClientProvider、Digest pages/tests
+  - 测试: Vitest + tsc + next build + Playwright 5/5
+  - 依赖: T38 / V5-05 / V5-06
+  - 估时: 1h
+
 ---
 
 ## § 3 · 任务依赖图
@@ -401,6 +428,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T33 | test_check_test_quality.py | 空测试/占位标记/无理由 skip + CLI 非零退出码 |
 | T34 | test_check_coverage.py + test_ci_workflow.py + network-policy tests | 三 CI Gate / coverage / MySQL / 禁公网 |
 | T35 | verify.md + Playwright + L5 curl | 阶段五真实验证；失败项不得包装为通过 |
+| T36-T39 | 对应回归 + L5 重验 | V5-01～V5-07 修复回路 |
 
 ---
 
@@ -426,6 +454,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T33 | 用户确认的 Harness 治理阶段 3 | — |
 | T34 | 用户确认的 Harness 治理阶段 4 | — |
 | T35 | 用户确认的 Harness 治理阶段 5 | — |
+| T36-T39 | verify.md V5-01～V5-07 | — |
 
 ---
 
@@ -442,9 +471,10 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 - 阶段 H（T33）：1h → 实际约 45min
 - 阶段 I（T34）：1h → 实际约 55min
 - 阶段 J（T35）：1h → 实际约 55min
-- **总估时**：33.5h
-- **已用**：~5h35min（T1+T2+T5+T6+T33+T34+T35）
-- **剩余**：~26.75h（按未完成任务估时）
+- 阶段 K（T36-T39）：4h → T36 实际约 25min
+- **总估时**：37.5h
+- **已用**：~6h（T1+T2+T5+T6+T33-T36）
+- **剩余**：~29.75h（含 T37-T39）
 - **实际偏差**：≤ 30%（事后验证 · 写入 retro.md）
 ```
 
@@ -459,7 +489,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T33 | `dd546d9`（初版，与 T20 混合）+ `05c7d57`（边界修正） | 1h | ~45min |
 | T34 | `bcd6f78` + `3ff6566` | 1h | ~55min |
 | T35 | `ef0a342` | 1h | ~55min |
-| **小计** | 9 commits | 6.75h | ~5h35min |
+| T36 | 待本提交完成后回写 | 1h | ~25min |
+| **小计** | 9 commits + T36 pending | 7.75h | ~6h |
 
 ---
 
@@ -495,9 +526,12 @@ Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
 
 Phase 10 · Harness 验证（T35，1h）        ← 2026-07-22 ⚠️ VERIFIED / FAILED
   T35（L3/L5 已实跑；V5-01～V5-08 待修）
+
+Phase 11 · Harness 修复（T36-T39，4h）    ← 2026-07-22 🚧 IN PROGRESS
+  ✅ T36 → T37 → T38 → T39
 ```
 
-**总周期**：~3.5 个工作日 · 已用 ~5h35min（含 T35）· 剩余 ~26.75h
+**总周期**：~4 个工作日 · 已用 ~6h（含 T36）· 剩余 ~29.75h
 
 **下次实施时**：开始前先看 § 6 总估时 + 实际 commit 历史表 → 知道上回做到哪 → 从未完成的任务继续
 
@@ -509,7 +543,7 @@ Phase 10 · Harness 验证（T35，1h）        ← 2026-07-22 ⚠️ VERIFIED /
 - [x] 每任务 1 commit（commit 字段都填了）
 - [x] 每任务对应 ≥ 1 测试（"测试" 字段填了）
 - [x] 依赖关系 DAG（§ 3 拓扑图无环）
-- [x] 总估时 33.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
+- [x] 总估时 37.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
 
 ---
 
@@ -531,7 +565,7 @@ Phase 10 · Harness 验证（T35，1h）        ← 2026-07-22 ⚠️ VERIFIED /
 - **文档版本**：v1 · 2026-07-17（2026-07-22 审计修正）
 - **路径**：`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`
 - **下一步**：进 4 步实施 · 按 Phase 1 → 7 顺序 · 配合 spec § 6.7 verify-loop 校验每任务
-- **总任务**：35 个 · 总估时 33.5h
+- **总任务**：39 个 · 总估时 37.5h
 - **MVP 范围**：T1-T29（29 任务）· Phase 2 暂不做（T30 除外）
 
 ---

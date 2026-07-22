@@ -17,6 +17,7 @@ import asyncio
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any, Optional
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import httpx
 from sqlalchemy import select, update
@@ -30,6 +31,13 @@ FETCH_TIMEOUT_SEC = 10.0
 
 # 连续失败 3 次 → 自动禁用源（避免坏源持续消耗 cron 时间）
 MAX_CONSECUTIVE_FAILURES = 3
+
+# RSSHub routes are only defined for sources that do not have a reliable
+# second-party feed URL. Official feeds continue to fail closed after retries.
+RSSHUB_SOURCE_ROUTES: dict[str, str] = {
+    "机器之心": "/jiqizhixin",
+    "量子位": "/qbitai",
+}
 
 
 class DigestService:
@@ -71,6 +79,7 @@ class DigestService:
                 )
             else:
                 normalized.append(result)
+        self._deduplicate_results(normalized)
         return normalized
 
     async def _fetch_one_with_retry(
@@ -98,6 +107,26 @@ class DigestService:
                     # 指数退避 0.5s · 1s · 2s
                     await asyncio.sleep(0.5 * (2 ** attempt))
 
+        # Direct feed exhausted: supported sources get one RSSHub fallback.
+        fallback_url = self._rsshub_fallback_url(source)
+        if fallback_url:
+            try:
+                items = await self._fetch_and_parse(fallback_url)
+                await self._update_source_after_fetch(
+                    db, source.id, success=True, count=len(items), error=None
+                )
+                return {
+                    "source_id": source.id,
+                    "source_name": source.name,
+                    "items": items,
+                    "error": None,
+                }
+            except Exception as fallback_error:
+                last_error = (
+                    f"{last_error}; RSSHub {type(fallback_error).__name__}: "
+                    f"{fallback_error}"
+                )
+
         # 3 次都失败 → 更新 last_error + 检查连续失败次数 → 可能 auto-disable
         await self._update_source_after_fetch(
             db, source.id, success=False, count=0, error=last_error
@@ -108,6 +137,43 @@ class DigestService:
             "items": [],
             "error": last_error,
         }
+
+    def _rsshub_fallback_url(self, source: DigestSource) -> str | None:
+        route = RSSHUB_SOURCE_ROUTES.get(str(source.name))
+        if not route:
+            return None
+        from core.config import settings
+
+        return f"{settings.rsshub_url.rstrip('/')}{route}"
+
+    def _deduplicate_results(self, results: list[dict]) -> None:
+        """Remove duplicate articles across sources while preserving order."""
+        seen: set[str] = set()
+        for result in results:
+            unique_items: list[dict] = []
+            for item in result.get("items", []):
+                key = self._article_key(item)
+                if key in seen:
+                    continue
+                seen.add(key)
+                unique_items.append(item)
+            result["items"] = unique_items
+
+    def _article_key(self, item: dict) -> str:
+        raw_url = str(item.get("url") or "").strip()
+        if raw_url:
+            parts = urlsplit(raw_url)
+            query = urlencode([
+                (key, value)
+                for key, value in parse_qsl(parts.query, keep_blank_values=True)
+                if not key.lower().startswith("utm_")
+                and key.lower() not in {"ref", "source"}
+            ])
+            path = parts.path.rstrip("/") or "/"
+            return urlunsplit(
+                (parts.scheme.lower(), parts.netloc.lower(), path, query, "")
+            )
+        return f"title:{str(item.get('title') or '').strip().casefold()}"
 
     async def _fetch_and_parse(self, url: str) -> list[dict]:
         """HTTP fetch + RSS XML 解析 · 单源。"""
@@ -146,7 +212,9 @@ class DigestService:
                 title_el = entry.find(f"{ns}title")
                 link_el = entry.find(f"{ns}link")
                 updated_el = entry.find(f"{ns}updated")
-                summary_el = entry.find(f"{ns}summary") or entry.find(f"{ns}content")
+                summary_el = entry.find(f"{ns}summary")
+                if summary_el is None:
+                    summary_el = entry.find(f"{ns}content")
                 href = link_el.attrib.get("href", "") if link_el is not None else ""
                 items.append(
                     {
