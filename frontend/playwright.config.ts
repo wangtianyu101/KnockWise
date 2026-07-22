@@ -43,7 +43,7 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
-    timeout: 60_000,
+    timeout: 180_000, // 2026-07-22 audit 修复 · Next.js 冷编译 ~120s · 加到 180s
     stdout: 'ignore',
     stderr: 'pipe',
   },

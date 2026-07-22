@@ -48,7 +48,7 @@ export function DigestCard({ item, onHide, onBookmark, onOpenDetail }: DigestCar
   return (
     <article
       onClick={() => onOpenDetail?.(item.id)}
-      className={`bg-[rgba(15,20,40,0.7)] backdrop-blur-xl border border-[rgba(148,163,184,0.08)] border-l-[3px] border-l-[rgba(99,102,241,0.6)] rounded-xl p-5 mb-3 transition-all hover:border-[rgba(99,102,241,0.25)] hover:shadow-lg cursor-pointer ${
+      className={`digest-card bg-[rgba(15,20,40,0.7)] backdrop-blur-xl border border-[rgba(148,163,184,0.08)] border-l-[3px] border-l-[rgba(99,102,241,0.6)] rounded-xl p-5 mb-3 transition-all hover:border-[rgba(99,102,241,0.25)] hover:shadow-lg cursor-pointer ${
         item.is_read ? "opacity-60" : ""
       }`}
     >
@@ -86,6 +86,7 @@ export function DigestCard({ item, onHide, onBookmark, onOpenDetail }: DigestCar
             原文
           </a>
           <button
+            title={item.is_bookmarked ? "已收藏" : "收藏"}
             onClick={(e) => { e.stopPropagation(); onBookmark?.(item.id); }}
             className={`px-2 py-1 text-xs transition-colors ${
               item.is_bookmarked ? "text-[#60a5fa]" : "hover:text-[#6366f1]"
@@ -95,6 +96,7 @@ export function DigestCard({ item, onHide, onBookmark, onOpenDetail }: DigestCar
             {item.is_bookmarked ? "已收藏" : "收藏"}
           </button>
           <button
+            title="屏蔽"
             onClick={(e) => { e.stopPropagation(); onHide?.(item.id); }}
             className="px-2 py-1 text-xs hover:text-[#f87171] transition-colors"
           >

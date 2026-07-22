@@ -50,7 +50,9 @@ const HERO_BORDER = 'rgba(244,114,182,0.4)';
 const HERO_SHADOW = '0 16px 48px rgba(244,114,182,0.3)';
 
 // 自动状态判定
-function determineState(props: HeroCardProps): HeroState {
+function determineState(
+  props: Pick<HeroCardProps, 'state' | 'loading' | 'recentInterviews'>,
+): HeroState {
   if (props.state) return props.state;
   if (props.loading) return 'loading';
   if (props.recentInterviews.length === 0) return 'empty';

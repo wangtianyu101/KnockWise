@@ -12,7 +12,7 @@ export default function BookmarksPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4 text-text-primary">🔖 我的收藏</h1>
-      <VibeBadge text={`共 ${total} 条收藏`} />
+      <VibeBadge vibe={`共 ${total} 条收藏`} />
       <div className="flex gap-2 my-4">
         {(['all', 'model', 'application'] as const).map((t) => (
           <button key={t} onClick={() => setFilter(t)}

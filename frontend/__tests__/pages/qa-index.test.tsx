@@ -1,5 +1,6 @@
 /**
- * Phase 2 单测: /qa 页面 (LLM 1v1 问答)
+ * Phase 2 单测: /qa 页面 (LLM 1v1 问答)。
+ * Tests live outside pages/ so Next does not register them as routes.
  *
  * 不渲染完整 page (会触发太多副作用)。
  * 改为测核心 helper 逻辑: 消息流 / 错误处理。

@@ -13,6 +13,8 @@ import { useRouter } from "next/router";
 import "@/styles/globals.css";
 import { Layout } from "@/components/v3/Layout/Layout";
 import { getToken } from "@/lib/api";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
 
 // 不包裹 Layout 的路由（独立设计或登录相关）
 const LAYOUT_EXCLUDE_PATHS = new Set<string>([
@@ -22,6 +24,7 @@ const LAYOUT_EXCLUDE_PATHS = new Set<string>([
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
+  const [queryClient] = useState(() => new QueryClient());
 
   // SSR + 客户端一致判断：用 router.pathname（同步可用）+ token 同步检查
   const hasToken = typeof window !== "undefined" ? !!getToken() : true;
@@ -29,12 +32,18 @@ export default function App({ Component, pageProps }: AppProps) {
     hasToken && !LAYOUT_EXCLUDE_PATHS.has(router.pathname);
 
   if (!shouldWrapLayout) {
-    return <Component {...pageProps} />;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Component {...pageProps} />
+      </QueryClientProvider>
+    );
   }
 
   return (
-    <Layout currentPage={router.pathname}>
-      <Component {...pageProps} />
-    </Layout>
+    <QueryClientProvider client={queryClient}>
+      <Layout currentPage={router.pathname}>
+        <Component {...pageProps} />
+      </Layout>
+    </QueryClientProvider>
   );
 }

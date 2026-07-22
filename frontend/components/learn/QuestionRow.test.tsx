@@ -32,14 +32,24 @@ describe('types/learn.ts', () => {
     it('必填字段存在', () => {
       const p: QuestionProgress = {
         id: 'p1',
+        user_id: 'u1',
+        question_id: 'q1',
         status: 'new',
         practice_count: 0,
         correct_count: 0,
         bookmarked: false,
+        source: 'seed',
+        last_review_at: null,
+        review_count: 0,
         ease_factor: 2.5,
         interval_days: 0,
+        first_practiced_at: null,
         next_review_at: null,
         last_practiced_at: null,
+        user_answer: null,
+        notes_path: null,
+        created_at: '2026-07-22T00:00:00Z',
+        updated_at: '2026-07-22T00:00:00Z',
       };
       expect(p.id).toBe('p1');
       expect(p.ease_factor).toBe(2.5);
@@ -48,16 +58,24 @@ describe('types/learn.ts', () => {
     it('可选字段可空', () => {
       const p: QuestionProgress = {
         id: 'p1',
+        user_id: 'u1',
+        question_id: 'q1',
         status: 'mastered',
         practice_count: 10,
         correct_count: 8,
         bookmarked: true,
+        source: 'seed',
+        last_review_at: null,
+        review_count: 10,
         ease_factor: 2.6,
         interval_days: 30,
+        first_practiced_at: '2026-06-22T00:00:00Z',
         next_review_at: null,
         last_practiced_at: null,
         user_answer: null,
         notes_path: null,
+        created_at: '2026-06-22T00:00:00Z',
+        updated_at: '2026-07-22T00:00:00Z',
       };
       expect(p.user_answer).toBe(null);
     });

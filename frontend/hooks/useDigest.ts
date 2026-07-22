@@ -32,6 +32,18 @@ interface DigestItem {
   related_item_ids: string[];
 }
 
+interface DigestBookmarkItem {
+  item_id: string;
+  title: string;
+  summary: string | null;
+  quality_score: number;
+  type: 'model' | 'application';
+  region: 'domestic' | 'overseas';
+  source_name: string;
+  source_url: string;
+  published_at: string | null;
+}
+
 interface DigestToday {
   date: string;
   vibe: string | null;
@@ -44,10 +56,13 @@ interface DigestSource {
   user_id: string | null;
   name: string;
   url: string;
+  category: string;
   type: 'model' | 'application';
   region: 'domestic' | 'overseas';
   enabled: boolean;
   is_default: boolean;
+  last_fetched_at: string | null;
+  last_item_count: number;
 }
 
 interface DigestSettings {
@@ -73,8 +88,8 @@ export function useDigestToday(): QueryHookResult<DigestToday> {
   return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };
 }
 
-export function useDigestBookmarks(filter: 'all' | 'model' | 'application' = 'all'): QueryHookResult<{ total: number; items: DigestItem[] }> {
-  const qr = useQuery<{ total: number; items: DigestItem[] }>({
+export function useDigestBookmarks(filter: 'all' | 'model' | 'application' = 'all'): QueryHookResult<{ total: number; items: DigestBookmarkItem[] }> {
+  const qr = useQuery<{ total: number; items: DigestBookmarkItem[] }>({
     queryKey: ['digest', 'bookmarks', filter],
     queryFn: async () => {
       const url = filter === 'all' ? '/api/digest/bookmarks' : `/api/digest/bookmarks?type=${filter}`;
@@ -163,7 +178,7 @@ export function useDigestSources(): QueryHookResult<{ system_count: number; user
 export function useAddDigestSource() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (source: { name: string; url: string; type: 'model' | 'application'; region: 'domestic' | 'overseas' }) => {
+    mutationFn: async (source: { name: string; url: string; category: 'model' | 'application'; type: 'model' | 'application'; region: 'domestic' | 'overseas' }) => {
       const res = await fetch('/api/digest/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

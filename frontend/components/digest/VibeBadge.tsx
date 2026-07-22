@@ -11,7 +11,7 @@ const VIBE_STYLES: Record<VibeLevel, string> = {
 export function VibeBadge({ vibe, level = "info" }: { vibe: string | null; level?: VibeLevel }) {
   if (!vibe) return null;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium border ${VIBE_STYLES[level]}`}>
+    <span className={`vibe-badge inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium border ${VIBE_STYLES[level]}`}>
       ✨ {vibe}
     </span>
   );

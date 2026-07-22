@@ -1,5 +1,6 @@
 /**
- * Phase 2 单测: /learn 页面 (题库列表 + 过滤)
+ * Phase 2 单测: /learn 页面 (题库列表 + 过滤)。
+ * Tests live outside pages/ so Next does not register them as routes.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

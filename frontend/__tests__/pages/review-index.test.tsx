@@ -1,5 +1,6 @@
 /**
- * Phase 2 单测: /review 页面 (SRS 复习队列)
+ * Phase 2 单测: /review 页面 (SRS 复习队列)。
+ * Tests live outside pages/ so Next does not register them as routes.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

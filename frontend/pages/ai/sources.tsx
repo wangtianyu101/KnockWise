@@ -53,7 +53,7 @@ function AddSourceDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (s: a
           <button onClick={() => {
             const name = (document.getElementById('src-name') as HTMLInputElement)?.value;
             const url = (document.getElementById('src-url') as HTMLInputElement)?.value;
-            if (name && url) onAdd({ name, url, type: 'model', region: 'domestic' });
+            if (name && url) onAdd({ name, url, category: 'model', type: 'model', region: 'domestic' });
             onClose();
           }} className="btn btn-primary">添加并启用</button>
         </div>

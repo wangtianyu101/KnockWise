@@ -48,7 +48,7 @@ export function HideDialog({
       onClick={() => onOpenChange(false)}
     >
       <div
-        className="bg-[rgba(15,20,40,0.95)] backdrop-blur-2xl border border-[rgba(99,102,241,0.25)] rounded-2xl p-8 w-[520px] max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="modal-content bg-[rgba(15,20,40,0.95)] backdrop-blur-2xl border border-[rgba(99,102,241,0.25)] rounded-2xl p-8 w-[520px] max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-bold mb-1">不再推送类似内容？</h2>

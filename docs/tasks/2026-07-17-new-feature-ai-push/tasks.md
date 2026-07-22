@@ -366,14 +366,16 @@
   - 边界: 仅 Mock RSS/LLM/Email/Clock；真实 Scheduler、评分、ORM、MySQL、FastAPI；验证单源失败降级、进程重启后 DB 去重、邮件一次、API 查询同一条持久化数据
   - 验证口径: 实现与定向/全量回归证据已完成；独立 verifier 结论在用户暂停验证时尚未收口，不把本行解释为整个阶段五完成
 
-- [ ] T39: 🚧 实施中、验证暂停 — Frontend type/build + Digest Playwright 5 scenario
+- [x] T39: ✅ DONE — Frontend type/build + Digest Playwright 5 scenario
   - 文件: frontend 类型错误、QueryClientProvider、Digest pages/tests
   - 测试: Vitest + tsc + next build + Playwright 5/5
   - 依赖: T38 / V5-05 / V5-06
   - 估时: 1h
-  - 已取得证据: `tsc --noEmit` 0 errors；Vitest 27 files / 210 passed；Next build passed（31 pages）
-  - 未通过/未完成: 第一次确定性 Playwright 为 2 passed / 3 failed；发现 localStorage key 使用 `token` 而应用读取 `knockwise_token`，修复后第二次运行被用户中止，**无 5/5 证据**
-  - 状态约束: 代码尚未提交；不得标 DONE，不得把 type/build/Vitest 绿推导为浏览器 E2E 绿
+  - 实测证据: `npm test` → **27 files / 210 passed**；`npx tsc --noEmit` → **exit 0 / 0 errors**；`npm run build` → **exit 0 / 31 pages**；Digest Playwright → **5 passed / 9.1s**
+  - 修复链: 第一次确定性 Playwright 2 passed / 3 failed → 定位 localStorage key `token` 与应用 `knockwise_token` 不一致 → 修复后用户恢复验证，本轮 5/5
+  - 边界: 浏览器 E2E 仅拦截 `/api/digest/**`，不访问公网；它证明前端五条用户路径，不冒充 Scheduler→DB 的后端真实 E2E
+  - 环境说明: `start.sh` 确认 MySQL/Redis 在线，但 LiveKit UDP bind 被沙箱拒绝；T39 不依赖 LiveKit，阶段五完整 L5 仍需另行收口
+  - 估时: 1h → 实际约 55min（含第一次失败定位与恢复后复验）
 
 ---
 
@@ -478,10 +480,10 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 - 阶段 H（T33）：1h → 实际约 45min
 - 阶段 I（T34）：1h → 实际约 55min
 - 阶段 J（T35）：1h → 实际约 55min
-- 阶段 K（T36-T39）：4h → T36/T37 实际各约 25min，T38 约 45min
+- 阶段 K（T36-T39）：4h → T36/T37 实际各约 25min，T38 约 45min，T39 约 55min
 - **总估时**：37.5h
-- **已用**：~7.25h（T1+T2+T5+T6+T33-T38）
-- **剩余**：~28.5h（含 T39）
+- **已用**：~8.2h（T1+T2+T5+T6+T33-T39）
+- **剩余**：~27.5h（不含已完成 T39；阶段五完整重验与外部 ruleset 另计）
 - **实际偏差**：≤ 30%（事后验证 · 写入 retro.md）
 ```
 
@@ -499,7 +501,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T36 | `dec649d` | 1h | ~25min |
 | T37 | `8d48fb2` | 1h | ~25min |
 | T38 | `f5200a0` | 1h | ~45min |
-| **小计** | 12 commits | 9.75h | ~7.25h |
+| T39 | 本次前端提交（见 git history） | 1h | ~55min |
+| **小计** | 13 commits | 10.75h | ~8.2h |
 
 ---
 
@@ -536,11 +539,11 @@ Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
 Phase 10 · Harness 验证（T35，1h）        ← 2026-07-22 ⚠️ VERIFIED / FAILED
   T35（L3/L5 已实跑；V5-01～V5-08 待修）
 
-Phase 11 · Harness 修复（T36-T39，4h）    ← 2026-07-22 🚧 IN PROGRESS
-  ✅ T36 → ✅ T37 → ✅ T38 → T39
+Phase 11 · Harness 修复（T36-T39，4h）    ← 2026-07-22 ✅ IMPLEMENTED
+  ✅ T36 → ✅ T37 → ✅ T38 → ✅ T39
 ```
 
-**总周期**：~4 个工作日 · 已用 ~7.25h（含 T38）· 剩余 ~28.5h
+**总周期**：~4 个工作日 · 已用 ~8.2h（含 T39）· 剩余 ~27.5h；阶段五完整重验仍未闭环
 
 **下次实施时**：开始前先看 § 6 总估时 + 实际 commit 历史表 → 知道上回做到哪 → 从未完成的任务继续
 
