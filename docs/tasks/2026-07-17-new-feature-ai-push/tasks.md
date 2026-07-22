@@ -609,6 +609,7 @@ Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
 | TDD 红灯 | `check_coverage.py` 与 `.github/workflows/ci.yml` 不存在：5 error + 7 failed |
 | Workflow 结构 | YAML parse 通过；3 个独立 job；无 `continue-on-error` |
 | Verify-Loop #1 | FAIL：`setup-node@v7` 不存在；已由 `3ff6566` 改为官方当前 `setup-node@v6` 并修正契约测试（记录因共享 index 碰撞进入 `3c17813`） |
+| Verify-Loop #2 | PASS：三个官方 Action major 有效；13 passed + 1 local skip；quality exit 1；Vitest 210 passed；typecheck/build 如实阻断 |
 | 后端全量 | `698 passed, 1 skipped, 4 xfailed`；全局行 61.37% |
 | Digest 核心 | 行 85.55% / 分支 82.00%，高于 80% / 70% gate |
 | MySQL | 本机 MySQL + TEMPORARY TABLE round-trip：`1 passed` |
