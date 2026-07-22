@@ -5,7 +5,7 @@ HEAD：v1 `be80a3f feat(infra+test+docs): T29 e2e + T30 RSSHub + T31 retro + T32
 
 > ⚠️ **2026-07-22 audit 复核偏差**：原标题"实施完成 · 2026-07-19"过于乐观 —— 实际 41 个测试空壳（v1 时 100% · v2 时仍 37 个纯 `pass` + 4 个有内容但 0 assert）被 pytest 计为通过 · 形成"假绿灯" · 详见 § 9 偏差段。
 >
-> ❌ **2026-07-22 阶段五实测 v4**：虽然空测试扫描已清零、pytest 与 coverage 达标，但 LLM 契约不存在、后端 E2E Mock 越界、Playwright 5/5 失败、typecheck/build 失败。§ 12 的“8/9 闭环”不得解释为 Harness 项目完成；最新事实以 § 15 与 `verify.md` 为准。
+> ⚠️ **2026-07-22 Harness 治理 v5**：T36～T38 已补 RSS/LLM/Email/真实 MySQL E2E，T39 仅取得 typecheck/Vitest/build 证据，Playwright 修复后复跑被中止；GitHub required checks 也未确认配置。§ 12、§ 15 均为历史快照，最新事实以 § 16 为准，当前任务仍未闭环。
 >
 > **必填段（CLAUDE.md § 6.6 · 2026-07-11 加规则）**：verify.md commit 后立即写 retro.md · 不要等用户催。
 
@@ -356,3 +356,127 @@ v3 新增待写：
 - 阶段五验证活动：✅ 已执行。
 - 阶段五结果：❌ 未通过。
 - 步骤六：本文仅为自动起草，**等待用户确认改进项，不能判定任务闭环**。
+
+---
+
+## 16. Harness 治理全面复盘（v5 · 2026-07-22 · 当前权威结论）
+
+### 16.1 结论与当前边界
+
+这次事故不是“少写了几个 assert”，而是完整验证系统的五层防线同时失效：
+
+```text
+Writer 生成占位测试
+  → 测试框架把 no-op 计为 passed
+  → Verifier 只看绿灯/数量，没有验证需求语义与 Mock 边界
+  → CI 缺少质量、类型、构建、真实数据库和浏览器 Gate
+  → tasks/verify/retro 把“文件存在/函数数量/命令绿”升级成 DONE
+```
+
+当前只允许作如下判断：
+
+| 范围 | 当前事实 | 状态 |
+|---|---|---|
+| 空测试治理 | AST 扫描已达到 0 violations；脚本与 CI Gate 已存在 | ✅ 已实施并有本地证据 |
+| T36 RSS | RSSHub fallback、字段解析、去重、失败隔离与 shutdown 修复 | ✅ 已实施并经独立 verifier PASS |
+| T37 LLM / Email | provider contract、输入白名单、fallback、邮件开关/幂等/非阻塞 | ✅ 已实施；verifier 经两次 FAIL 后 PASS |
+| T38 后端真实 E2E | 仅 Mock RSS/LLM/Email/Clock，真实 Scheduler/Service/ORM/MySQL/API | ✅ 定向与全量回归有证据；独立 verifier 在暂停时未收口 |
+| T39 前端 | typecheck 0、Vitest 210、build 31 pages；Playwright 首跑 2/5 | 🚧 实施中，修复后复跑被中止，无 5/5 证据 |
+| GitHub 合并阻断 | workflow 已写；required checks / ruleset 未确认 | 🟡 外部配置待办，不能声称已阻断合并 |
+| 阶段五 | 用户要求暂停验证，未重新形成完整 verify 证据 | ❌ 未完成 |
+
+### 16.2 直接原因：为什么空测试会“通过”
+
+1. **测试文件是占位产物**：Writer 用 `pass`、空函数和无 oracle 的方法先搭结构，但任务状态没有停在“stub/未验证”。
+2. **pytest 语义被误用**：pytest 的职责是执行函数；函数没有失败就会 passed，它不会判断测试是否验证了需求。
+3. **计数对象错误**：文档把测试函数、测试类或 collected 数量当成“真实通过测试数”，忽略了函数体语义。
+4. **没有质量前置 Gate**：当时 CI 和 commit 流程没有 AST 检查，因此 no-op 测试能与真实测试得到相同绿灯。
+
+### 16.3 系统根因：五层防线如何逐层失守
+
+| 防线 | 本应阻断 | 实际失效 | 根因 | 已落地约束 |
+|---|---|---|---|---|
+| Writer | 占位测试进入完成态 | stub 被当实现提交 | 没有“oracle 是什么”的完成条件 | `testing-rules.md` §6.3/6.4 |
+| Test oracle | 错误逻辑仍然绿 | `pass`、非空列表、Mock 回显均可绿 | 只要求函数存在/命令通过 | AST Gate + 破坏后变红证据 |
+| Verifier | 需求与实现不一致 | 只数断言、跑 pytest，不审计链路 | 未从 requirement 追到生产代码/失败断言 | `verify-template.md` 追踪矩阵 |
+| E2E boundary | 内部层被 Mock | “cron→DB→API”实际 Mock DB/ORM/Service | 用文件名/docstring 代替边界证明 | Mock 边界账本；内部层禁 Mock |
+| CI / merge | 不可信变更合入 | 缺 quality/MySQL/type/build/browser Gate | workflow 与 required checks 混为一谈 | Gate 矩阵 + ruleset 独立核验 |
+| 文档状态 | 未验证不得 DONE | tasks/retro 复述了乐观结论 | 没有证据元信息和状态分级 | verify 证据头 + 文档事实对账 |
+
+根因不能归结为“AI 粗心”。真正的根因是流程允许**结构性信号**（文件存在、函数数量、命令退出 0）替代**行为性证据**（错误逻辑会让哪条断言失败）。
+
+### 16.4 业务链路暴露出的真实缺口
+
+空壳清零以后，语义审计继续发现以下问题，证明 AST Gate 是必要条件但不是充分条件：
+
+- **LLM**：文档写“已重写/转移”，实际没有可执行 `ainvoke` 契约；Prompt 白名单、结构化解析、非法 JSON、超时/限流/模型异常均未验证。
+- **RSS**：RSSHub 已部署不等于应用有 fallback；还缺跨源去重、单源失败隔离和清理关闭路径。
+- **Email**：生产方法仍是 `NotImplementedError`，原测试只证明“未实现会报错”，不能证明邮件链路可用。
+- **伪 E2E**：原测试直接调用 service，并 Mock 偏好、RSS、ORM 和数据库；没有经过 Scheduler、真实事务和 API 查询。
+- **持久化语义**：`/today` 一度以 `db=None` 重新生成内容，而不是查询 Scheduler 已写入的同一条 digest。
+- **幂等性**：只靠进程内状态，重启后可能重复生成/推送；真实 E2E 后改为数据库约束验证。
+- **并发 Session**：并发 RSS 工作共享同一个 `AsyncSession`，存在事务/连接安全风险。
+- **生命周期**：正常请求绿，但 SIGINT 才暴露 shutdown 的 `asyncio` 未导入，说明只测 happy path 不够。
+
+### 16.5 修复过程中的二次缺陷
+
+Verifier 的三轮结果也暴露“补了测试不等于第一次实现就正确”：
+
+1. 第一次修复遗漏 Email 重试间隔、`email_enabled`、主题/链接、幂等与非阻塞，并使用不匹配的 Mock 类型产生 RuntimeWarning。
+2. 第二次修复把邮件链接指到不存在的 `/daily`，且用全局锁导致不同用户互相阻塞。
+3. 第三次改为真实 `/ai/today?date=...` 链接和按幂等 key 的锁后，独立 verifier 才 PASS。
+4. 前端 Playwright 改成确定性网络拦截后，初始化仍写错 localStorage key（`token` vs `knockwise_token`），导致 hydration overlay 拦截点击；修正后的复跑被中止，所以不能写 5/5。
+
+这说明 verifier 必须独立读取需求、运行测试并实测行为；仅由 Writer 自证会把自身假设带进结论。
+
+### 16.6 文档为什么会持续漂移
+
+- **状态词没有层级**：“已写代码”“单测绿”“整合验证”“staging 通过”都被压缩成 DONE。
+- **证据没有来源**：旧记录缺 commit、完整命令、cwd、环境、退出码和分类计数，后人无法复现或判断是否过期。
+- **历史快照没有失效标记**：早期 retro 的“8/9 闭环”仍可被单独引用，虽然后续证据已推翻。
+- **skip/xfail 混入通过叙事**：pytest 总结数字被简化后丢失测试状态差异。
+- **规则文件存在被当成规则生效**：GitHub Actions YAML 存在，但仓库 ruleset 未配置时仍不能保证阻断合并。
+
+本节因此明确覆盖早期乐观结论；旧章节只保留为事故演进记录，不再作为当前状态来源。
+
+### 16.7 做对了什么
+
+- AST 质量脚本把最明显的空壳变成可自动阻断的非零退出码。
+- 独立 verifier 没有接受第一次“看起来完整”的实现，两次 FAIL 具体抓出协议、路由和并发问题。
+- 后端 E2E 使用隔离 MySQL，并把 Mock 限制在 RSS/LLM/Email/Clock，验证数据库、API 和重启幂等。
+- 验证阶段诚实记录 Playwright、typecheck/build 和 shutdown 失败，没有继续维持全绿叙事。
+- 用户在修复后复跑未完成时叫停验证；本次复盘保留 T39 未完成，而不是补写推测结果。
+
+### 16.8 已沉淀的机器约束
+
+| 失败模式 | 落地位置 | 新约束 | 状态 |
+|---|---|---|---|
+| `pass` / `...` / 占位测试假绿 | `scripts/check_test_quality.py`、CI `test-quality` | AST 发现即非零退出 | ✅ 已有本地证据；CI 远端待运行 |
+| 测试存在但无行为 oracle | `docs/rules/testing-rules.md` §6.3/6.4 | 必须说明错误时哪条断言变红 | 🟡 规则已写，待下次 commit 验证执行 |
+| 伪 E2E | `testing-rules.md` §6.5、`verify-template.md` | Mock 边界账本；内部层 Mock 则降级命名 | 🟡 已用于 T38，模板执行待持续观察 |
+| 数字口径造假 | `verify-template.md` §0.2 | collected/passed/failed/skip/xfail 分列 | 🟡 模板已写 |
+| 需求和测试脱节 | `verify-template.md` §0.3 | requirement→代码→测试→oracle 追踪 | 🟡 模板已写 |
+| 只测启动不测关闭/重启 | `testing-rules.md` §6.5、DOD §七 | lifecycle 与重启幂等必查 | 🟡 规则已写 |
+| Vitest 绿掩盖类型/构建失败 | `testing-rules.md` §6.6、DOD §七 | Vitest/tsc/build/Playwright 分 Gate | 🟡 规则已写 |
+| workflow 存在但不能挡合并 | `testing-rules.md` §6.6、DOD §七 | ruleset/required checks 单独核验 | ❌ GitHub 配置仍待用户完成 |
+| retro 只写“下次注意” | `retro-template.md` §3.1/5.1、DOD §八 | 必须写失效链、文件位置、验证状态 | ✅ 文档约束已落地 |
+
+### 16.9 尚未完成与后续恢复入口
+
+以下项目没有在本次复盘中被偷偷关闭：
+
+- T39 Playwright 修复后的 5/5 复跑、前端改动 review 与提交；
+- T38 独立 verifier 最终结论收口；
+- 全量阶段五 `verify.md` 按 v3 模板重写并取得 L3/L5 最新证据；
+- 对核心逻辑执行一次可恢复的破坏实验，记录“测试确实变红”；
+- GitHub 仓库配置 `test-quality`、`backend-test`、`frontend-test` 为 required checks；
+- 将最终 pytest/coverage/frontend/Playwright 原始输出与 tasks/verify/retro 做一次数字对账。
+
+恢复验证时必须从上述清单继续，不能引用中止前的半套证据直接标完成。
+
+### 16.10 本轮复盘完成判定
+
+- ✅ 原因已从直接现象追到 Writer、oracle、Verifier、CI、文档五层。
+- ✅ 改进已落到 `testing-rules.md`、`verify-template.md`、`retro-template.md` 和 `DOD.md`，不只留在本文件。
+- ✅ T39、T38 verifier、required checks 和阶段五仍明确未闭环。
+- ⏳ 新规则尚未经过下一次完整 Harness 运行验证；因此本节是**复盘与规则沉淀完成草案**，不是整个 AI 推送任务完成证明。

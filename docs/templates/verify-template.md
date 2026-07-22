@@ -1,8 +1,8 @@
 ---
 title: 验证文档模板（verify）
 date: 2026-06-30
-updated: 2026-07-21
-status: v2
+updated: 2026-07-22
+status: v3
 tags: [verify, 5步, L3, L5, 模板]
 related:
   - [test-cases-template.md](test-cases-template.md)
@@ -19,6 +19,17 @@ related:
 
 ## 0. 上游证据（必填）
 
+### 0.1 证据元信息
+
+| 字段 | 值 |
+|---|---|
+| Commit / 工作树 | `<hash / dirty files>` |
+| 日期与时区 | `<YYYY-MM-DD HH:mm TZ>` |
+| 工作目录 | `<cwd>` |
+| 环境 | `<OS / runtime / DB>` |
+
+> 每条命令必须记录原命令、退出码和分类结果。只贴“passed”或人工摘要不算可复现证据。
+
 | 分布式活动 | 证据位置 | 结果 |
 |---|---|---|
 | L1 类型检查 | `<command / log / commit>` | ✅ / ❌ |
@@ -26,6 +37,20 @@ related:
 | L4 review / verifier | `<review / verifier result>` | PASS / FAIL |
 
 > 本段只引用步骤 4 已产生的证据，不在步骤 5 重新制造五层 gate。
+
+### 0.2 测试人口径
+
+| collected | passed | failed | skipped | xfailed | xpassed | quality violations |
+|---:|---:|---:|---:|---:|---:|---:|
+| N | N | N | N | N | N | N |
+
+> `skip` / `xfail` 不计入 passed；测试类、函数或文件数量不得包装成通过数量。
+
+### 0.3 需求追踪矩阵
+
+| Requirement | 生产代码 | 自动化测试 | 失败时哪条断言变红 | 状态 |
+|---|---|---|---|---|
+| `<REQ-ID>` | `<file:line>` | `<test node id>` | `<oracle>` | PASS / FAIL / BLOCKED |
 
 ## L3 整合测试（必填）
 
@@ -41,6 +66,26 @@ related:
 |---|---|---|---|---|
 | <场景 1> | <期望> | <实际> | `<log / response>` | ✅ / ❌ |
 | <场景 2> | <期望> | <实际> | `<log / response>` | ✅ / ❌ |
+
+### Mock 边界账本（API / E2E 必填）
+
+| 层 | Real / Mock | 理由 | 证据 |
+|---|---|---|---|
+| Scheduler | Real / Mock | `<why>` | `<test/fixture>` |
+| Service | Real / Mock | `<why>` | `<test/fixture>` |
+| ORM / Database | Real / Mock | `<why>` | `<DB name/assertion>` |
+| API | Real / Mock | `<why>` | `<request/response>` |
+| RSS / LLM / Email / Clock | Real / Mock | `<why>` | `<provider fixture>` |
+
+> 名为 E2E 的测试若 Mock 了目标 Scheduler、Service、ORM、数据库或 API handler，必须降级命名，不能记为真实 E2E。
+
+### 反证与生命周期
+
+- **故意破坏核心逻辑**：`<mutation / 临时反转条件>`
+- **预期红灯**：`<test node id + failure>`
+- **恢复后结果**：`<command + exit code>`
+- **启动 / 关闭**：`<结果与日志>`
+- **重复执行 / 进程重启幂等**：`<结果与数据库证据>`
 
 ## L5 staging 运行时验证（必填）
 
@@ -64,6 +109,14 @@ related:
 
 > 无法运行、依赖缺失或没有证据时必须写 FAILED/BLOCKED，不得写成通过。
 
+## 文档事实对账（必填）
+
+- [ ] `tasks.md` 状态与本次证据一致
+- [ ] `verify.md` 数量与命令原始输出一致
+- [ ] `retro.md` 已覆盖过时结论或明确标注历史快照
+- [ ] `docs/issues.md` / milestones 未提前关闭
+- [ ] GitHub required checks 已配置；若未配置，已明确记录为外部待办
+
 ## 用户验收（必填）
 
 - **结论**：✅ 验证完成 / ❌ 退回步骤 4
@@ -76,6 +129,10 @@ related:
 - [ ] L3 整合测试通过且有可复现命令
 - [ ] L5 staging 真实路径通过且有日志/截图/浏览器证据
 - [ ] 期望与实际逐项记录，失败没有被隐藏
+- [ ] 测试计数分类记录，没有把 skip/xfail/测试类计入 passed
+- [ ] 需求追踪矩阵与 Mock 边界账本完整
+- [ ] 核心逻辑有“破坏后变红”的反证，运行时启动/关闭/重启已覆盖
+- [ ] tasks / verify / retro / issues 状态完成事实对账
 - [ ] 用户明确确认验证完成
 
 > 任一项未满足，verify.md 不算完成，不能进入步骤 6 复盘。

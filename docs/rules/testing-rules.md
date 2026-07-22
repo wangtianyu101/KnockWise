@@ -22,7 +22,65 @@
 | 后端 | **pytest** | `cd backend && ./.venv/bin/python -m pytest tests/ -v` | `backend/tests/test_*.py` |
 | 前端 | **vitest** + RTL + happy-dom | `cd frontend && npm test` | `frontend/**/*.test.{ts,tsx}` |
 
-## § 6.6 关联规则（CLAUDE.md 中保留）
+## § 6.3 有效测试判定（Harness Gate）
+
+测试被 pytest / Vitest 收集，不等于测试有效。新增或修改测试必须至少包含一个能在行为错误时失败的 **oracle**：
+
+- Python `assert`、`pytest.raises`、Mock `assert_*`；
+- 前端 `expect(...)`、用户交互后的可观察状态；
+- helper 内显式断言或抛错（调用点必须能追溯到该 helper）。
+
+以下情况一律视为无效测试并阻断 CI：
+
+- 函数体只有 `pass`、`...`、docstring、注释或占位返回值；
+- 包含 `placeholder` / `TODO` / `FIXME` 且没有关联 issue 与明确 `skip` 原因；
+- 只验证“没有抛异常”、列表非空或 Mock 返回了自身配置值，不能证明需求；
+- `skip` / `xfail` 未写原因或 issue；二者必须单独统计，禁止计入 passed；
+- 测试文件放进 Next.js `pages/` / `app/` 路由树，导致测试被构建成页面。
+
+提交前必须运行：
+
+```bash
+python3 scripts/check_test_quality.py backend/tests
+```
+
+## § 6.4 需求链路与断言
+
+- API 集成测试至少验证 HTTP 状态、响应契约和数据库最终状态；写操作还要验证重复请求与权限边界。
+- Provider 契约测试只 Mock 公共 provider 边界，不 Patch service 的私有方法来证明 service 正确。
+- 异步方法使用 `AsyncMock`，同步方法使用 `Mock`；新增测试产生的 unawaited coroutine / RuntimeWarning 必须处理，不能当作绿灯噪声。
+- RSS / LLM fixture 固定且默认禁止公网；必须覆盖解析/输入契约、异常和降级，不只验证返回非空。
+- 核心逻辑至少保留一条“故意破坏后会变红”的证据：可用 mutation test，或临时反转条件并记录失败测试；验证后恢复代码。
+
+## § 6.5 E2E Mock 边界
+
+每个 E2E 必须在测试或 `verify.md` 列出真实层与 Mock 层。名称、目录和 docstring 不能证明它是 E2E。
+
+Digest Harness 的允许 Mock 边界仅为：**RSS 网络、LLM、Email、Clock**。以下内部层必须走真实代码：
+
+```text
+Scheduler → Service → ORM → 隔离测试数据库 → FastAPI API
+```
+
+禁止在同一条“真实 E2E”中 Mock Scheduler、目标 Service、ORM、数据库或目标 API handler。若环境无法提供真实层，必须降级命名为 integration/unit，并在验证结论中写 BLOCKED，不能包装为 E2E passed。
+
+E2E 必查：外部源部分失败的降级、持久化结果、API 查询同一数据、重复执行、进程重启后的幂等、启动与关闭路径。
+
+## § 6.6 Gate 矩阵与状态口径
+
+| Gate | 最低证据 |
+|---|---|
+| test-quality | AST 扫描 0 violations |
+| backend-test | pytest 分类计数 + coverage + 隔离 MySQL 集成测试 |
+| frontend-test | Vitest + `tsc --noEmit` + Next build |
+| browser E2E | Playwright 场景结果；不得依赖公网 |
+
+- Gate 绿只证明本 Gate，不自动推导整个任务 DONE。
+- 任务状态只允许：`已实现未验证`、`L1/L2 已通过`、`L3 已通过`、`L5 已通过/完成`、`FAILED/BLOCKED`。
+- 证据必须记录 commit、命令、工作目录、环境、时间、退出码和 passed/failed/skipped/xfail 分类计数。
+- GitHub workflow 存在不等于能阻断合并；required checks / ruleset 未配置时必须作为外部待办单列。
+
+## § 6.7 关联规则（AGENTS.md 中保留）
 
 - **§ 6.3 自检清单** — 每个代码 commit 前必过的 5 条
 - **§ 6.4 违反处置** — 没单测 = 没完成

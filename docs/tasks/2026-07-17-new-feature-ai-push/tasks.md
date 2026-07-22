@@ -364,12 +364,16 @@
   - 依赖: T37 / V5-02
   - 估时: 1h → 实际约 45 min
   - 边界: 仅 Mock RSS/LLM/Email/Clock；真实 Scheduler、评分、ORM、MySQL、FastAPI；验证单源失败降级、进程重启后 DB 去重、邮件一次、API 查询同一条持久化数据
+  - 验证口径: 实现与定向/全量回归证据已完成；独立 verifier 结论在用户暂停验证时尚未收口，不把本行解释为整个阶段五完成
 
-- [ ] T39: Frontend type/build + Digest Playwright 5 scenario
+- [ ] T39: 🚧 实施中、验证暂停 — Frontend type/build + Digest Playwright 5 scenario
   - 文件: frontend 类型错误、QueryClientProvider、Digest pages/tests
   - 测试: Vitest + tsc + next build + Playwright 5/5
   - 依赖: T38 / V5-05 / V5-06
   - 估时: 1h
+  - 已取得证据: `tsc --noEmit` 0 errors；Vitest 27 files / 210 passed；Next build passed（31 pages）
+  - 未通过/未完成: 第一次确定性 Playwright 为 2 passed / 3 failed；发现 localStorage key 使用 `token` 而应用读取 `knockwise_token`，修复后第二次运行被用户中止，**无 5/5 证据**
+  - 状态约束: 代码尚未提交；不得标 DONE，不得把 type/build/Vitest 绿推导为浏览器 E2E 绿
 
 ---
 

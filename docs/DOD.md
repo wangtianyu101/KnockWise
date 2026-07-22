@@ -104,6 +104,10 @@ tags: [DOD, 6步流程, 完成定义]
 - [ ] commit 前先回写 `tasks.md` 的状态、实际耗时和 commit 历史
 - [ ] 每个 commit 按 `CLAUDE.md §6.7` 运行独立 verifier；FAIL 必须修正或上报
 - [ ] 阶段结束整合 `test-cases.md`
+- [ ] 新增/修改测试通过 AST Harness Gate；无 `pass` / `...` / 无理由 skip / 占位标记
+- [ ] 每条测试能指出需求失败时会变红的 oracle，不以“收集到/未抛异常”代替验证
+- [ ] E2E 已列 Mock 边界；内部 Scheduler / Service / ORM / DB / API 不得被 Mock 后仍称真实 E2E
+- [ ] 前端测试不位于 Next.js `pages/` / `app/` 路由树
 
 ## 七、5 步验证 DOD
 
@@ -111,6 +115,13 @@ tags: [DOD, 6步流程, 完成定义]
 - [ ] **L3 整合测试**：关键 API contract / E2E / 跨模块路径通过
 - [ ] **L5 staging**：真实运行路径通过，有命令、日志、截图或浏览器证据
 - [ ] 期望与实际逐场景记录；失败项不得写成通过
+- [ ] 每条证据含 commit、命令、cwd、环境、时间、退出码及 passed/failed/skipped/xfail 分类计数
+- [ ] 需求追踪矩阵能从 requirement 追到生产代码、测试和失败 oracle
+- [ ] API/E2E 有 Mock 边界账本、真实数据库最终状态、重复执行和进程重启幂等证据
+- [ ] 核心逻辑有一次“故意破坏后测试变红”的反证；启动、关闭路径均实测
+- [ ] Vitest、typecheck、build、Playwright 分开记录，不用其中一个绿推导另一个绿
+- [ ] workflow 与 GitHub required checks 分开核验；未配置 ruleset 不得声称能阻断合并
+- [ ] `tasks.md`、`verify.md`、`retro.md`、issues/milestones 已完成事实对账
 - [ ] 用户明确确认验证完成
 
 > 任何一项未满足，`verify.md` 不算完成，不能进入复盘。
@@ -122,6 +133,8 @@ tags: [DOD, 6步流程, 完成定义]
 - [ ] 调研偏差逐条修正
 - [ ] 改进项有负责人、截止日期和沉淀位置
 - [ ] 经验已写入 `CLAUDE.md` / `AGENTS.md` / DOD / 模板 / skill / `docs/issues.md` 至少一处
+- [ ] 严重问题已按“Writer → oracle → Verifier → CI → 文档”写完整失效链
+- [ ] 每个改进项注明机器约束位置和“已验证/待验证”，不把规则文件存在等同于生效
 
 ## 九、遗留项关闭 DOD（收尾动作，不是步骤）
 
