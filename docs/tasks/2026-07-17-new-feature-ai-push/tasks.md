@@ -185,13 +185,13 @@
   - commit: `test(api): digest 16 endpoint 集成测试` — **未真实实施**
   - 产出: ⚠️ **0 真实 pytest case · 16 空壳 stub**
 
-- [ ] T21: ⚠️ 部分完成 + 重复空壳 — audit 2026-07-21（详见 § 9）
-  - 文件: `backend/tests/services/test_digest_service.py`（真实 12 case） + ⚠️ **`test_digest_service_unit.py`（12 个空壳 · 与真实测试重复）**
-  - 测试: ⚠️ **真实文件 12 case 全过 · 重复文件 12 个全 `pass`** · 净有效 ~12 case（不是 ~20）
+- [x] T21: ✅ DONE — commit pending 拆分（删 12 个重复空壳 · 留 36 真实测试覆盖）
+  - 文件: `backend/tests/services/test_digest_service.py`（真实 4 RSS 解析 case） + ✅ **`test_digest_service_unit.py` 已删除**
+  - 测试: ✅ **真实测试覆盖完整**：test_digest_composite_score.py 23 + test_digest_select_top_n.py 4 + test_digest_push_daily.py 5 + test_digest_service.py 4 = **36 真实 case**
   - 依赖: T5-T8
-  - 估时: 1h → 需删除重复文件
-  - commit: `test(services): digest service 单元测试` — **部分完成**
-  - 产出: ⚠️ **去重后 ~12 真实 case**（不是 20）
+  - 估时: 30 min（vs 估时 1h · 提前）
+  - commit: `test(digest): T21 拆分 · 删 test_digest_service_unit.py 12 重复 stub` — **待 commit**
+  - 产出: ✅ **0 假绿灯 · 36 真实 digest 测试覆盖** · pytest 668 collect / 664 pass / 4 xfail / 0 fail（vs 681/494/183/4 删除前）
 
 - [ ] T22: ⚠️ STUB — audit 2026-07-21（详见 § 9）
   - 文件: `backend/tests/services/test_digest_llm.py`
