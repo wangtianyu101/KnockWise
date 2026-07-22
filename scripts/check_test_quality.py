@@ -63,6 +63,16 @@ def _reason_from_call(call: ast.Call, *, skipif: bool) -> ast.AST | None:
     return None
 
 
+def _is_skip_decorator(decorator: ast.expr) -> bool:
+    target = decorator.func if isinstance(decorator, ast.Call) else decorator
+    name = _call_name(target)
+    return name.endswith((".skip", ".skipif")) or name in {"skip", "unittest.skip"}
+
+
+def _has_skip_decorator(decorators: Iterable[ast.expr]) -> bool:
+    return any(_is_skip_decorator(decorator) for decorator in decorators)
+
+
 def _skip_decorator_without_reason(decorators: Iterable[ast.expr]) -> ast.AST | None:
     for decorator in decorators:
         if isinstance(decorator, ast.Call):
@@ -80,19 +90,23 @@ def _skip_decorator_without_reason(decorators: Iterable[ast.expr]) -> ast.AST | 
     return None
 
 
+def _runtime_skip_calls(function: ast.FunctionDef | ast.AsyncFunctionDef) -> list[ast.Call]:
+    return [
+        node
+        for node in ast.walk(function)
+        if isinstance(node, ast.Call) and _call_name(node.func) in {"pytest.skip", "skip"}
+    ]
+
+
 def _skip_without_reason(function: ast.FunctionDef | ast.AsyncFunctionDef) -> ast.AST | None:
     """Return the first undocumented skip decorator/call, if present."""
     decorator = _skip_decorator_without_reason(function.decorator_list)
     if decorator is not None:
         return decorator
 
-    for node in ast.walk(function):
-        if not isinstance(node, ast.Call):
-            continue
-        name = _call_name(node.func)
-        if name in {"pytest.skip", "skip"}:
-            if not _is_nonempty_reason(_reason_from_call(node, skipif=False)):
-                return node
+    for node in _runtime_skip_calls(function):
+        if not _is_nonempty_reason(_reason_from_call(node, skipif=False)):
+            return node
     return None
 
 
@@ -186,8 +200,21 @@ def scan_file(path: Path) -> tuple[list[Violation], int]:
     tests.sort(key=lambda node: (node.lineno, node.name))
 
     for function in tests:
+        skip_present = _has_skip_decorator(function.decorator_list) or bool(
+            _runtime_skip_calls(function)
+        )
+        undocumented_skip = _skip_without_reason(function)
+        ancestor = parents.get(function)
+        while ancestor is not None:
+            if isinstance(ancestor, ast.ClassDef):
+                skip_present = skip_present or _has_skip_decorator(ancestor.decorator_list)
+                if undocumented_skip is None:
+                    undocumented_skip = _skip_decorator_without_reason(ancestor.decorator_list)
+            ancestor = parents.get(ancestor)
+        documented_skip = skip_present and undocumented_skip is None
+
         marker = _placeholder_marker(function, comments)
-        if marker is not None:
+        if marker is not None and not documented_skip:
             line, text = marker
             violations.append(
                 Violation(
@@ -198,7 +225,7 @@ def scan_file(path: Path) -> tuple[list[Violation], int]:
                     message=f"placeholder marker {text!r} must be removed or replaced by an explained skip",
                 )
             )
-        elif _is_empty_test(function):
+        elif _is_empty_test(function) and not documented_skip:
             violations.append(
                 Violation(
                     path=path,
@@ -209,12 +236,6 @@ def scan_file(path: Path) -> tuple[list[Violation], int]:
                 )
             )
 
-        undocumented_skip = _skip_without_reason(function)
-        ancestor = parents.get(function)
-        while undocumented_skip is None and ancestor is not None:
-            if isinstance(ancestor, ast.ClassDef):
-                undocumented_skip = _skip_decorator_without_reason(ancestor.decorator_list)
-            ancestor = parents.get(ancestor)
         if undocumented_skip is not None:
             violations.append(
                 Violation(

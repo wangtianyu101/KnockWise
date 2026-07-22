@@ -147,6 +147,18 @@ def test_scan_accepts_documented_class_level_skip(tmp_path, checker):
     assert checker.scan_paths([test_file]) == []
 
 
+def test_documented_skip_can_replace_an_unimplemented_placeholder(tmp_path, checker):
+    test_file = _write_test(
+        tmp_path,
+        "@pytest.mark.skip(reason='Issue #789: endpoint is not implemented')\n"
+        "def test_future_endpoint():\n"
+        "    \"\"\"TODO: replace after issue #789 is implemented.\"\"\"\n"
+        "    pass\n",
+    )
+
+    assert checker.scan_paths([test_file]) == []
+
+
 def test_scan_reports_syntax_errors_instead_of_silently_ignoring_them(tmp_path, checker):
     test_file = _write_test(tmp_path, "def test_broken(:\n    pass\n")
 
