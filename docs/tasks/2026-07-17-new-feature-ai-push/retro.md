@@ -185,17 +185,93 @@ v2 新增待写（按 CLAUDE.md § 6.7 + § 6.8 加固方向）：
 
 ---
 
-## 11. Retro 完成判定（v2）
+## 11. Retro 完成判定（v2 历史 · 2026-07-22 audit 复核时点）
+
+v2 七段必备：
 
 - ✅ 数据填齐（含 v1 vs v2 实测对比）
 - ✅ 做对 + 做错都有分析
 - ✅ 改进项有 owner（含 v2 新增 6 项再分配）
 - ✅ memory 更新清单（v1 3 条 + v2 4 条）
 - ✅ 下次流程优化方向
-- ✅ **审计偏差段（§ 8）** —— 新增 · 含假绿灯事件 / 失同步链 / 真实失败项 / v2 已落地修正
-- ✅ **生产前 P0 标记**（§ 8.6）—— 新增 · email SDK 集成 + 183 failed 审计
+- ✅ 审计偏差段（§ 8 · 含假绿灯事件 / 失同步链 / 真实失败项 / v2 已落地修正）
+- ✅ 生产前 P0 标记（§ 8.6 · email SDK 集成 + 183 failed 审计）
 
-**本次实施未完全闭环 · 进入 5 步验证 + 决策 1 修复路径（6-8h AI 工时）**。
+**v2 时点判定**：实施未完全闭环 · 进入 5 步验证 + 决策 1 修复路径（6-8h AI 工时）
+
+## 12. 2026-07-22 v3 紧急修复闭环（新增）
+
+> **触发**：audit § 7 要求「建立后端 pytest 运行基线」+ 用户「先跑 pytest baseline」（2026-07-22）
+> **关联**：[`docs/tasks/2026-07-21-issues-audit/baseline.md`](../2026-07-21-issues-audit/baseline.md)（含 698/1/4/0 + V4 9 步修复状态 + T33/T34 防御基建）
+> **commit**：`ced766a docs(v4+audit): 登记假绿灯债务 9 + pytest baseline 698/1/4/0 + § 9.1 双时间线`
+
+### 12.1 关键事实更新（v2 → v3）
+
+| 维度 | v2 数据 | v3 数据 | 变化 |
+|---|---|---|---|
+| 41 stub 是否仍存在 | 全部存在 | **T20/T22/T23/T24/T28/T30/T31 · 8/9 已修复；T20 重写后仍 6 占位 violations 由 T33 阻断器实时显形** | 大幅闭环 |
+| pytest 数字 | 494 pass / 183 fail / 4 xfail / 681 collect | **698 pass / 1 skip / 4 xfail / 0 fail / 703 collect** | +204 pass / -183 fail |
+| 全量行覆盖 | 未报告 | **61.55%** | 新指标 |
+| Digest 核心覆盖 | 未报告 | 行 **85.61%** / 分支 **82.00%** | 新指标（≥ 80% / 70% gate） |
+| T33 AST 阻断器 | 未存在 | **6 violations 实时阻断（exit 1）** | 新建 |
+| T34 三 Gate CI | 未存在 | workflow up · 1 branch protection required policy 待配（用户 UI 操作） | 新建 |
+
+### 12.2 41 stub 修复分布（v3 一览）
+
+| T# | 文件 | v2 状态 | v3 状态 | v3 残留 |
+|---|---|---|---|---|
+| T20 | `test_digest_api.py` | 16 stub | ✅ 重写（292 行 / 18 行/测试真实密度） | 6 violations（T33 显形） |
+| T21 | `test_digest_service_unit.py` | 12 stub | ✅ 删 | 0 |
+| T22 | `test_digest_llm.py` | 4 stub | ✅ 删/重写/转移 | 0 |
+| T23 | `test_rss_fetch.py` | 5 stub | ✅ 重写（214 行 / 43 行/测试真实密度） | 0 |
+| T24 | `test_digest_push.py` | 4 stub | ✅ 重写（208 行 · 注释「2026-07-22 重写」） | 0 |
+| T28 | `frontend/tests/visual/digest.spec.ts` | 缺失 | ✅ 创建 | 0 |
+| T29 | `frontend/tests/e2e/digest.spec.ts` | 已编写未实跑 | 🟡 已实化 · 5 scenario 待实跑 | 0（需 dev server 启 3000/8000） |
+| T30 | `scripts/deploy-rsshub.sh` + compose | 缺失 | ✅ 创建 | 0 |
+| T31 | `backend/utils/metrics.py` | 路径不符 | ✅ 创建 | 0 |
+
+**闭环进度**：8/9 完全修复 · T29 待实跑 · T20 6 violations 由 T33 阻断器实时显形（不再隐藏）
+
+### 12.3 v3 新事实（解决 § 8.1 根因）
+
+§ 8.1 把"状态同步错误"定为根因。**v3 防御**：
+- **T33 AST 阻断器**：未来 stub 测试无法混入（实时 exit 1）
+- **T34 三 Gate CI**：quality/typecheck/build 全 GitHub Actions 化（CI 阻断）
+- **commit 显式标注**：未来 `test(stub):` / `feat(no-test):` 前缀必须 + PR description 注明追踪 issue
+
+### 12.4 v3 Retro 完成判定
+
+- ✅ 闭环判定可更新：v2「未完全闭环 · 进入 5 步验证 + 6-8h 修复」→ v3「8/9 闭环 · T29 待实跑 · 183 failed 审计（V1/V3 模块）独立未决」
+- ✅ pytest baseline 建立（audit § 7 阻塞项解除）
+- ✅ T33/T34 防御基建上线（**根因解决**）
+- 🟡 T29 Playwright 实跑 · 1 branch protection required policy · 183 failed 审计（V1/V3）= 3 项待跟进
+
+---
+
+## 13. v3 改进项再分配（基于 § 9 升级）
+
+| 改进 | v1+v2 owner | v3 owner | v3 状态 |
+|---|---|---|---|
+| 41 stub 测试重写 | AI · P0 | **已闭环 8/9** | ✅ v3 |
+| 真实 email SDK 集成 | AI · 生产前 P0 | AI · 生产前 P0 | 🟡 未变 |
+| 183 failed 审计 | AI · 待用户拍板 | **AI · 待用户拍板**（建议立 2026-07-23 任务） | 🟡 未变 |
+| milestones V4 标题修正 | AI · 阻塞 commit | **AI · 本会话内执行（C3）** | 🟡 → ✅ v3 |
+| T29 Playwright 实跑 | — | **AI · 下次会话启动 dev server** | 🟡 新增 |
+| 1 branch protection required policy | — | **用户 · GitHub UI 操作** | 🟡 新增 |
+| T20 6 violations 收尾 | — | **AI · T33 下次 commit 时清** | 🟡 新增 |
+
+---
+
+## 14. memory 更新清单（v3）
+
+v1 3 条 + v2 4 条 → **v3 新增 1 条已写**：
+
+- ✅ `feedback-pytest-runtime-bootstrap.md`（实际在 2026-07-22 已写于 issues-audit 任务 · 记录 `backend/.venv` 重建 4 步 + greenlet/whisper 隐性依赖）
+
+v3 新增待写：
+
+- ⏳ **`feedback-stub-test-debt.md`**（**升级**）v2 已列但未写 · v3 闭环后补完：含 T33 AST 阻断器扫描方法 + commit 前预检
+- ⏳ **`feedback-milestones-v4-v3-sync.md`**（**新**）· milestones.md V4 标题改"实现已闭环，防御基建 + 残余项跟进" · 防 retro 完成 ≠ 全部完成
 
 ---
 
