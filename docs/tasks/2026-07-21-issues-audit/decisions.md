@@ -37,6 +37,7 @@
 | 15 | 2026-07-22 | 还是要 HTML mockup | ✅ **是 · 仅 room.tsx 改后版** | ✅ 已决策 | 用户「我还是需要个html看一下的」· 1 个 HTML · 仅 room.tsx 改后版本 |
 | 16 | 2026-07-22 | § 1 规格整体验收 | ✅ **通过** | ✅ 已决策 | 设计 v3 拟人化 + SVG icons + ASCII 前后对比 · 用户「通过」· § 1 规格闭环 |
 | 17 | 2026-07-22 | 启动 § 2 计划 | ✅ **是** | ✅ 已决策 | 用户「出方案」· 写 4 份文档（plan / db-design / api-spec / component-spec）|
+| 18 | 2026-07-22 | plan 验收通过 + § 3 拆分 | ✅ **通过** | ✅ 已决策 | 用户「继续」· plan.md 4 议题方案已锁定 · 进入 § 3 拆分（tasks.md）|
 
 ---
 
@@ -261,6 +262,7 @@
 | 15 · 还是要 HTML | 用户原话「我还是需要个html看一下的」· 之前决策 12 后改 ASCII 但 HTML 仍需要看 | 写 1 个 room.tsx 改后版本 HTML mockup |
 | 16 · § 1 规格验收 | 用户「通过」· design v3 拟人化 + SVG icons + ASCII 前后对比 | § 1 规格闭环 · 进 § 2 计划（待用户说"出方案"）|
 | 17 · § 2 计划 | 用户「出方案」· 反转决策 6 暂缓状态 | 写 plan.md + db-design.md + api-spec.md + component-spec.md |
+| 18 · § 3 拆分 | 用户「继续」· plan.md 4 议题方案已锁定 | 写 tasks.md（4 个 T 拆 ≤ 1h 原子任务）|
 
 ---
 

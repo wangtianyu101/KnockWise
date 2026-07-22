@@ -525,27 +525,29 @@ Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
 > **关联债务**：[`docs/issues.md` 债务 9](../../issues.md#债务-9--v4-ai-推送模块存在-41-个测试空壳被-pytest-计为通过--p0-new) · **审计方式**：AST 静态识别 `pass` / `...` / 显式断言 / `pytest.raises` / Mock `assert_*`
 > **触发**：用户「先改两个 P0」（2026-07-22）· **决策依据**：[`decisions.md` 决策 1](decisions.md)
 
-### 9.1 偏差汇总（9 处）
+### 9.1 偏差汇总（9 处 · 2026-07-21 audit 时点 vs 2026-07-22 现状）
 
-| T# | 文档原声明 | audit 实测 | 当前状态 |
+| T# | 文档原声明 | audit 实测（2026-07-21） | 现状（2026-07-22） |
 |---|---|---|---|
-| T20 | ~48 case · DONE | 16 测试全 `pass`（15 纯 + 1 import+注释）· 0 真实 | ⚠️ **STUB · 0 真实 case** |
-| T21 | ~20 case · DONE | 真实 12 case + 重复 12 空壳 · 净 ~12 | ⚠️ **部分完成 · 去重后 12** |
-| T22 | Prompt 契约已验证 · DONE | 4 测试全 `pass` | ⚠️ **STUB · Prompt 未验证** |
-| T23 | 12 源 fixture + fallback · DONE | 5 测试全 `pass` · 12 fixture 找不到 | ⚠️ **STUB · 0 fixture** |
-| T24 | cron→DB→API→email · DONE | 4 测试全 `pass` | ⚠️ **STUB · 全链路未验证** |
-| T28 | digest.spec.ts · DONE | **文件不存在**（`ls` 验证） | ⚠️ **缺失 · 需创建** |
-| T29 | 5-7 场景 · DONE | 5 scenario 已 collect · 未实跑（服务未启） | ⚠️ **已编写 · 待执行验证** |
-| T30 | deploy 脚本 + 1200 服务 · DONE | **`scripts/deploy-rsshub.sh` 不存在 + compose 无 rsshub** | ⚠️ **缺失 · 需创建** |
-| T31 | `backend/utils/metrics.py` · DONE | **文件不存在**（仅 redis/livekit 库内有同名） | ⚠️ **路径不符 · 需核验 logger.py** |
+| T20 | ~48 case · DONE | 16 测试全 `pass`（15 纯 + 1 import+注释）· 0 真实 | ✅ **重写 · 292 行 / 18 行/测试 · AsyncMock + 断言 · T33 阻断器显形 6 violations 待清** |
+| T21 | ~20 case · DONE | 真实 12 case + 重复 12 空壳 · 净 ~12 | ✅ **已完成 · `test_digest_service_unit.py` 已删** |
+| T22 | Prompt 契约已验证 · DONE | 4 测试全 `pass` | ✅ **已完成 · `test_digest_llm.py` 已删/重写/转移** |
+| T23 | 12 源 fixture + fallback · DONE | 5 测试全 `pass` · 12 fixture 找不到 | ✅ **重写 · 214 行 / 43 行/测试真实密度** |
+| T24 | cron→DB→API→email · DONE | 4 测试全 `pass` | ✅ **重写 · 208 行 + 注释「2026-07-22 重写」** |
+| T28 | digest.spec.ts · DONE | **文件不存在**（`ls` 验证） | ✅ **已完成 · 文件已创建** |
+| T29 | 5-7 场景 · DONE | 5 scenario 已 collect · 未实跑（服务未启） | 🟡 **已实化 · 5 scenario 待实跑**（需 dev server 启 3000/8000） |
+| T30 | deploy 脚本 + 1200 服务 · DONE | **`scripts/deploy-rsshub.sh` 不存在 + compose 无 rsshub** | ✅ **已完成 · 脚本 + compose 均已存在** |
+| T31 | `backend/utils/metrics.py` · DONE | **文件不存在**（仅 redis/livekit 库内有同名） | ✅ **已完成 · `backend/utils/metrics.py` 已创建 · logger.py 仅保留 trace/logger** |
 
-**净偏差**：9 处声明与事实不符 · commit `9251fd6` 提交时这些任务就被定义为 "test stub"（commit message），是后续状态同步错误。
+**净偏差**（audit 时）：9 处声明与事实不符 · commit `9251fd6` 提交时这些任务就被定义为 "test stub"（commit message），是后续状态同步错误。
+
+**修复进展**（2026-07-22）：8/9 已完成（T29 待实跑）· T33 AST 阻断器 + T34 三 Gate CI 已落地预防未来 stub 重现 · 详见 [`baseline.md`](../2026-07-21-issues-audit/baseline.md)。
 
 ### 9.2 修复优先级（按 audit 报告 § 6 + 依赖关系）
 
 | 序 | 任务 | 工时估算 | 优先级 | 验证手段 |
 |---|---|---|---|---|
-| 1 | T21 拆分（删 12 重复空壳） | 30 min | 🟡 P1 | `find backend/tests/services -name 'test_digest*.py'` 应仅剩真实文件 |
+| 1 | T21 拆分（删 12 重复空壳） | 30 min | 🟡 P1 · ✅ **已完成**（`test_digest_service_unit.py` 已删） | `find backend/tests/services -name 'test_digest*.py'` 应仅剩真实文件 ✓ |
 | 2 | T30 RSSHub deploy | 1h | 🟡 P1 | `curl http://localhost:1200/juejin/tag/AI` 返回 RSS |
 | 3 | T31 metrics 路径核验 | 30 min | 🟡 P1 | 确认 logger.py 内 DigestMetrics · 决定是否搬出 |
 | 4 | T28 visual spec 创建 | 1h | 🟢 P2 | Playwright visual regression 跑通 |
