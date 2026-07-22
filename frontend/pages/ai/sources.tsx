@@ -4,13 +4,17 @@ import { useDigestSources, useAddDigestSource } from '@/hooks/useDigest';
 import { SourceToggleRow } from '@/components/digest/SourceToggleRow';
 
 export default function SourcesPage() {
-  const { sources, system_count, user_count } = useDigestSources();
+  // 2026-07-22 audit 修复：hooks 返回 { data, isLoading, error, refetch }
+  const { data: sourcesData } = useDigestSources();
   const addSource = useAddDigestSource();
   const [showAdd, setShowAdd] = useState(false);
   // TODO: 接 useToggleDigestSource hook 后替换 noop
   const handleToggle = (_sourceId: string, _enabled: boolean) => {
     // 当前未实现 toggle API · 留作 follow-up
   };
+  const sources = sourcesData?.items ?? [];
+  const system_count = sourcesData?.system_count ?? 0;
+  const user_count = sourcesData?.user_count ?? 0;
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4 text-text-primary">📡 信源管理</h1>
@@ -32,7 +36,7 @@ export default function SourcesPage() {
           />
         ))}
       </div>
-      {showAdd && <AddSourceDialog onClose={() => setShowAdd(false)} onAdd={addSource} />}
+      {showAdd && <AddSourceDialog onClose={() => setShowAdd(false)} onAdd={addSource.mutate} />}
     </div>
   );
 }

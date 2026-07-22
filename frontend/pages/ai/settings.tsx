@@ -3,7 +3,8 @@ import { useDigestSettings, useUpdateDigestSettings } from '@/hooks/useDigest';
 import { GlassCard } from '@/components/digest/DigestCard';
 
 export default function SettingsPage() {
-  const { settings } = useDigestSettings();
+  // 2026-07-22 audit 修复：hooks 返回 { data, isLoading, error, refetch }
+  const { data: settings } = useDigestSettings();
   const update = useUpdateDigestSettings();
   return (
     <div>

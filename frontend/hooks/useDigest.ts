@@ -1,6 +1,18 @@
 // hooks/useDigest.ts · T27
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { useState } from 'react';
+
+/**
+ * 2026-07-22 audit 修复 · hooks 返回值
+ *
+ * 之前：hooks 直接 return useQuery() · 返回 UseQueryResult<T> · 含 { data, isLoading, error, refetch }
+ * 页面 `const { settings } = useDigestSettings()` 失败（settings 在 data 字段里）
+ *
+ * 方案：hooks 直接 return query.data（裸数据）+ 控制字段
+ * 页面 `const { data: settings, isLoading, error } = useDigestSettings()` 或
+ *     `const settings = useDigestSettings()` 都可用
+ */
+type QueryHookResult<T> = { data: T | undefined; isLoading: boolean; error: Error | null; refetch: UseQueryResult<T, Error>['refetch'] };
 
 interface DigestItem {
   id: string;
@@ -48,8 +60,8 @@ interface DigestSettings {
   blocked_tags: string[];
 }
 
-export function useDigestToday() {
-  return useQuery<DigestToday>({
+export function useDigestToday(): QueryHookResult<DigestToday> {
+  const qr = useQuery<DigestToday>({
     queryKey: ['digest', 'today'],
     queryFn: async () => {
       const res = await fetch('/api/digest/today');
@@ -58,10 +70,11 @@ export function useDigestToday() {
     },
     staleTime: 5 * 60 * 1000,
   });
+  return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };
 }
 
-export function useDigestBookmarks(filter: 'all' | 'model' | 'application' = 'all') {
-  return useQuery<{ total: number; items: DigestItem[] }>({
+export function useDigestBookmarks(filter: 'all' | 'model' | 'application' = 'all'): QueryHookResult<{ total: number; items: DigestItem[] }> {
+  const qr = useQuery<{ total: number; items: DigestItem[] }>({
     queryKey: ['digest', 'bookmarks', filter],
     queryFn: async () => {
       const url = filter === 'all' ? '/api/digest/bookmarks' : `/api/digest/bookmarks?type=${filter}`;
@@ -70,6 +83,7 @@ export function useDigestBookmarks(filter: 'all' | 'model' | 'application' = 'al
       return res.json();
     },
   });
+  return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };
 }
 
 export function useAddBookmark() {
@@ -134,8 +148,8 @@ export function useMarkRead() {
   });
 }
 
-export function useDigestSources() {
-  return useQuery<{ system_count: number; user_count: number; items: DigestSource[] }>({
+export function useDigestSources(): QueryHookResult<{ system_count: number; user_count: number; items: DigestSource[] }> {
+  const qr = useQuery<{ system_count: number; user_count: number; items: DigestSource[] }>({
     queryKey: ['digest', 'sources'],
     queryFn: async () => {
       const res = await fetch('/api/digest/sources');
@@ -143,6 +157,7 @@ export function useDigestSources() {
       return res.json();
     },
   });
+  return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };
 }
 
 export function useAddDigestSource() {
@@ -178,8 +193,8 @@ export function usePatchDigestSource() {
   });
 }
 
-export function useDigestSettings() {
-  return useQuery<DigestSettings>({
+export function useDigestSettings(): QueryHookResult<DigestSettings> {
+  const qr = useQuery<DigestSettings>({
     queryKey: ['digest', 'settings'],
     queryFn: async () => {
       const res = await fetch('/api/digest/settings');
@@ -187,6 +202,7 @@ export function useDigestSettings() {
       return res.json();
     },
   });
+  return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };
 }
 
 export function useUpdateDigestSettings() {

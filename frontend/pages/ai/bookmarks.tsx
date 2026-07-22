@@ -5,11 +5,14 @@ import { VibeBadge } from '@/components/digest/VibeBadge';
 
 export default function BookmarksPage() {
   const [filter, setFilter] = useState<'all' | 'model' | 'application'>('all');
-  const { bookmarks, total, isLoading } = useDigestBookmarks(filter);
+  // 2026-07-22 audit 修复：hooks 返回 { data, isLoading, error, refetch } · 字段都在 data 里
+  const { data, isLoading } = useDigestBookmarks(filter);
+  const bookmarks = data?.items ?? [];
+  const total = data?.total ?? 0;
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4 text-text-primary">🔖 我的收藏</h1>
-      <VibeBadge text="共 {total} 条收藏" />
+      <VibeBadge text={`共 ${total} 条收藏`} />
       <div className="flex gap-2 my-4">
         {(['all', 'model', 'application'] as const).map((t) => (
           <button key={t} onClick={() => setFilter(t)}
