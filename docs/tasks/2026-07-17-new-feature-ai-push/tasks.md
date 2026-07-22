@@ -366,7 +366,7 @@
   - 边界: 仅 Mock RSS/LLM/Email/Clock；真实 Scheduler、评分、ORM、MySQL、FastAPI；验证单源失败降级、进程重启后 DB 去重、邮件一次、API 查询同一条持久化数据
   - 验证口径: 实现与定向/全量回归证据已完成；独立 verifier 结论在用户暂停验证时尚未收口，不把本行解释为整个阶段五完成
 
-- [x] T39: ✅ DONE — Frontend type/build + Digest Playwright 5 scenario
+- [x] T39: ✅ DONE — commit `e57890e` · Frontend type/build + Digest Playwright 5 scenario
   - 文件: frontend 类型错误、QueryClientProvider、Digest pages/tests
   - 测试: Vitest + tsc + next build + Playwright 5/5
   - 依赖: T38 / V5-05 / V5-06
@@ -501,7 +501,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T36 | `dec649d` | 1h | ~25min |
 | T37 | `8d48fb2` | 1h | ~25min |
 | T38 | `f5200a0` | 1h | ~45min |
-| T39 | 本次前端提交（见 git history） | 1h | ~55min |
+| T39 | `e57890e` | 1h | ~55min |
 | **小计** | 13 commits | 10.75h | ~8.2h |
 
 ---

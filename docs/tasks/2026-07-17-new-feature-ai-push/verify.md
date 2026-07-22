@@ -213,5 +213,38 @@ npx playwright test tests/e2e/digest.spec.ts --project=chromium-desktop
 - 文档事实核对：✅ 已按 2026-07-22 实测重写。
 - L3：❌ 未通过。
 - L5：❌ 未通过。
+
+---
+
+## 9. T39 前端增量复验（2026-07-22 22:08～22:10 CST）
+
+> 本节是 V5-05 / V5-06 的最新增量证据，覆盖本文前面对前端失败的历史快照；不自动推导整个阶段五通过。
+
+实现提交：`e57890e test(frontend): complete T39 digest browser harness`
+
+| Gate | 命令 | 结果 | 退出码 |
+|---|---|---|---:|
+| Vitest | `cd frontend && npm test` | **27 files / 210 passed** | 0 |
+| TypeScript | `cd frontend && npx tsc --noEmit` | **0 errors** | 0 |
+| Production build | `cd frontend && npm run build` | **compiled / 31 static pages** | 0 |
+| Browser E2E | `cd frontend && npx playwright test tests/e2e/digest.spec.ts --reporter=line` | **5 passed / 9.1s** | 0 |
+
+Playwright 五个场景：
+
+1. `/ai/today` 展示 5 条 Digest 与 vibe；
+2. 收藏后按钮变为“已收藏”；
+3. 屏蔽操作打开 HideDialog；
+4. `/ai/bookmarks` 展示收藏数据；
+5. `/ai/settings` 保存并回读 `push_hour=7`。
+
+Mock 边界：浏览器侧只拦截 `/api/digest/**`，fixture 固定且不访问公网；因此本节结论是“前端用户路径 E2E”，不冒充 Scheduler / ORM / MySQL 的系统 E2E。
+
+环境记录：`./scripts/start.sh` 确认 MySQL、Redis 在线，但 LiveKit 在沙箱内绑定 UDP 时返回 EPERM。T39 不依赖 LiveKit；该结果不能作为完整 L5 五服务通过证据。
+
+关闭状态：
+
+- V5-05 前端 L1：✅ CLOSED。
+- V5-06 Digest Playwright：✅ CLOSED。
+- 阶段五总状态：仍保持未闭环，等待后端修复链统一重验、T38 verifier 收口与 GitHub required checks 配置。
 - 阶段五：**未通过，等待 V5-01～V5-08 修复后重验**。
 - 用户 gate：⏳ 待用户确认本验证结论；不得进入“项目闭环”状态。
