@@ -264,13 +264,18 @@
   - 产出: ✅ **visual spec 文件存在** · baseline 截图待 `npx playwright test visual/digest.spec.ts --update-snapshots` 创建
   - 注：dev-login + token 注入复用 e2e/digest.spec.ts 模式
 
-- [ ] T29: ⚠️ 已编写未实跑 — audit 2026-07-21（详见 § 9）
-  - 文件: `frontend/tests/e2e/digest.spec.ts`（存在但仅 collect）
-  - 测试: ⚠️ **5 个 Playwright scenario 已编写 · 未实跑**（服务未启动 3000/8000）
-  - 依赖: T27
+- [ ] T29: ⚠️ 阻塞 — 5 Playwright scenario 已编写 · 需 services 启动（3000/8000）才能实跑
+  - 文件: `frontend/tests/e2e/digest.spec.ts`（存在 · 5 scenario · 仅 collect 未实跑）
+  - 测试: ⚠️ **5 scenario collect OK · 0 实跑**（沙箱无 3000/8000 服务启动）
+  - 依赖: T27 + `./scripts/start.sh` 启动 MySQL/Redis/LiveKit/Backend/Frontend
   - 估时: 1h → 实跑 + 修整
-  - commit: `test(e2e): Playwright 端到端 push 流程` — **已编写，待执行验证**
-  - 产出: ⚠️ **5 scenario 已 collect · 0 实跑**
+  - commit: 暂未生成（需先启动服务才能 commit 实跑结果）
+  - 产出: ⚠️ **0 实跑** · 用户本地跑步骤：
+    1. `cd KnockWise && ./scripts/start.sh`（启 5 服务）
+    2. `cd frontend && npm install`（首次）
+    3. `npx playwright test e2e/digest.spec.ts`（5 scenario 实跑）
+    4. 截图存 `frontend/tests/e2e/digest.spec.ts-snapshots/`
+  - **注**：本任务在当前 sandbox 无法实跑 · 标记为"阻塞"而非"DONE" · 需用户本地执行
 
 ### 阶段 G · DevOps + 文档（3h）
 
