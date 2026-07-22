@@ -2,6 +2,15 @@
 
 import { ExternalLink, Bookmark, BookmarkCheck, EyeOff } from "lucide-react";
 
+/** Glassmorphism 容器 wrapper · 与 DigestCard 卡片样式统一 */
+export function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-[rgba(15,20,40,0.7)] backdrop-blur-xl border border-[rgba(148,163,184,0.08)] rounded-xl p-5 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
 interface DigestItem {
   id: string;
   rank: number;

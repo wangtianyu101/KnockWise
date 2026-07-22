@@ -7,6 +7,10 @@ export default function SourcesPage() {
   const { sources, system_count, user_count } = useDigestSources();
   const addSource = useAddDigestSource();
   const [showAdd, setShowAdd] = useState(false);
+  // TODO: 接 useToggleDigestSource hook 后替换 noop
+  const handleToggle = (_sourceId: string, _enabled: boolean) => {
+    // 当前未实现 toggle API · 留作 follow-up
+  };
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4 text-text-primary">📡 信源管理</h1>
@@ -18,7 +22,15 @@ export default function SourcesPage() {
       </div>
       <button onClick={() => setShowAdd(true)} className="btn btn-primary mb-4">+ 添加自定义源</button>
       <div className="space-y-2">
-        {sources.map((s) => <SourceToggleRow key={s.id} source={s} />)}
+        {sources.map((s) => (
+          <SourceToggleRow
+            key={s.id}
+            source={s}
+            isDefault={s.is_default}
+            enabled={s.enabled}
+            onToggle={handleToggle}
+          />
+        ))}
       </div>
       {showAdd && <AddSourceDialog onClose={() => setShowAdd(false)} onAdd={addSource} />}
     </div>
