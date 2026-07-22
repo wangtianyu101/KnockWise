@@ -95,6 +95,7 @@ class TestPushDailyHappyPath:
             ),
         ]
         db = AsyncMock()
+        db.add = MagicMock()
 
         with patch.object(svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)):
             result = await svc.push_daily(db=db, user_id="user-1", target_date=date(2026, 7, 17))
@@ -118,6 +119,7 @@ class TestPushDailyHappyPath:
             make_fetch_result(items=[make_raw_item(f"Item {i}", type="model", region="overseas") for i in range(6)])
         ]
         db = AsyncMock()
+        db.add = MagicMock()
 
         with patch.object(svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)):
             result = await svc.push_daily(db=db, user_id="user-1", target_date=date(2026, 7, 17))
@@ -136,6 +138,7 @@ class TestPushDailyEmptyCase:
             make_fetch_result(error="404"),
         ]
         db = AsyncMock()
+        db.add = MagicMock()
 
         with patch.object(svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)):
             result = await svc.push_daily(db=db, user_id="user-1", target_date=date(2026, 7, 17))
@@ -158,6 +161,7 @@ class TestPushDailyEmptyCase:
             ]),
         ]
         db = AsyncMock()
+        db.add = MagicMock()
 
         with patch.object(svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)):
             result = await svc.push_daily(db=db, user_id="user-1", target_date=date(2026, 7, 17))
@@ -191,6 +195,7 @@ class TestPushDailyPartialFailure:
             make_fetch_result(source_id="src-2", error="timeout"),
         ]
         db = AsyncMock()
+        db.add = MagicMock()
 
         with patch.object(svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)):
             result = await svc.push_daily(db=db, user_id="user-1", target_date=date(2026, 7, 17))
@@ -214,19 +219,22 @@ class TestPushDailyExternalContracts:
             }
         ]
         email_service = AsyncMock()
-        email_service.send_daily_digest.return_value = {
-            "message_id": "message-1",
-            "error": None,
-        }
         svc = DigestService(
             llm_service=llm_service,
             email_service=email_service,
         )
         fetch_results = [make_fetch_result(items=[make_raw_item("AI 首次发布")])]
         db = AsyncMock()
+        db.add = MagicMock()
         email_query = MagicMock()
-        email_query.scalar_one_or_none.return_value = "user@example.com"
+        email_query.one_or_none.return_value = ("user@example.com", True)
         db.execute.side_effect = [MagicMock(), email_query]
+
+        async def send_after_commit(**_kwargs):
+            assert db.commit.await_count == 1
+            return {"message_id": "message-1", "error": None}
+
+        email_service.send_daily_digest.side_effect = send_after_commit
 
         with patch.object(
             svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)
@@ -241,9 +249,34 @@ class TestPushDailyExternalContracts:
         persisted_item = db.add.call_args_list[1].args[0]
         assert persisted_item.summary == "LLM contract summary"
         db.commit.assert_awaited_once()
+        await svc.wait_for_notifications()
         email_service.send_daily_digest.assert_awaited_once()
         assert (
             email_service.send_daily_digest.await_args.kwargs["items"][0]["summary"]
             == "LLM contract summary"
         )
-        assert result["email"]["message_id"] == "message-1"
+        assert result["email"] == {"scheduled": True}
+
+    @pytest.mark.asyncio
+    async def test_email_disabled_skips_notification_without_affecting_digest(self):
+        email_service = AsyncMock()
+        svc = DigestService(email_service=email_service)
+        fetch_results = [make_fetch_result(items=[make_raw_item("AI 首次发布")])]
+        db = AsyncMock()
+        db.add = MagicMock()
+        email_query = MagicMock()
+        email_query.one_or_none.return_value = ("user@example.com", False)
+        db.execute.side_effect = [MagicMock(), email_query]
+
+        with patch.object(
+            svc, "fetch_all_sources", AsyncMock(return_value=fetch_results)
+        ), patch.object(svc, "composite_score", return_value=0.95):
+            result = await svc.push_daily(
+                db=db,
+                user_id="user-1",
+                target_date=date(2026, 7, 22),
+            )
+
+        assert result["daily_id"] is not None
+        assert result["email"] is None
+        email_service.send_daily_digest.assert_not_awaited()

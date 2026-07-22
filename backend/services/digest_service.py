@@ -46,6 +46,7 @@ class DigestService:
     def __init__(self, llm_service: Any | None = None, email_service: Any | None = None) -> None:
         self.llm_service = llm_service
         self.email_service = email_service
+        self._notification_tasks: set[asyncio.Task[Any]] = set()
 
     # ═════════════════════════════════════════════════════════════════
     # T5 · fetch_all_sources
@@ -65,7 +66,10 @@ class DigestService:
         if not sources:
             return []
 
-        tasks = [self._fetch_one_with_retry(db, src) for src in sources]
+        # Network work stays concurrent, while writes through one AsyncSession
+        # are serialized (SQLAlchemy sessions are not task-safe).
+        db_write_lock = asyncio.Lock()
+        tasks = [self._fetch_one_with_retry(db, src, db_write_lock) for src in sources]
         # return_exceptions=True 防止一个源抛异常导致 gather 全部失败
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -87,7 +91,10 @@ class DigestService:
         return normalized
 
     async def _fetch_one_with_retry(
-        self, db: AsyncSession, source: DigestSource
+        self,
+        db: AsyncSession,
+        source: DigestSource,
+        db_write_lock: asyncio.Lock | None = None,
     ) -> dict:
         """抓取单源 · 失败重试 3 次 + 指数退避（0.5s · 1s · 2s）"""
         last_error: Optional[str] = None
@@ -96,8 +103,9 @@ class DigestService:
             try:
                 items = await self._fetch_and_parse(source.url)
                 # 成功 → 更新 last_fetched_at + last_item_count + 清 last_error
+                update_kwargs = {"db_write_lock": db_write_lock} if db_write_lock else {}
                 await self._update_source_after_fetch(
-                    db, source.id, success=True, count=len(items), error=None
+                    db, source.id, success=True, count=len(items), error=None, **update_kwargs
                 )
                 return {
                     "source_id": source.id,
@@ -116,8 +124,9 @@ class DigestService:
         if fallback_url:
             try:
                 items = await self._fetch_and_parse(fallback_url)
+                update_kwargs = {"db_write_lock": db_write_lock} if db_write_lock else {}
                 await self._update_source_after_fetch(
-                    db, source.id, success=True, count=len(items), error=None
+                    db, source.id, success=True, count=len(items), error=None, **update_kwargs
                 )
                 return {
                     "source_id": source.id,
@@ -132,8 +141,9 @@ class DigestService:
                 )
 
         # 3 次都失败 → 更新 last_error + 检查连续失败次数 → 可能 auto-disable
+        update_kwargs = {"db_write_lock": db_write_lock} if db_write_lock else {}
         await self._update_source_after_fetch(
-            db, source.id, success=False, count=0, error=last_error
+            db, source.id, success=False, count=0, error=last_error, **update_kwargs
         )
         return {
             "source_id": source.id,
@@ -267,6 +277,7 @@ class DigestService:
         success: bool,
         count: int,
         error: Optional[str],
+        db_write_lock: asyncio.Lock | None = None,
     ) -> None:
         """更新源状态 · 失败连续 3 次自动 disable（避免坏源持续耗资源）。"""
         now = datetime.now(timezone.utc)
@@ -292,8 +303,13 @@ class DigestService:
                     last_error=error[:256] if error else None,
                 )
             )
-        await db.execute(stmt)
-        await db.commit()
+        if db_write_lock is None:
+            await db.execute(stmt)
+            await db.commit()
+        else:
+            async with db_write_lock:
+                await db.execute(stmt)
+                await db.commit()
 
     # ═════════════════════════════════════════════════════════════════
     # T6 · composite_score (5 维加权打分)
@@ -674,7 +690,7 @@ class DigestService:
                 source_id=sel.get("source_id"),
                 source_name=sel.get("source_name", ""),
                 source_url=sel.get("url", ""),
-                published_at=sel.get("published_at"),
+                published_at=self._coerce_published_at(sel.get("published_at")),
                 related_item_ids=[],
                 estimated_minutes=3,
             )
@@ -700,17 +716,28 @@ class DigestService:
 
         email_result = None
         if self.email_service is not None:
-            from models import User
+            from models import DigestSettings, User
 
-            email_query = await db.execute(select(User.email).where(User.id == user_id))
-            user_email = email_query.scalar_one_or_none()
-            if user_email:
-                email_result = await self.email_service.send_daily_digest(
+            email_query = await db.execute(
+                select(User.email, DigestSettings.email_enabled)
+                .outerjoin(DigestSettings, DigestSettings.user_id == User.id)
+                .where(User.id == user_id)
+            )
+            email_row = email_query.one_or_none()
+            if email_row is not None:
+                user_email, email_enabled = email_row
+            else:
+                user_email, email_enabled = None, False
+            if user_email and email_enabled is not False:
+                task = asyncio.create_task(self.email_service.send_daily_digest(
                     user_email=str(user_email),
                     digest_date=target_date.isoformat(),
                     items=selected,
                     vibe=vibe,
-                )
+                ))
+                self._notification_tasks.add(task)
+                task.add_done_callback(self._notification_done)
+                email_result = {"scheduled": True}
 
         return {
             "daily_id": daily_id,
@@ -719,6 +746,24 @@ class DigestService:
             "error": None,
             "email": email_result,
         }
+
+    async def wait_for_notifications(self) -> None:
+        """Drain currently scheduled notifications (used by shutdown/tests)."""
+        if self._notification_tasks:
+            await asyncio.gather(*tuple(self._notification_tasks), return_exceptions=True)
+
+    def _notification_done(self, task: asyncio.Task[Any]) -> None:
+        self._notification_tasks.discard(task)
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            return
+        except Exception as exc:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "digest email delivery failed: %s", exc
+            )
 
     def _classify_raw_item(self, raw_item: dict, source_name: str) -> dict:
         """RSS items 缺 type/region/category · 自动分类。
@@ -750,6 +795,16 @@ class DigestService:
         else:
             category = "headline"
         return {"type": item_type, "region": region, "category": category}
+
+    def _coerce_published_at(self, value: Any) -> datetime | None:
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str) and value:
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+        return None
 
 
 # ─── 模块级 singleton（2026-07-22 audit 修复）────────────────

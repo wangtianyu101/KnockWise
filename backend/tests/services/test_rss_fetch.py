@@ -247,7 +247,7 @@ class TestFetchAllSources:
             "published_at": None,
         }
 
-        async def fetch_one(_db, source):
+        async def fetch_one(_db, source, _lock=None):
             item = dict(duplicated)
             if source.id == "src-2":
                 item["url"] = "https://example.com/post"

@@ -15,8 +15,9 @@
 """
 from __future__ import annotations
 
+from datetime import date, datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -31,14 +32,17 @@ def fake_user():
     return SimpleNamespace(id=str(uuid4()), email="test@example.com")
 
 
-def make_client(router, user):
+def make_client(router, user, db=None):
     """为单个 router 创建 TestClient + 已 override 鉴权"""
+    from core.database import get_db
     from core.dependencies import get_current_user
 
     from fastapi import FastAPI
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[get_current_user] = lambda: user
+    if db is not None:
+        app.dependency_overrides[get_db] = lambda: db
     return TestClient(app)
 
 
@@ -49,36 +53,55 @@ class TestDailyAPI:
     """GET /api/digest/today + /daily/{date} + /dailies"""
 
     def test_get_today_returns_200_with_digest(self, fake_user):
-        """GET /api/digest/today · happy → 200 + DigestTodayResponse（mock service）
-
-        注：模块级 `digest_service` 实例不存在（生产 bug · 独立修复范围）
-        """
+        """GET /api/digest/today reads the committed daily and items."""
         from api.digest.daily import router as daily_router
-        from services.digest_service import DigestService
 
-        client = make_client(daily_router, fake_user)
-        with patch.object(DigestService, "push_daily", new_callable=AsyncMock) as mock_push:
-            mock_push.return_value = {
-                "daily_id": "d-001",
-                "vibe": "今日 5 条 · 正常推送",
-                "item_count": 5,
-            }
-            response = client.get("/api/digest/today")
+        daily = SimpleNamespace(
+            id="d-001",
+            user_id=fake_user.id,
+            date=date(2026, 7, 22),
+            vibe="今日 1 条",
+        )
+        item = SimpleNamespace(
+            id="i-001",
+            rank=1,
+            title="Database-backed digest",
+            summary="persisted summary",
+            quality_score=0.91,
+            type="model",
+            region="overseas",
+            category="headline",
+            source_name="Example",
+            source_url="https://example.com/item",
+            published_at=datetime(2026, 7, 22, tzinfo=timezone.utc),
+            estimated_minutes=3,
+            related_item_ids=[],
+        )
+        daily_result = SimpleNamespace(scalar_one_or_none=lambda: daily)
+        items_result = SimpleNamespace(
+            scalars=lambda: SimpleNamespace(all=lambda: [item])
+        )
+        db = AsyncMock()
+        db.execute.side_effect = [daily_result, items_result]
+        client = make_client(daily_router, fake_user, db)
+
+        response = client.get("/api/digest/today?target_date=2026-07-22")
 
         assert response.status_code == 200
         body = response.json()
-        assert body["vibe"] == "今日 5 条 · 正常推送"
-        assert body["item_count"] == 5
+        assert body["vibe"] == "今日 1 条"
+        assert body["item_count"] == 1
+        assert body["items"][0]["title"] == "Database-backed digest"
+        assert db.execute.await_count == 2
 
     def test_get_today_no_data_404(self, fake_user):
-        """GET /api/digest/today · service 返回 None → 404"""
+        """GET /api/digest/today · no persisted daily → 404."""
         from api.digest.daily import router as daily_router
-        from services.digest_service import DigestService
 
-        client = make_client(daily_router, fake_user)
-        with patch.object(DigestService, "push_daily", new_callable=AsyncMock) as mock_push:
-            mock_push.return_value = {"daily_id": None, "vibe": None, "item_count": 0}
-            response = client.get("/api/digest/today")
+        db = AsyncMock()
+        db.execute.return_value = SimpleNamespace(scalar_one_or_none=lambda: None)
+        client = make_client(daily_router, fake_user, db)
+        response = client.get("/api/digest/today")
 
         assert response.status_code == 404
 

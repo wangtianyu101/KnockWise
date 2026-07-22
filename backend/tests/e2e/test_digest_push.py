@@ -1,208 +1,265 @@
-"""E2E push flow (T24 重写 · 2026-07-22) - cron → fetch → score → save → API。
+"""Real Scheduler → Service → MySQL → API → Email digest harness.
 
-覆盖：4 个场景（happy / all-failed / partial / no-candidates）
-
-实现位置：services/digest_service.py::DigestService.push_daily
-邮件发送通过可注入 provider 边界验证，不访问公网。
-
-测试策略：
-- 全链路 mock（fetch / DB save / email）
-- 验证 push_daily 编排正确（调用顺序 + 异常处理）
-- 验证 vibe 文本覆盖 5 种状态（全失败/无候选/部分/正常/全部）
-- 验证 DB 持久化调用（add + commit 顺序）
-- email 发送单独验证 provider 调用契约
+Only external boundaries are replaced: RSS, LLM, email and clock. Scheduler,
+selection, ORM persistence, MySQL queries and FastAPI serialization stay real.
 """
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+import os
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, patch
+from uuid import uuid4
+from zoneinfo import ZoneInfo
 
+import httpx
 import pytest
+from sqlalchemy import delete, func, select
+from sqlalchemy.engine import make_url
 
+from core.config import settings
+from core.database import Base, async_session, engine, get_db
+from core.dependencies import get_current_user
+from main import app
+from models import (
+    DigestDaily,
+    DigestDailyItem,
+    DigestSettings,
+    DigestSource,
+    User,
+)
+from services.digest_scheduler import DigestScheduler
 from services.digest_service import DigestService
 
 
-# ── Fixtures ────────────────────────────────────────────────
+def _isolated_mysql_enabled() -> bool:
+    if os.getenv("RUN_MYSQL_INTEGRATION") != "1":
+        return False
+    database_name = make_url(settings.database_url).database or ""
+    return "test" in database_name.lower()
 
 
-def make_raw_item(
-    title: str,
-    source_name: str = "Test Source",
-    type: str = "model",
-    region: str = "domestic",
-    score: float = 0.85,
-):
-    """构造一个 RSS item + 已分类 + 已打分"""
-    return {
-        "title": title,
-        "url": f"https://test.com/{title}",
-        "summary": "test summary",
-        "published_at": "2026-07-22T10:00:00Z",
-        "source_name": source_name,
-        "type": type,
-        "region": region,
-        "category": "一手",
-        "score": score,
+pytestmark = [
+    pytest.mark.skipif(
+        not _isolated_mysql_enabled(),
+        reason="Requires RUN_MYSQL_INTEGRATION=1 and an isolated *test* database",
+    ),
+    pytest.mark.asyncio,
+]
+
+
+async def test_scheduler_to_api_persists_once_and_degrades_per_source():
+    await _create_schema()
+    user_id = str(uuid4())
+    healthy_source_id = str(uuid4())
+    failing_source_id = str(uuid4())
+    fixed_now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    local_now = fixed_now.astimezone(ZoneInfo("Asia/Shanghai"))
+
+    await _seed_user_and_sources(
+        user_id=user_id,
+        healthy_source_id=healthy_source_id,
+        failing_source_id=failing_source_id,
+        push_hour=local_now.hour,
+        push_minute=local_now.minute,
+    )
+
+    llm_boundary = AsyncMock()
+
+    async def enrich(items, _preferences):
+        return [
+            {**item, "summary": "LLM contract summary", "llm_fallback": False}
+            for item in items
+        ]
+
+    llm_boundary.enrich_items.side_effect = enrich
+    email_boundary = AsyncMock()
+    email_boundary.send_daily_digest.return_value = {
+        "message_id": "message-e2e-1",
+        "error": None,
     }
+    service = DigestService(
+        llm_service=llm_boundary,
+        email_service=email_boundary,
+    )
 
-
-def make_user_prefs():
-    """Mock user preferences (返回 dict · DigestPreferenceService 内部也是 dict)"""
-    return {
-        "user_id": "user-001",
-        "interested_tags": ["AI", "LLM"],
-        "blocked_tags": ["crypto"],
-        "push_hour": 8,
-        "push_minute": 0,
-        "push_timezone": "Asia/Shanghai",
-    }
-
-
-# ── Tests · push_daily 编排 ──────────────────────────────────
-
-
-class TestPushDailyOrchestration:
-    """测试 push_daily 编排逻辑（fetch → score → select → save）"""
-
-    @pytest.mark.asyncio
-    async def test_full_cron_to_db_to_api_happy(self):
-        """Happy path：5 候选 → select 5 条 → save digest + items → 返回 daily_id
-
-        完整 cron → DB → API 编排：
-        1. fetch_all_sources 返回 8 源成功
-        2. composite_score + select_top_n 选 5
-        3. 写 DigestDaily + DigestDailyItem
-        4. 返回 daily_id + vibe + item_count
-        """
-        service = DigestService()
-        db = AsyncMock()
-
-        # 模拟 8 源成功 · 每源 5 条 item · 已分类已打分
-        source_results = [
+    async def rss_boundary(url: str):
+        if "failing" in url:
+            raise httpx.ConnectError("fixture source unavailable")
+        return [
             {
-                "source_id": f"src-{i}",
-                "source_name": f"Source {i}",
-                "items": [make_raw_item(f"AI LLM breakthrough item-{i}-{j}", source_name=f"Source {i}") for j in range(5)],
-                "error": None,
-            }
-            for i in range(8)
-        ]
-
-        with patch.object(service, "fetch_all_sources", AsyncMock(return_value=source_results)), \
-             patch("services.digest_preference_service.DigestPreferenceService") as MockPref, \
-             patch("models.DigestDaily") as MockDaily, \
-             patch("models.DigestDailyItem") as MockItem:
-            MockPref.return_value.get_user_prefs = AsyncMock(return_value=make_user_prefs())
-            MockDaily.return_value = MagicMock()  # for type hint
-            MockItem.return_value = MagicMock()
-
-            result = await service.push_daily(db=db, user_id="user-001", target_date=None)
-
-        # 验证返回结构
-        assert result["daily_id"] is not None
-        assert result["item_count"] == 5
-        assert "vibe" in result
-        assert result["error"] is None
-        # 验证 DB 写操作（add 调用次数：1 daily + 5 items = 6 次）
-        assert db.add.call_count == 6
-        db.commit.assert_awaited_once()
-
-    @pytest.mark.asyncio
-    async def test_push_daily_persists_to_db(self):
-        """push_daily 持久化：commit 调用 + add 顺序（daily 先 / items 后）"""
-        service = DigestService()
-        db = AsyncMock()
-
-        source_results = [
-            {
-                "source_id": "src-1",
-                "source_name": "S1",
-                "items": [make_raw_item(f"AI LLM news item-{j}") for j in range(10)],  # 10 候选
-                "error": None,
+                "title": "AI agent 首次重大突破发布",
+                "summary": "Fixture source summary",
+                "url": "https://articles.example.com/agent-release",
+                "published_at": fixed_now.isoformat(),
             }
         ]
 
-        with patch.object(service, "fetch_all_sources", AsyncMock(return_value=source_results)), \
-             patch("services.digest_preference_service.DigestPreferenceService") as MockPref, \
-             patch("models.DigestDaily"), \
-             patch("models.DigestDailyItem"):
-            MockPref.return_value.get_user_prefs = AsyncMock(return_value=make_user_prefs())
+    service._fetch_and_parse = AsyncMock(side_effect=rss_boundary)
+    scheduler = DigestScheduler(service=service, now_provider=lambda: fixed_now)
 
-            result = await service.push_daily(db=db, user_id="user-001", target_date=None)
+    try:
+        async with async_session() as session:
+            with patch(
+                "services.digest_service.asyncio.sleep", new_callable=AsyncMock
+            ):
+                first_run = await scheduler.check_and_push(session)
+        await service.wait_for_notifications()
 
-        # DB add + commit 都被调用
-        db.add.assert_called()
-        db.commit.assert_awaited_once()
-        assert result["daily_id"] is not None
+        assert first_run == {
+            "checked": 1,
+            "pushed": 1,
+            "skipped": 0,
+            "errors": 0,
+        }
 
-    @pytest.mark.asyncio
-    async def test_all_sources_failed_returns_error_vibe(self):
-        """全源失败 → vibe = "今日 digest 暂缺 · 信源全部失败" · 不写 DB"""
-        service = DigestService()
-        db = AsyncMock()
+        async with async_session() as session:
+            daily_count = await session.scalar(
+                select(func.count(DigestDaily.id)).where(
+                    DigestDaily.user_id == user_id
+                )
+            )
+            daily = (
+                await session.execute(
+                    select(DigestDaily).where(DigestDaily.user_id == user_id)
+                )
+            ).scalar_one()
+            item = (
+                await session.execute(
+                    select(DigestDailyItem).where(
+                        DigestDailyItem.daily_id == daily.id
+                    )
+                )
+            ).scalar_one()
+            failed_source = await session.get(DigestSource, failing_source_id)
 
-        # 8 源全部失败
-        source_results = [
-            {"source_id": f"src-{i}", "source_name": f"S{i}", "items": [], "error": "ConnectionError"}
-            for i in range(8)
-        ]
+        assert daily_count == 1
+        assert item.summary == "LLM contract summary"
+        assert failed_source is not None
+        assert "fixture source unavailable" in (failed_source.last_error or "")
+        llm_boundary.enrich_items.assert_awaited_once()
+        email_boundary.send_daily_digest.assert_awaited_once()
 
-        with patch.object(service, "fetch_all_sources", AsyncMock(return_value=source_results)), \
-             patch("services.digest_preference_service.DigestPreferenceService") as MockPref:
-            MockPref.return_value.get_user_prefs = AsyncMock(return_value=make_user_prefs())
-
-            result = await service.push_daily(db=db, user_id="user-001", target_date=None)
-
-        assert result["daily_id"] is None
-        assert result["item_count"] == 0
-        assert "信源全部失败" in result["vibe"]
-        # 全失败时不写 DB
-        db.add.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_no_candidates_returns_vibe_no_new(self):
-        """无候选（源成功但 0 条过阈值）→ vibe = "今日 AI 圈无新动态" · 不写 DB"""
-        service = DigestService()
-        db = AsyncMock()
-
-        # 源成功但 items 全部 score=0 → 全部被阈值过滤
-        source_results = [
-            {
-                "source_id": "src-1",
-                "source_name": "S1",
-                "items": [make_raw_item(f"unrelated item-{j}") for j in range(3)],  # 全部 0 分
-                "error": None,
-            }
-        ]
-
-        with patch.object(service, "fetch_all_sources", AsyncMock(return_value=source_results)), \
-             patch("services.digest_preference_service.DigestPreferenceService") as MockPref:
-            MockPref.return_value.get_user_prefs = AsyncMock(return_value=make_user_prefs())
-
-            result = await service.push_daily(db=db, user_id="user-001", target_date=None)
-
-        assert result["daily_id"] is None
-        assert "无新动态" in result["vibe"]
-        db.add.assert_not_called()
-
-
-# ── Tests · email provider 集成 ───────────────────────────────
-
-
-class TestEmailIntegration:
-    """EmailService delegates delivery to the configured provider."""
-
-    @pytest.mark.asyncio
-    async def test_email_send_delegates_to_provider(self):
-        from services.email_service import EmailService
-
-        provider = AsyncMock()
-        provider.send.return_value = "message-1"
-        svc = EmailService(provider=provider)
-        message_id = await svc._send_via_resend(
-            to_email="test@example.com",
-            subject="KnockWise Daily 2026-07-22",
-            html="<html>test</html>",
+        # A fresh scheduler instance proves dedup survives process memory loss.
+        restarted_scheduler = DigestScheduler(
+            service=service,
+            now_provider=lambda: fixed_now,
         )
+        async with async_session() as session:
+            second_run = await restarted_scheduler.check_and_push(session)
+        assert second_run == {
+            "checked": 1,
+            "pushed": 0,
+            "skipped": 1,
+            "errors": 0,
+        }
+        email_boundary.send_daily_digest.assert_awaited_once()
 
-        assert message_id == "message-1"
-        provider.send.assert_awaited_once()
+        async def override_db():
+            async with async_session() as session:
+                yield session
+
+        app.dependency_overrides[get_db] = override_db
+        app.dependency_overrides[get_current_user] = lambda: User(
+            id=user_id,
+            email="harness@example.com",
+        )
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+        ) as client:
+            response = await client.get(
+                "/api/digest/today",
+                params={"target_date": fixed_now.date().isoformat()},
+            )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["item_count"] == 1
+        assert body["items"][0]["title"] == "AI agent 首次重大突破发布"
+        assert body["items"][0]["summary"] == "LLM contract summary"
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        app.dependency_overrides.pop(get_current_user, None)
+        await _cleanup(user_id, healthy_source_id, failing_source_id)
+
+
+async def _create_schema() -> None:
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+
+
+async def _seed_user_and_sources(
+    *,
+    user_id: str,
+    healthy_source_id: str,
+    failing_source_id: str,
+    push_hour: int,
+    push_minute: int,
+) -> None:
+    async with async_session() as session:
+        session.add(
+            User(
+                id=user_id,
+                email=f"harness-{user_id}@example.com",
+                display_name="Harness E2E",
+            )
+        )
+        await session.flush()
+        session.add(
+            DigestSettings(
+                user_id=user_id,
+                push_hour=push_hour,
+                push_minute=push_minute,
+                push_timezone="Asia/Shanghai",
+                email_enabled=True,
+                interested_tags=["AI"],
+                blocked_tags=[],
+            )
+        )
+        session.add_all(
+            [
+                DigestSource(
+                    id=healthy_source_id,
+                    user_id=user_id,
+                    name="Harness Healthy",
+                    url="https://fixtures.invalid/healthy.xml",
+                    category="一手",
+                    type="model",
+                    region="overseas",
+                    enabled=True,
+                    is_default=False,
+                ),
+                DigestSource(
+                    id=failing_source_id,
+                    user_id=user_id,
+                    name="Harness Failing",
+                    url="https://fixtures.invalid/failing.xml",
+                    category="一手",
+                    type="model",
+                    region="overseas",
+                    enabled=True,
+                    is_default=False,
+                ),
+            ]
+        )
+        await session.commit()
+
+
+async def _cleanup(user_id: str, *source_ids: str) -> None:
+    async with async_session() as session:
+        daily_ids = select(DigestDaily.id).where(DigestDaily.user_id == user_id)
+        await session.execute(
+            delete(DigestDailyItem).where(DigestDailyItem.daily_id.in_(daily_ids))
+        )
+        await session.execute(
+            delete(DigestDaily).where(DigestDaily.user_id == user_id)
+        )
+        await session.execute(
+            delete(DigestSource).where(DigestSource.id.in_(source_ids))
+        )
+        await session.execute(
+            delete(DigestSettings).where(DigestSettings.user_id == user_id)
+        )
+        await session.execute(delete(User).where(User.id == user_id))
+        await session.commit()

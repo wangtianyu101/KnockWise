@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,7 +27,13 @@ DEDUP_WINDOW_MIN = 60
 class DigestScheduler:
     """每分钟检查 + 防重复推送。"""
 
-    def __init__(self):
+    def __init__(
+        self,
+        service: Any | None = None,
+        now_provider: Callable[[], datetime] | None = None,
+    ):
+        self.service = service
+        self._now_provider = now_provider or (lambda: datetime.now(timezone.utc))
         self.last_pushed: dict[str, datetime] = {}  # user_id → last_pushed_at
 
     async def check_and_push(self, db: AsyncSession) -> dict[str, Any]:
@@ -40,7 +47,12 @@ class DigestScheduler:
                 "errors": int,          # 错误数
             }
         """
-        from services.digest_service import digest_service
+        if self.service is None:
+            from services.digest_service import digest_service
+
+            service = digest_service
+        else:
+            service = self.service
 
         # 1. 查所有 enabled 的 settings
         stmt = select(DigestSettings).where(
@@ -64,7 +76,17 @@ class DigestScheduler:
 
                 # 2. 调 push_daily
                 target_date = self._user_local_date(settings)
-                result = await digest_service.push_daily(
+                existing_result = await db.execute(
+                    select(DigestDaily.id).where(
+                        DigestDaily.user_id == str(settings.user_id),
+                        DigestDaily.date == target_date,
+                    )
+                )
+                if existing_result.scalar_one_or_none() is not None:
+                    skipped += 1
+                    continue
+
+                result = await service.push_daily(
                     db=db,
                     user_id=str(settings.user_id),
                     target_date=target_date,
@@ -72,7 +94,7 @@ class DigestScheduler:
 
                 if result.get("daily_id"):
                     pushed += 1
-                    self.last_pushed[str(settings.user_id)] = datetime.now(timezone.utc)
+                    self.last_pushed[str(settings.user_id)] = self._now_provider()
                 else:
                     # 没选出 item
                     pass
@@ -93,27 +115,28 @@ class DigestScheduler:
         # 1. 防重复 · 上次推送 < DEDUP_WINDOW_MIN
         last = self.last_pushed.get(str(settings.user_id))
         if last:
-            elapsed = (datetime.now(timezone.utc) - last).total_seconds() / 60
+            elapsed = (self._now_provider() - last).total_seconds() / 60
             if elapsed < DEDUP_WINDOW_MIN:
                 return False, "dedup"
 
-        # 2. 时区 + 推送时间匹配 (MVP 简化 · 不做完整 tz 转换)
-        # 实际部署: 用 zoneinfo + user tz
-        from datetime import datetime as dt
-        now_utc = dt.now(timezone.utc)
-        user_hour = settings.push_hour
-        user_minute = settings.push_minute
-
-        # 简化: 如果 push_hour == UTC hour ± 1 → 推送
-        if abs(now_utc.hour - user_hour) <= 1 and now_utc.minute < 5:
+        # 2. Convert the injected UTC clock to the user's IANA timezone.
+        try:
+            user_now = self._now_provider().astimezone(ZoneInfo(settings.push_timezone))
+        except (ZoneInfoNotFoundError, ValueError):
+            logger.warning("invalid digest timezone: %s", settings.push_timezone)
+            return False, "invalid_timezone"
+        if user_now.hour == settings.push_hour and user_now.minute == settings.push_minute:
             return True, ""
 
         return False, "not_time"
 
     def _user_local_date(self, settings: DigestSettings) -> "date":
         """用户本地时区的日期 (MVP 简化 · 直接 UTC date)。"""
-        from datetime import date
-        return datetime.now(timezone.utc).date()
+        try:
+            timezone_info = ZoneInfo(settings.push_timezone)
+        except (ZoneInfoNotFoundError, ValueError):
+            timezone_info = timezone.utc
+        return self._now_provider().astimezone(timezone_info).date()
 
 
 # 模块级

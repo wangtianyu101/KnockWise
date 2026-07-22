@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     # Email delivery (Resend HTTP API)
     resend_api_key: str = ""
     resend_from_email: str = ""
+    app_base_url: str = "http://localhost:3000"
 
     class Config:
         env_file = (".env", ".env.local")

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 from typing import Any, Protocol
 
@@ -11,7 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class EmailProvider(Protocol):
-    async def send(self, to_email: str, subject: str, html: str) -> str: ...
+    async def send(
+        self,
+        to_email: str,
+        subject: str,
+        html: str,
+        *,
+        idempotency_key: str,
+    ) -> str: ...
 
 
 class ResendEmailProvider:
@@ -19,7 +27,14 @@ class ResendEmailProvider:
 
     API_URL = "https://api.resend.com/emails"
 
-    async def send(self, to_email: str, subject: str, html: str) -> str:
+    async def send(
+        self,
+        to_email: str,
+        subject: str,
+        html: str,
+        *,
+        idempotency_key: str,
+    ) -> str:
         from core.config import settings
 
         if not settings.resend_api_key or not settings.resend_from_email:
@@ -30,6 +45,7 @@ class ResendEmailProvider:
                 headers={
                     "Authorization": f"Bearer {settings.resend_api_key}",
                     "Content-Type": "application/json",
+                    "Idempotency-Key": idempotency_key,
                 },
                 json={
                     "from": settings.resend_from_email,
@@ -50,10 +66,12 @@ class EmailService:
 
     # 重试配置 (spec § 7.2)
     MAX_RETRIES = 3
-    RETRY_DELAYS = [5, 15, 60]  # 秒 · spec § 7.2 错误码重试间隔
+    RETRY_DELAYS = [5 * 60, 15 * 60, 60 * 60]
 
     def __init__(self, provider: EmailProvider | None = None) -> None:
         self.provider = provider or ResendEmailProvider()
+        self._sent_results: dict[str, dict[str, Any]] = {}
+        self._delivery_locks: dict[str, asyncio.Lock] = {}
 
     async def send_daily_digest(
         self,
@@ -80,25 +98,43 @@ class EmailService:
         if not user_email:
             return {"message_id": None, "sent_at": None, "error": "no user email"}
 
+        idempotency_key = self._idempotency_key(user_email, digest_date)
+        if idempotency_key in self._sent_results:
+            return dict(self._sent_results[idempotency_key])
+
         # 1. 渲染 HTML 模板
         html = self._render_html(digest_date, items, vibe)
 
-        # 2. 重试 3 次 (spec § 7.2 错误码重试)
-        for attempt in range(self.MAX_RETRIES):
-            try:
-                result = await self._send_via_resend(
-                    user_email, f"KnockWise Daily · {digest_date}", html
-                )
-                logger.info(f"email sent: user={user_email} message_id={result}")
-                return {
-                    "message_id": result,
-                    "sent_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
-                    "error": None,
-                }
-            except Exception as e:
-                logger.warning(f"email send failed (attempt {attempt+1}): {e}")
-                if attempt < self.MAX_RETRIES - 1:
-                    await asyncio.sleep(self.RETRY_DELAYS[attempt])
+        # Serialize identical in-process attempts; Resend's idempotency header
+        # provides the same guarantee across worker restarts.
+        delivery_lock = self._delivery_locks.setdefault(idempotency_key, asyncio.Lock())
+        async with delivery_lock:
+            if idempotency_key in self._sent_results:
+                return dict(self._sent_results[idempotency_key])
+            for attempt in range(self.MAX_RETRIES + 1):
+                try:
+                    message_id = await self._send_via_resend(
+                        user_email,
+                        "KnockWise · 今日 5 条 AI 推送",
+                        html,
+                        idempotency_key=idempotency_key,
+                    )
+                    logger.info(
+                        "email sent: user=%s message_id=%s", user_email, message_id
+                    )
+                    sent_result = {
+                        "message_id": message_id,
+                        "sent_at": __import__("datetime").datetime.now(
+                            __import__("datetime").timezone.utc
+                        ).isoformat(),
+                        "error": None,
+                    }
+                    self._sent_results[idempotency_key] = sent_result
+                    return dict(sent_result)
+                except Exception as e:
+                    logger.warning("email send failed (attempt %s): %s", attempt + 1, e)
+                    if attempt < self.MAX_RETRIES:
+                        await asyncio.sleep(self.RETRY_DELAYS[attempt])
 
         return {
             "message_id": None,
@@ -127,6 +163,9 @@ class EmailService:
             </div>
             """
 
+        from core.config import settings
+
+        digest_url = f"{settings.app_base_url.rstrip('/')}/ai/today?date={digest_date}"
         return f"""
         <!DOCTYPE html>
         <html><body style="font-family: -apple-system, sans-serif; max-width: 768px; margin: 0 auto; padding: 24px;">
@@ -134,16 +173,33 @@ class EmailService:
             <p style="color: #6b7280; font-size: 14px;">{vibe or ''}</p>
             <hr/>
             {items_html}
+            <p><a href="{digest_url}" style="color: #6366f1; font-weight: 600;">在 KnockWise 查看今日 Digest →</a></p>
             <hr/>
             <p style="color: #9ca3af; font-size: 12px;">KnockWise · AI for AI developers</p>
         </body></html>
         """
 
     async def _send_via_resend(
-        self, to_email: str, subject: str, html: str
+        self,
+        to_email: str,
+        subject: str,
+        html: str,
+        *,
+        idempotency_key: str,
     ) -> str:
         """Delegate delivery to the configured provider boundary."""
-        return await self.provider.send(to_email, subject, html)
+        return await self.provider.send(
+            to_email,
+            subject,
+            html,
+            idempotency_key=idempotency_key,
+        )
+
+    def _idempotency_key(self, user_email: str, digest_date: str) -> str:
+        digest = hashlib.sha256(
+            f"digest-email:{user_email.casefold()}:{digest_date}".encode()
+        ).hexdigest()
+        return f"digest-{digest}"
 
 
 # 模块级 singleton

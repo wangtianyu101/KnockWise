@@ -356,12 +356,14 @@
   - 依赖: T36 / V5-01 / V5-03
   - 估时: 1h → 实际约 25 min
   - 边界: Prompt 仅包含偏好标签与候选白名单字段；20 条/字段长度硬上限；非法 JSON、超时、限流、模型异常均保留原摘要；邮件经可注入 provider 调用 Resend HTTP API
+  - Verify-loop: FAIL（重试/幂等/email_enabled/主题链接/非阻塞）→ FAIL（错误路由/全局锁）→ 修复为 Resend 幂等键 + per-key lock + `/ai/today` + commit 后 background task
 
-- [ ] T38: Scheduler → Service → MySQL → API → Email 真 E2E
+- [x] T38: ✅ DONE — commit `pending` · Scheduler → Service → MySQL → API → Email 真 E2E
   - 文件: `backend/tests/e2e/test_digest_push.py` + 必要 API/Service 接线
-  - 测试: 真实 Scheduler/ORM/MySQL/API；仅 Mock RSS/LLM/Email/Clock
+  - 测试: ✅ 隔离 MySQL `knockwise_harness_test` **1 passed**；✅ 后端全量 **711 passed / 2 skipped / 4 xfailed**；quality **48 files / 693 tests / 0 violations**
   - 依赖: T37 / V5-02
-  - 估时: 1h
+  - 估时: 1h → 实际约 45 min
+  - 边界: 仅 Mock RSS/LLM/Email/Clock；真实 Scheduler、评分、ORM、MySQL、FastAPI；验证单源失败降级、进程重启后 DB 去重、邮件一次、API 查询同一条持久化数据
 
 - [ ] T39: Frontend type/build + Digest Playwright 5 scenario
   - 文件: frontend 类型错误、QueryClientProvider、Digest pages/tests
@@ -472,10 +474,10 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 - 阶段 H（T33）：1h → 实际约 45min
 - 阶段 I（T34）：1h → 实际约 55min
 - 阶段 J（T35）：1h → 实际约 55min
-- 阶段 K（T36-T39）：4h → T36/T37 实际各约 25min
+- 阶段 K（T36-T39）：4h → T36/T37 实际各约 25min，T38 约 45min
 - **总估时**：37.5h
-- **已用**：~6.5h（T1+T2+T5+T6+T33-T37）
-- **剩余**：~29.25h（含 T38-T39）
+- **已用**：~7.25h（T1+T2+T5+T6+T33-T38）
+- **剩余**：~28.5h（含 T39）
 - **实际偏差**：≤ 30%（事后验证 · 写入 retro.md）
 ```
 
@@ -492,7 +494,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T35 | `ef0a342` | 1h | ~55min |
 | T36 | `dec649d` | 1h | ~25min |
 | T37 | `8d48fb2` | 1h | ~25min |
-| **小计** | 11 commits | 8.75h | ~6.5h |
+| T38 | `pending` | 1h | ~45min |
+| **小计** | 12 commits | 9.75h | ~7.25h |
 
 ---
 
@@ -530,10 +533,10 @@ Phase 10 · Harness 验证（T35，1h）        ← 2026-07-22 ⚠️ VERIFIED /
   T35（L3/L5 已实跑；V5-01～V5-08 待修）
 
 Phase 11 · Harness 修复（T36-T39，4h）    ← 2026-07-22 🚧 IN PROGRESS
-  ✅ T36 → ✅ T37 → T38 → T39
+  ✅ T36 → ✅ T37 → ✅ T38 → T39
 ```
 
-**总周期**：~4 个工作日 · 已用 ~6.5h（含 T37）· 剩余 ~29.25h
+**总周期**：~4 个工作日 · 已用 ~7.25h（含 T38）· 剩余 ~28.5h
 
 **下次实施时**：开始前先看 § 6 总估时 + 实际 commit 历史表 → 知道上回做到哪 → 从未完成的任务继续
 
@@ -618,7 +621,7 @@ Phase 11 · Harness 修复（T36-T39，4h）    ← 2026-07-22 🚧 IN PROGRESS
 
 - [ ] `cd backend && ./.venv/bin/python -m pytest tests/api/test_digest_api.py -v` 全绿（覆盖 ≥80%）
 - [ ] `cd backend && ./.venv/bin/python -m pytest tests/services/test_digest_*.py -v` 全绿（去掉 test_digest_service_unit.py 后）
-- [ ] `cd backend && ./.venv/bin/python -m pytest tests/e2e/test_digest_push.py -v` 全绿
+- [x] `cd backend && DATABASE_URL=.../knockwise_harness_test RUN_MYSQL_INTEGRATION=1 ./.venv/bin/python -m pytest tests/e2e/test_digest_push.py -v` → **1 passed**
 - [ ] `cd frontend && npm test -- --cache=false` 仍 25 文件 / 209 测试全过
 - [ ] `cd frontend && npx playwright test e2e/digest.spec.ts` 5 scenario 全过
 - [ ] `cd frontend && npx playwright test visual/digest.spec.ts` 视觉对比通过

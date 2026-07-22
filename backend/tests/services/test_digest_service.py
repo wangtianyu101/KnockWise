@@ -86,7 +86,7 @@ class TestFetchAllSourcesHappyPath:
         service = DigestService()
 
         with patch.object(service, "_list_enabled_sources", AsyncMock(return_value=sources)), \
-             patch.object(service, "_fetch_one_with_retry", AsyncMock(side_effect=lambda db, src: {
+             patch.object(service, "_fetch_one_with_retry", AsyncMock(side_effect=lambda db, src, _lock=None: {
                  "source_id": src.id, "source_name": src.name,
                  "items": [{"title": f"item {src.id}"}], "error": None,
              })):
@@ -108,7 +108,7 @@ class TestFetchAllSourcesPartialFailure:
         ]
         service = DigestService()
 
-        async def fake_fetch(db, src):
+        async def fake_fetch(db, src, _lock=None):
             if src.id == "src-2":
                 return {"source_id": "src-2", "source_name": src.name,
                         "items": [], "error": "ConnectError: timeout"}
@@ -153,7 +153,7 @@ class TestFetchAllSourcesExceptionHandling:
         sources = [make_source(id="src-1"), make_source(id="src-2")]
         service = DigestService()
 
-        async def one_crashes(db, src):
+        async def one_crashes(db, src, _lock=None):
             if src.id == "src-1":
                 raise RuntimeError("Unexpected boom")
             return {"source_id": src.id, "source_name": src.name,
