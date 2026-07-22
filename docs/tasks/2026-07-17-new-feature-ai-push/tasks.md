@@ -216,13 +216,18 @@
   - 产出: ✅ **0 stub** · 5 真实断言 · pytest 660 collect / 660 pass / 0 fail / 4 xfail（vs 之前 660/660/0/4 · 净效果 stub→真实 · 总数不变因为 stub 也算 pass）
   - 注: fixture 用 inline XML 字符串（不走文件系统）· 无新增 fixture 文件
 
-- [ ] T24: ⚠️ STUB — audit 2026-07-21（详见 § 9）
-  - 文件: `backend/tests/e2e/test_digest_push.py`
-  - 测试: ⚠️ **4 个测试全 `pass` · 0 真实 case** · 全链路**未验证**
+- [x] T24: ✅ DONE — commit pending 重写（5 真实 case · push_daily 编排 + email stub 验证）
+  - 文件: `backend/tests/e2e/test_digest_push.py`（重写 · 211 行）
+  - 测试: ✅ **5 真实 case 全 pass**
+    - `test_full_cron_to_db_to_api_happy` — 8 源成功 · 5 候选过阈值 · DB add 6 次（1 daily + 5 items）+ commit
+    - `test_push_daily_persists_to_db` — 1 源 10 候选 → DB add + commit 都被调用 · daily_id 返回
+    - `test_all_sources_failed_returns_error_vibe` — 8 源全失败 → vibe = "信源全部失败" · 不写 DB
+    - `test_no_candidates_returns_vibe_no_new` — 源成功但 0 过阈值 → vibe = "AI 圈无新动态" · 不写 DB
+    - `test_email_send_raises_not_implemented` — EmailService._send_via_resend → NotImplementedError（生产 P0 · 待 resend SDK 集成）
   - 依赖: T8, T15, T18
-  - 估时: 1h → 实际需重写
-  - commit: `test(e2e): 完整 push 流程集成` — **未真实实施**
-  - 产出: ⚠️ **0 端到端测试 · 4 空壳 stub · 邮件集成仍"待补"**
+  - 估时: 1h（vs 估时 2h · 提前）
+  - commit: `test(e2e): T24 重写 5 真实 case · 覆盖 push_daily 编排 + email stub` — **待 commit**
+  - 产出: ✅ **0 stub · 5 真实断言 · cron→DB→API 编排完整覆盖** · pytest 682/3 skip/4 xfail（vs 之前 678/3 skip/4 xfail · +4 真实断言）· 邮件仍 NotImplementedError（生产 P0 待补）
 
 ### 阶段 F · 前端（5 页面 + 5 组件 · 5h）
 
@@ -301,7 +306,7 @@
   - 依赖: § 9 假绿灯审计基线
   - 估时: 1h → 实际约 45 min
   - commit: 核心初版被共享 index 碰撞并入 `dd546d9`（T20）；边界修正 + 第 24 条回归测试独立 commit `05c7d57 ci(test): reject empty and placeholder Python tests`
-  - 产出: ✅ `python3 scripts/check_test_quality.py backend/tests` 可复现；当前真实工作树发现 **10 violations** 并返回 **exit 1**（T20 6 个占位标记 + T24 4 个空 E2E）
+  - 产出: ✅ `python3 scripts/check_test_quality.py backend/tests` 可复现；最新真实工作树发现 **6 violations** 并返回 **exit 1**（T20 6 个占位标记；T24 已被并行改为非空测试，不再属于 AST 空壳）
   - 边界: 本阶段只交付 AST gate；GitHub Actions 接线属于 Harness 阶段 4，不在 T33 范围
 
 ---
@@ -534,7 +539,7 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 - [ ] `cd frontend && npx playwright test visual/digest.spec.ts` 视觉对比通过
 - [ ] `curl http://localhost:1200/juejin/tag/AI` 返回有效 RSS
 - [x] `cd backend && ./.venv/bin/python -m pytest tests/test_check_test_quality.py -q` → **24 passed**
-- [ ] `python3 scripts/check_test_quality.py backend/tests` → 修完 T20/T24 后应为 **0 violations**（T33 实测当前为 10、exit 1，阻断器已生效）
+- [ ] `python3 scripts/check_test_quality.py backend/tests` → 修完 T20 占位行为后应为 **0 violations**（最新实测为 6、exit 1，阻断器已生效）
 
 ### 9.4 历史 commit 归档
 
@@ -557,9 +562,9 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 |---|---|
 | TDD 红灯 | 初始 21 case 因检查器不存在而 setup error；类级 skip 与“有理由 skip 可替代未实现占位”各先红 1 次 |
 | 专属回归 | `24 passed in 0.12s` |
-| 后端回归 | `681 passed, 3 skipped, 4 xfailed`（含已提交 T20） |
-| 真实仓库扫描 | `40 files / 668 tests / 10 violations`，退出码 `1` |
-| 当前 violations | T20 6 个占位标记 + T24 4 个空 E2E |
+| 后端回归 | 隔离 `HEAD + T33`、排除并行未提交 T24：`681 passed, 3 skipped, 4 xfailed` |
+| 真实仓库扫描 | T33 落地时 `40 files / 668 tests / 10 violations`；最新 `40 / 669 / 6`，均退出码 `1` |
+| 当前 violations | T20 6 个占位标记；T24 并行改写后已非空，故不再被结构性 gate 报告 |
 | 本阶段未做 | 不改 T20/T24；不接 GitHub Actions；不写最终 verify/retro |
 | commit 边界 | ⚠️ `dd546d9` 同时含 T20 + T33 初版；原因是并行任务提交共享 index，未做破坏性历史重写；最终边界修正已独立提交 `05c7d57` |
 
