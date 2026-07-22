@@ -185,13 +185,14 @@
   - commit: `test(api): digest 16 endpoint 集成测试` — **未真实实施**
   - 产出: ⚠️ **0 真实 pytest case · 16 空壳 stub**
 
-- [x] T21: ✅ DONE — commit pending 拆分（删 12 个重复空壳 · 留 36 真实测试覆盖）
+- [x] T21: ✅ DONE — commit `acca478` 拆分（删 12 个重复空壳 · 留 36 真实测试覆盖）
   - 文件: `backend/tests/services/test_digest_service.py`（真实 4 RSS 解析 case） + ✅ **`test_digest_service_unit.py` 已删除**
   - 测试: ✅ **真实测试覆盖完整**：test_digest_composite_score.py 23 + test_digest_select_top_n.py 4 + test_digest_push_daily.py 5 + test_digest_service.py 4 = **36 真实 case**
   - 依赖: T5-T8
   - 估时: 30 min（vs 估时 1h · 提前）
-  - commit: `test(digest): T21 拆分 · 删 test_digest_service_unit.py 12 重复 stub` — **待 commit**
+  - commit: `acca478 test(digest): T21 拆分 · 删 test_digest_service_unit.py 12 重复 stub`
   - 产出: ✅ **0 假绿灯 · 36 真实 digest 测试覆盖** · pytest 668 collect / 664 pass / 4 xfail / 0 fail（vs 681/494/183/4 删除前）
+  - verifier: ✅ PASS · 唯一偏差 = T21 commit hash 已补（verifier 报"待 commit" → 改为 `acca478`）
 
 - [ ] T22: ⚠️ STUB — audit 2026-07-21（详见 § 9）
   - 文件: `backend/tests/services/test_digest_llm.py`
