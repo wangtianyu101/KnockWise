@@ -1,6 +1,11 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
+// Unit tests must mock every HTTP boundary. Playwright owns real localhost E2E.
+vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+  throw new Error(`network is disabled in Vitest; mock fetch for ${String(input)}`);
+}));
+
 // Mock Next.js router (避免引入 next/router 真实模块)
 vi.mock('next/router', () => ({
   useRouter: () => ({

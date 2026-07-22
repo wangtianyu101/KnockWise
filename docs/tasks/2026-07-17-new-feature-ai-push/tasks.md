@@ -316,7 +316,19 @@
   - 估时: 1h → 实际约 45 min
   - commit: 核心初版被共享 index 碰撞并入 `dd546d9`（T20）；边界修正 + 第 24 条回归测试独立 commit `05c7d57 ci(test): reject empty and placeholder Python tests`
   - 产出: ✅ `python3 scripts/check_test_quality.py backend/tests` 可复现；最新真实工作树发现 **6 violations** 并返回 **exit 1**（T20 6 个占位标记；T24 已被并行改为非空测试，不再属于 AST 空壳）
-  - 边界: 本阶段只交付 AST gate；GitHub Actions 接线属于 Harness 阶段 4，不在 T33 范围
+  - 边界: 本阶段只交付 AST gate；GitHub Actions 接线已由 T34 完成
+
+### 阶段 I · Harness 治理（阶段 4 · CI · 1h）
+
+- [x] T34: ✅ DONE — commit 待本提交完成后回写 · 三 Gate GitHub Actions
+  - 文件: `.github/workflows/ci.yml` + `scripts/check_coverage.py` + `backend/tests/{conftest.py,test_check_coverage.py,test_ci_workflow.py,test_network_policy.py,integration/test_mysql_ci.py}` + `frontend/{vitest.config.ts,vitest.setup.ts,__tests__/network-policy.test.ts}`
+  - 测试: ✅ coverage/workflow/network 契约 **13 passed + 1 local skip**；✅ backend **695 passed / 4 skipped / 4 xfailed**；✅ MySQL round-trip **1 passed**；✅ frontend Vitest **210 passed**
+  - 依赖: T33
+  - 估时: 1h → 实际约 55 min
+  - commit: `ci(test): add blocking quality backend and frontend gates` — **待提交后回写 hash**
+  - 产出: ✅ `test-quality` / `backend-test` / `frontend-test` 三个独立 job；✅ 默认禁公网；✅ MySQL 8.4 service；✅ global line ≥61%、Digest line ≥80% / branch ≥70%
+  - 真实红灯: `test-quality` 仍阻断 T20 的 6 个占位行为；`frontend-test` 仍阻断 10 个既有 type error，Next build 同源失败；未使用 `continue-on-error`
+  - 边界: workflow 已接入；要“阻止合并”还需在 GitHub ruleset/branch protection 将三项 check 设为 required（仓库外设置，不在本 commit 内）
 
 ---
 
@@ -376,6 +388,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T30 | 部署后 curl 测试 | RSSHub 可达 |
 | T31-T32 | test_metrics + docs | 监控 + retro |
 | T33 | test_check_test_quality.py | 空测试/占位标记/无理由 skip + CLI 非零退出码 |
+| T34 | test_check_coverage.py + test_ci_workflow.py + network-policy tests | 三 CI Gate / coverage / MySQL / 禁公网 |
 
 ---
 
@@ -399,6 +412,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T25-T29 | component-spec § 1.5 | — |
 | T30 | plan.md 决策 1（RSSHub fallback）| — |
 | T33 | 用户确认的 Harness 治理阶段 3 | — |
+| T34 | 用户确认的 Harness 治理阶段 4 | — |
 
 ---
 
@@ -412,10 +426,11 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 - 阶段 E（T20-T24）：5h
 - 阶段 F（T25-T29）：5h
 - 阶段 G（T30-T32）：2.5h
-- 阶段 H（T33）：1h → 实际约 35min
-- **总估时**：31.5h
-- **已用**：3.0h（T1+T2+T5+T6）
-- **剩余**：~27.5h
+- 阶段 H（T33）：1h → 实际约 45min
+- 阶段 I（T34）：1h → 实际约 55min
+- **总估时**：32.5h
+- **已用**：~4h40min（T1+T2+T5+T6+T33+T34）
+- **剩余**：~26.75h（按未完成任务估时）
 - **实际偏差**：≤ 30%（事后验证 · 写入 retro.md）
 ```
 
@@ -428,7 +443,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T5 | `4f8c92d` | 1h | ~45min |
 | T6 | `560ba40` | 1h | ~45min |
 | T33 | `dd546d9`（初版，与 T20 混合）+ `05c7d57`（边界修正） | 1h | ~45min |
-| **小计** | 6 commits（T33 跨 2 commit） | 4.75h | ~3h45min |
+| T34 | 待本提交完成后回写 | 1h | ~55min |
+| **小计** | 6 commits + T34 pending | 5.75h | ~4h40min |
 
 ---
 
@@ -457,10 +473,13 @@ Phase 7 · 部署 + 文档（T30-T32，2.5h）   ← Day 4 上午
   T30 → T31 → T32
 
 Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
-  T33（AST 空测试阻断器；CI 接线留阶段 4）
+  T33（AST 空测试阻断器）
+
+Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
+  T34（三 Gate + coverage + MySQL + 禁公网）
 ```
 
-**总周期**：~3.5 个工作日 · 已用 ~1h（3 commits）· 剩余 ~28.75h
+**总周期**：~3.5 个工作日 · 已用 ~4h40min（T1/T2/T5/T6/T33/T34）· 剩余 ~26.75h
 
 **下次实施时**：开始前先看 § 6 总估时 + 实际 commit 历史表 → 知道上回做到哪 → 从未完成的任务继续
 
@@ -472,7 +491,7 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 - [x] 每任务 1 commit（commit 字段都填了）
 - [x] 每任务对应 ≥ 1 测试（"测试" 字段填了）
 - [x] 依赖关系 DAG（§ 3 拓扑图无环）
-- [x] 总估时 31.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
+- [x] 总估时 32.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
 
 ---
 
@@ -494,7 +513,7 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 - **文档版本**：v1 · 2026-07-17（2026-07-22 审计修正）
 - **路径**：`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`
 - **下一步**：进 4 步实施 · 按 Phase 1 → 7 顺序 · 配合 spec § 6.7 verify-loop 校验每任务
-- **总任务**：33 个 · 总估时 31.5h
+- **总任务**：34 个 · 总估时 32.5h
 - **MVP 范围**：T1-T29（29 任务）· Phase 2 暂不做（T30 除外）
 
 ---
@@ -535,8 +554,9 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 | 8 | T24 E2E 重写 | 2h | 🟢 P2 | TestClient 跑 cron→DB→API→email |
 | 9 | T29 Playwright 实跑 | 1h | 🟢 P2 | 5 scenario 全过 |
 | 10 | T33 AST 空测试阻断器 | 1h | 🔴 P0 | 24 回归测试全绿；对现存空测试返回非零 |
+| 11 | T34 三 Gate CI | 1h | 🔴 P0 | workflow 契约全绿；现存债务令 quality/frontend 如实红灯 |
 
-**总修复工时**：~11.5h AI 工作量 · 建议按 § 4 步 TDD（红→绿→refactor）每任务 1 commit
+**总修复工时**：~12.5h AI 工作量 · 建议按 § 4 步 TDD（红→绿→refactor）每任务 1 commit
 
 ### 9.3 验证清单（修复后必跑）
 
@@ -549,6 +569,10 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 - [ ] `curl http://localhost:1200/juejin/tag/AI` 返回有效 RSS
 - [x] `cd backend && ./.venv/bin/python -m pytest tests/test_check_test_quality.py -q` → **24 passed**
 - [ ] `python3 scripts/check_test_quality.py backend/tests` → 修完 T20 占位行为后应为 **0 violations**（最新实测为 6、exit 1，阻断器已生效）
+- [x] `cd backend && ./.venv/bin/python -m pytest tests/test_check_coverage.py tests/test_ci_workflow.py tests/test_network_policy.py -q` → **13 passed**
+- [x] `RUN_MYSQL_INTEGRATION=1 ... pytest tests/integration/test_mysql_ci.py -v` → **1 passed**（TEMPORARY TABLE）
+- [x] `cd frontend && npm test` → **26 files / 210 passed**
+- [ ] `cd frontend && npx tsc --noEmit && npm run build` → **10 个既有 type error，Gate 预期阻断**
 
 ### 9.4 历史 commit 归档
 
@@ -576,5 +600,19 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 | 当前 violations | T20 6 个占位标记；T24 并行改写后已非空，故不再被结构性 gate 报告 |
 | 本阶段未做 | 不改 T20/T24；不接 GitHub Actions；不写最终 verify/retro |
 | commit 边界 | ⚠️ `dd546d9` 同时含 T20 + T33 初版；原因是并行任务提交共享 index，未做破坏性历史重写；最终边界修正已独立提交 `05c7d57` |
+
+### 9.7 Harness 阶段 4 实施证据（T34）
+
+| 证据 | 实际结果 |
+|---|---|
+| TDD 红灯 | `check_coverage.py` 与 `.github/workflows/ci.yml` 不存在：5 error + 7 failed |
+| Workflow 结构 | YAML parse 通过；3 个独立 job；无 `continue-on-error` |
+| 后端全量 | `695 passed, 4 skipped, 4 xfailed`；全局行 61.37% |
+| Digest 核心 | 行 85.55% / 分支 82.00%，高于 80% / 70% gate |
+| MySQL | 本机 MySQL + TEMPORARY TABLE round-trip：`1 passed` |
+| 网络边界 | backend socket 仅放行 loopback；Vitest 默认 fetch 拒绝；对应测试全绿 |
+| 前端单测 | `26 files / 210 passed`；visual Playwright 不再被 Vitest 误收集 |
+| 预期红灯 | test-quality：6 violations；typecheck/build：10 个既有类型错误 |
+| 外部设置 | GitHub branch protection/ruleset 尚未把 3 个 checks 标 required |
 
 ---

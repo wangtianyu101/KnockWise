@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'codex/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  test-quality:
+    name: Test quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Reject empty and placeholder Python tests
+        run: python scripts/check_test_quality.py backend/tests
+
+  backend-test:
+    name: Backend tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: mysql+aiomysql://knockwise:knockwise@127.0.0.1:3306/knockwise_test
+      REDIS_ENABLED: "false"
+      LLM_API_KEY: ci-network-disabled
+      RUN_MYSQL_INTEGRATION: "1"
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: knockwise_test
+          MYSQL_USER: knockwise
+          MYSQL_PASSWORD: knockwise
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install backend dependencies
+        run: |
+          sed '/^openai-whisper==/d' backend/requirements.txt > /tmp/knockwise-requirements-ci.txt
+          python -m pip install -r /tmp/knockwise-requirements-ci.txt
+      - name: Verify real MySQL round trip
+        working-directory: backend
+        run: python -m pytest tests/integration/test_mysql_ci.py -v
+      - name: Run backend suite with branch coverage
+        working-directory: backend
+        run: >-
+          python -m pytest tests/ -q
+          --cov=agents --cov=api --cov=core --cov=models
+          --cov=schemas --cov=services --cov=utils --cov=voice
+          --cov-branch --cov-report=term
+          --cov-report=json:coverage.json
+      - name: Enforce coverage baselines
+        working-directory: backend
+        run: >-
+          python ../scripts/check_coverage.py coverage.json
+          --global-lines 61
+          --file services/digest_service.py
+          --file-lines 80
+          --file-branches 70
+
+  frontend-test:
+    name: Frontend tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Run Vitest
+        run: npm test
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Build Next.js
+        run: npm run build
