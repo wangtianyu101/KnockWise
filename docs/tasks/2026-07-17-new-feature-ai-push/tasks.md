@@ -320,12 +320,12 @@
 
 ### 阶段 I · Harness 治理（阶段 4 · CI · 1h）
 
-- [x] T34: ✅ DONE — commit 待本提交完成后回写 · 三 Gate GitHub Actions
+- [x] T34: ✅ DONE — commit `bcd6f78` · 三 Gate GitHub Actions
   - 文件: `.github/workflows/ci.yml` + `scripts/check_coverage.py` + `backend/tests/{conftest.py,test_check_coverage.py,test_ci_workflow.py,test_network_policy.py,integration/test_mysql_ci.py}` + `frontend/{vitest.config.ts,vitest.setup.ts,__tests__/network-policy.test.ts}`
   - 测试: ✅ coverage/workflow/network 契约 **13 passed + 1 local skip**；✅ backend **695 passed / 4 skipped / 4 xfailed**；✅ MySQL round-trip **1 passed**；✅ frontend Vitest **210 passed**
   - 依赖: T33
   - 估时: 1h → 实际约 55 min
-  - commit: `ci(test): add blocking quality backend and frontend gates` — **待提交后回写 hash**
+  - commit: `bcd6f78 ci(test): add blocking quality backend and frontend gates`
   - 产出: ✅ `test-quality` / `backend-test` / `frontend-test` 三个独立 job；✅ 默认禁公网；✅ MySQL 8.4 service；✅ global line ≥61%、Digest line ≥80% / branch ≥70%
   - 真实红灯: `test-quality` 仍阻断 T20 的 6 个占位行为；`frontend-test` 仍阻断 10 个既有 type error，Next build 同源失败；未使用 `continue-on-error`
   - 边界: workflow 已接入；要“阻止合并”还需在 GitHub ruleset/branch protection 将三项 check 设为 required（仓库外设置，不在本 commit 内）
@@ -443,8 +443,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T5 | `4f8c92d` | 1h | ~45min |
 | T6 | `560ba40` | 1h | ~45min |
 | T33 | `dd546d9`（初版，与 T20 混合）+ `05c7d57`（边界修正） | 1h | ~45min |
-| T34 | 待本提交完成后回写 | 1h | ~55min |
-| **小计** | 6 commits + T34 pending | 5.75h | ~4h40min |
+| T34 | `bcd6f78` | 1h | ~55min |
+| **小计** | 7 commits | 5.75h | ~4h40min |
 
 ---
 
