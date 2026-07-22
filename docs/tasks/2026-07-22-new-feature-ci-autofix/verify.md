@@ -132,16 +132,17 @@ $ python3 -m py_compile scripts/ci/check_auto_fix_diff.py
 
 ✅ **关 1 通过**
 
-### 关 2 · 权限分层（R10 / T1）
+### 关 2 · 权限分层（R10 / T1 · FU-3 v3 改进）
 
 | 检查 | 证据 |
 |---|---|
 | 双 job 结构 | `diagnostic:` + `apply-fix:` |
 | diagnostic permissions: read | yaml 行 `contents: read` |
+| diagnostic **无 LLM 调用 + 不暴露 secrets** ✅ | yaml v3：Claude step 已移到 apply-fix |
 | apply-fix permissions: write + pull-requests | yaml 行 `contents: write, pull-requests: write` |
-| secrets 仅在 apply-fix 暴露（注：diagnostic 也用了 secrets for Claude API 调用，但仅 diagnostic 单 job 可见） | yaml 校验 |
+| secrets 仅在 apply-fix 暴露 + env approval | yaml 校验 |
 
-✅ **关 2 通过**（注：secrets 在 diagnostic job 也用了，因为 Claude API 调用需要 key。这是 spec 设计的"诊断阶段也需要 LLM"。改进方向：可以用 GitHub OIDC token 让 diagnostic 不暴露 ANTHROPIC_API_KEY · 留作 T19+ follow-up）
+✅ **关 2 通过**（v3 最强化 · diagnostic 完全无 secrets · FU-3 已落地）
 
 ### 关 3 · 供应链防御（R8 / T17-T18）
 

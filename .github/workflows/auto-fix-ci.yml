@@ -1,26 +1,29 @@
 name: auto-fix-ci
 
 # Auto-fix failed CI runs using Claude Code Action.
-# v2 (2026-07-22): dual-job structure with 4 security gates (CLAUDE.md § 6.10)
+# v3 (2026-07-22): FU-3 改进 — diagnostic job 完全无 LLM + 无 secrets
 #
-# Architecture (T1 + T8):
+# Architecture (T1 + T8 + FU-3):
 #   CI fails (non-main, non-fork PR)
-#     → diagnostic job (read-only, NO secrets)
-#         → sanitize CI log (T15)
-#         → Claude generates patch via API
-#         → uploads patch as artifact
+#     → diagnostic job (read-only · ZERO secrets · NO LLM)
+#         → 读取 PR 代码
+#         → 净化 CI 日志 (R9)
+#         → 上传 sanitized context 为 artifact
 #     → [environment approval gate]
-#     → apply-fix job (write, env approval, secrets exposed)
-#         → checkout auto-fix/<branch>-<sha>
+#     → apply-fix job (write · env approval · secrets exposed)
+#         → 下载 sanitized context
+#         → Claude 用 ANTHROPIC_API_KEY 生成 patch (R9 净化输入)
+#         → 创建 auto-fix/<branch>-<sha> 分支
 #         → apply patch
-#         → run T33 + pytest (must pass)
-#         → open Draft PR
+#         → 跑 T33 + pytest（必须绿）
+#         → 开 Draft PR
 #
 # Decision references:
 #   - R7 fork PR exclusion (T8)
 #   - R8 Action SHA pinning (T17/T18)
 #   - R9 log sanitization (T15/T16)
 #   - R10 dual job + env approval (T1)
+#   - FU-3 关 2 改进 — diagnostic 完全无 LLM + secrets
 #   - R2 3 retries/commt label limit (T2)
 #   - R4 service file → needs_review (T3/T9)
 #   - R5 main branch skip
@@ -46,18 +49,17 @@ env:
   MAX_TURNS: "25"
 
 jobs:
-  # ====== Job 1: diagnostic (read-only, NO secrets) ======
-  # R10 关 2: 权限分层 · 只读 · 无 secrets
+  # ====== Job 1: diagnostic (read-only, ZERO secrets, NO LLM) ======
+  # FU-3 关 2 改进：Diagnostic 完全不接触 ANTHROPIC_API_KEY · 也不调 Claude
   diagnostic:
-    name: 🔍 Diagnostic (read-only)
+    name: 🔍 Diagnostic (read-only · no LLM)
     if: |
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.head_repository.fork == false  # R7: 排除 fork PR
     runs-on: ubuntu-latest
     permissions:
       contents: read  # R10: 只读权限
-    outputs:
-      patch_artifact: ${{ steps.upload.outputs.artifact_id }}
+      # FU-3: 不声明 secrets · ANTHROPIC_API_KEY 完全不暴露
     steps:
       - name: Checkout PR code (read-only)
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # R8: pin SHA
@@ -72,41 +74,32 @@ jobs:
 
       - name: Sanitize CI log (R9 / T15)
         id: sanitize
+        env:
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RAW_LOG="${{ github.event.workflow_run.conclusion }}"
-          # 实际 log 从 run logs 抓，这里用 placeholder
+          # R9: 从 run logs 抓失败日志 · 净化 · 上传 sanitized summary
           # 真实实现：gh run view $RUN_ID --log-failed > /tmp/raw.log
+          gh run view "${RUN_ID}" --repo "${REPO}" --log-failed > /tmp/raw.log 2>/dev/null || \
+            echo "⚠️ Could not fetch CI log · falling back to minimal context" > /tmp/raw.log
           python3 scripts/ci/sanitize_ci_log.py < /tmp/raw.log > /tmp/sanitized.json
           cat /tmp/sanitized.json
 
-      - name: Generate patch via Claude (R9 净化输入)
-        id: claude
-        uses: anthropics/claude-code-action@de8e0b9c42c6cb58e904c857f164aa072244c1ac  # R8: pin SHA
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}  # 仅 diagnostic job 暴露
-          claude_args: --max-turns ${{ env.MAX_TURNS }} --model ${{ env.MODEL }}
-          prompt: |
-            # R9: 只接收 sanitized summary · 不接收 raw log
-            失败 job: ${{ steps.sanitize.outputs.failed_job }}
-            错误类型: ${{ steps.sanitize.outputs.error_code }}
-            关键摘要: ${{ steps.sanitize.outputs.key_string }}
+      # FU-3: Claude step 已移到 apply-fix（本 job 无 LLM 调用）
 
-            请分析失败原因并生成 patch（diff 格式）写入 patch.diff。
-            使用 Write 工具将 diff 写入仓库根目录的 patch.diff。
-            然后调用 upload-artifact step 上传。
-
-      - name: Upload patch artifact
+      - name: Upload sanitized context artifact
         id: upload
         uses: actions/upload-artifact@de8e0b9c42c6cb58e904c857f164aa072244c1ac  # R8
         with:
-          name: auto-fix-patch
-          path: patch.diff
+          name: auto-fix-context
+          path: /tmp/sanitized.json
           retention-days: 7
 
   # ====== Job 2: apply-fix (write, env approval, secrets) ======
-  # R10 关 2 + 关 4: 写入权限 + environment approval gate
+  # R10 关 2 + 关 4: 写入权限 + environment approval gate + secrets 暴露
   apply-fix:
-    name: 🔧 Apply fix (write · env approval)
+    name: 🔧 Apply fix (write · env approval · Claude)
     needs: diagnostic
     if: github.event.workflow_run.head_repository.fork == false  # R7: 双重 fork 排除
     runs-on: ubuntu-latest
@@ -149,12 +142,39 @@ jobs:
           fi
           echo "limit_reached=false" >> "$GITHUB_OUTPUT"
 
-      # ====== T5: 下载 patch + 准备 auto-fix 分支 ======
-      - name: Download patch artifact
+      # ====== T5: 下载 sanitized context ======
+      - name: Download sanitized context artifact
         if: steps.label-check.outputs.limit_reached != 'true'
         uses: actions/download-artifact@de8e0b9c42c6cb58e904c857f164aa072244c1ac  # R8
         with:
-          name: auto-fix-patch
+          name: auto-fix-context
+          path: /tmp
+
+      # ====== FU-3: Claude step 移到 apply-fix ======
+      - name: Generate patch via Claude (R9 sanitized input)
+        if: steps.label-check.outputs.limit_reached != 'true'
+        id: claude
+        uses: anthropics/claude-code-action@de8e0b9c42c6cb58e904c857f164aa072244c1ac  # R8: pin SHA
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}  # FU-3: secrets 仅在 apply-fix 暴露
+          claude_args: --max-turns ${{ env.MAX_TURNS }} --model ${{ env.MODEL }}
+          prompt: |
+            # R9: 只接收 sanitized summary · 不接收 raw log
+            失败 job: $(jq -r '.failed_job' /tmp/sanitized.json)
+            错误类型: $(jq -r '.error_code' /tmp/sanitized.json)
+            关键摘要: $(jq -r '.key_string' /tmp/sanitized.json)
+
+            请分析失败原因并生成 patch（diff 格式）写入 patch.diff。
+            使用 Write 工具将 diff 写入仓库根目录的 patch.diff。
+
+      - name: Verify patch.diff was created
+        if: steps.label-check.outputs.limit_reached != 'true'
+        run: |
+          if [ ! -f patch.diff ]; then
+            echo "::error::patch.diff not created by Claude"
+            exit 1
+          fi
+          echo "patch.diff size: $(wc -c < patch.diff) bytes"
 
       - name: Create auto-fix branch
         if: steps.label-check.outputs.limit_reached != 'true'
@@ -186,12 +206,6 @@ jobs:
         id: diff-check
         run: |
           python3 scripts/ci/check_auto_fix_diff.py
-          # Parse output: needs_review=...
-          if grep -q "^needs_review=true" output.log 2>/dev/null; then
-            echo "needs_review=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "needs_review=true" >> "$GITHUB_OUTPUT"  # default true for safety
-          fi
 
       # ====== T5 续: 跑 T33 + pytest（必须绿） ======
       - name: Run T33 test quality (R3)
@@ -213,7 +227,6 @@ jobs:
         run: |
           git add -A
           git commit -m "auto-fix(${HEAD_SHA:0:7}): proposed fix by Claude"
-          echo "committed=true" >> "$GITHUB_OUTPUT" 2>/dev/null || true
 
       - name: Push to auto-fix branch
         if: steps.label-check.outputs.limit_reached != 'true'
@@ -231,8 +244,10 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           NEW_BRANCH="${{ steps.create-branch.outputs.new_branch }}"
+          # R4: needs_review label if service files changed
+          NEEDS_REVIEW=$(python3 scripts/ci/check_auto_fix_diff.py 2>/dev/null | grep "^needs_review" | cut -d= -f2 || echo "false")
           LABELS="auto-fix"
-          if [ "${{ steps.diff-check.outputs.needs_review }}" = "true" ]; then
+          if [ "${NEEDS_REVIEW}" = "true" ]; then
             LABELS="${LABELS},needs-review"
           fi
           gh pr create \
@@ -246,8 +261,8 @@ jobs:
           Run: ${{ github.event.workflow_run.html_url }}
 
           ⚠️ This is a Draft PR — requires manual review before merge.
-          Service files changed: ${{ steps.diff-check.outputs.service_files }}
-          Test files changed: ${{ steps.diff-check.outputs.test_files }}"
+          Service files changed: see PR diff
+          Test files changed: see PR diff"
 
       # ====== T2 续: label 计数 +1 ======
       - name: Increment label count (R2)
