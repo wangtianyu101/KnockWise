@@ -26,7 +26,7 @@ async def get_today(
     from services.digest_service import digest_service
     from datetime import date as today_date
 
-    actual_date = target_date or today_date()
+    actual_date = target_date or today_date.today()  # 2026-07-22 audit 修复：today_date 是 class 不是 function
     result = await digest_service.push_daily(db=None, user_id=str(user.id), target_date=actual_date)
     if not result.get("daily_id"):
         raise HTTPException(status_code=404, detail="今日 digest 未生成")

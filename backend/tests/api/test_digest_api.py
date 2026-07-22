@@ -48,9 +48,6 @@ def make_client(router, user):
 class TestDailyAPI:
     """GET /api/digest/today + /daily/{date} + /dailies"""
 
-    @pytest.mark.skip(reason="生产 bug：api/digest/daily.py:26 `from services.digest_service import digest_service` "
-                              "但模块级 digest_service 实例不存在 → ImportError。"
-                              "修复后移除 skip 并 patch DigestService.push_daily")
     def test_get_today_returns_200_with_digest(self, fake_user):
         """GET /api/digest/today · happy → 200 + DigestTodayResponse（mock service）
 
@@ -73,7 +70,6 @@ class TestDailyAPI:
         assert body["vibe"] == "今日 5 条 · 正常推送"
         assert body["item_count"] == 5
 
-    @pytest.mark.skip(reason="生产 bug：同 test_get_today_returns_200_with_digest")
     def test_get_today_no_data_404(self, fake_user):
         """GET /api/digest/today · service 返回 None → 404"""
         from api.digest.daily import router as daily_router
@@ -163,9 +159,6 @@ class TestBehaviorAPI:
         )
         assert response.status_code == 422
 
-    @pytest.mark.skip(reason="生产 bug：api/digest/behavior.py:25 返回 read_at=None，"
-                              "但 ReadResponse.read_at 字段类型是 datetime（required）。"
-                              "修复后端后移除 skip")
     def test_post_read_duration_below_30_no_mark(self, fake_user):
         """POST /api/digest/read · duration=10 → 200 但 marked_as_read=False
 

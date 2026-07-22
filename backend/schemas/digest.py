@@ -135,6 +135,7 @@ class ReadResponse(BaseModel):
     read_at: datetime
     duration_sec: int
     progress: str  # e.g. "5/10" · 今日已读/总推送
+    marked_as_read: bool = False  # 2026-07-22 audit 修复 · spec R7: duration_sec < 30 不标记为已读
 
 
 class HideCreate(BaseModel):
