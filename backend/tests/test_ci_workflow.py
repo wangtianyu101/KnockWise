@@ -57,4 +57,4 @@ def test_ci_uses_current_official_action_majors_and_read_only_permissions():
     assert "permissions:\n  contents: read" in content
     assert "actions/checkout@v6" in content
     assert "actions/setup-python@v6" in content
-    assert "actions/setup-node@v7" in content
+    assert "actions/setup-node@v6" in content
