@@ -60,3 +60,19 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/dashboard
 | `Unknown column 'xxx'` | DB 旧表缺列 → `core/database.py:_MIGRATIONS` 应自动 ALTER，看启动日志 |
 | LiveKit 连不上 | `node_ip` 没改？用 `lsof -i :7880` 看进程是否在 |
 | 知识库空 | `~/Obsidian/coding/` 不存在？改 `services/obsidian_service.py:VAULT_ROOT` |
+
+## CI Auto-fix（devops）
+
+详细配置见 [README § 🤖 Auto-fix CI](../../README.md#-auto-fix-ci自动修复失败的-ci)
+
+本地调试 scripts：
+```bash
+# 测试 CI 日志净化
+echo "##[error]frontend-test\nProperty X does not exist" | python3 scripts/ci/sanitize_ci_log.py
+
+# 检查所有 workflow Action 是否 pin SHA
+python3 scripts/ci/check_action_sha.py
+
+# 检查 auto-fix diff 是否含 backend service 改动（应输出 needs_review=true）
+python3 scripts/ci/check_auto_fix_diff.py
+```
