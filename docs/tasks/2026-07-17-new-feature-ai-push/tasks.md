@@ -314,8 +314,8 @@
   - 测试: ✅ **24/24 通过**；覆盖 sync/async `pass`、`...`、仅 docstring、占位注释/docstring、函数/类级无理由 `skip/skipif`、有理由 skip 取代未实现测试、合法 `assert` / `pytest.raises` / Mock 断言 / helper 契约、CLI 退出码
   - 依赖: § 9 假绿灯审计基线
   - 估时: 1h → 实际约 45 min
-  - commit: 核心初版被共享 index 碰撞并入 `dd546d9`（T20）；边界修正 + 第 24 条回归测试独立 commit `05c7d57 ci(test): reject empty and placeholder Python tests`
-  - 产出: ✅ `python3 scripts/check_test_quality.py backend/tests` 可复现；最新真实工作树发现 **6 violations** 并返回 **exit 1**（T20 6 个占位标记；T24 已被并行改为非空测试，不再属于 AST 空壳）
+  - commit: 核心初版被共享 index 碰撞并入 `dd546d9`（T20）；边界修正 `05c7d57`；误报文字收尾 `dd0e8f3`
+  - 产出: ✅ `python3 scripts/check_test_quality.py backend/tests` 可复现；阶段五最新实测 **0 violations / exit 0**
   - 边界: 本阶段只交付 AST gate；GitHub Actions 接线已由 T34 完成
 
 ### 阶段 I · Harness 治理（阶段 4 · CI · 1h）
@@ -328,8 +328,18 @@
   - commit: `bcd6f78 ci(test): add blocking quality backend and frontend gates`
   - 修复 commit: `3ff6566 fix(ci): use supported setup-node action`
   - 产出: ✅ `test-quality` / `backend-test` / `frontend-test` 三个独立 job；✅ 默认禁公网；✅ MySQL 8.4 service；✅ global line ≥61%、Digest line ≥80% / branch ≥70%
-  - 真实红灯: `test-quality` 仍阻断 T20 的 6 个占位行为；`frontend-test` 仍阻断 10 个既有 type error，Next build 同源失败；未使用 `continue-on-error`
+  - 真实状态: `test-quality` 已为 0 violations；`frontend-test` 仍因 12 条 type diagnostics 与 Next build 失败而阻断；未使用 `continue-on-error`
   - 边界: workflow 已接入；要“阻止合并”还需在 GitHub ruleset/branch protection 将三项 check 设为 required（仓库外设置，不在本 commit 内）
+
+### 阶段 J · Harness 治理（阶段 5 · 验证 · 1h）
+
+- [x] T35: ⚠️ VERIFIED / FAILED — commit 待回写 · 基于真实命令重写 verify + retro
+  - 文件: `verify.md` + `retro.md` + `tasks.md`
+  - 测试: quality **0 violations**；backend **698 passed / 1 skipped / 4 xfailed**；MySQL **1 passed**；Vitest **210 passed**；Playwright **5 failed**
+  - 依赖: T34
+  - 估时: 1h → 实际约 55 min
+  - 结论: ❌ L3/L5 未通过；LLM contract 缺失、E2E Mock 越界、frontend type/build 与 5 个用户场景失败
+  - 边界: 本阶段只记录证据，不修业务代码；关闭条件见 `verify.md` V5-01～V5-08
 
 ---
 
@@ -390,6 +400,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T31-T32 | test_metrics + docs | 监控 + retro |
 | T33 | test_check_test_quality.py | 空测试/占位标记/无理由 skip + CLI 非零退出码 |
 | T34 | test_check_coverage.py + test_ci_workflow.py + network-policy tests | 三 CI Gate / coverage / MySQL / 禁公网 |
+| T35 | verify.md + Playwright + L5 curl | 阶段五真实验证；失败项不得包装为通过 |
 
 ---
 
@@ -414,6 +425,7 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T30 | plan.md 决策 1（RSSHub fallback）| — |
 | T33 | 用户确认的 Harness 治理阶段 3 | — |
 | T34 | 用户确认的 Harness 治理阶段 4 | — |
+| T35 | 用户确认的 Harness 治理阶段 5 | — |
 
 ---
 
@@ -429,8 +441,9 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 - 阶段 G（T30-T32）：2.5h
 - 阶段 H（T33）：1h → 实际约 45min
 - 阶段 I（T34）：1h → 实际约 55min
-- **总估时**：32.5h
-- **已用**：~4h40min（T1+T2+T5+T6+T33+T34）
+- 阶段 J（T35）：1h → 实际约 55min
+- **总估时**：33.5h
+- **已用**：~5h35min（T1+T2+T5+T6+T33+T34+T35）
 - **剩余**：~26.75h（按未完成任务估时）
 - **实际偏差**：≤ 30%（事后验证 · 写入 retro.md）
 ```
@@ -445,7 +458,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T6 | `560ba40` | 1h | ~45min |
 | T33 | `dd546d9`（初版，与 T20 混合）+ `05c7d57`（边界修正） | 1h | ~45min |
 | T34 | `bcd6f78` + `3ff6566` | 1h | ~55min |
-| **小计** | 8 commits | 5.75h | ~4h40min |
+| T35 | 待本提交完成后回写 | 1h | ~55min |
+| **小计** | 8 commits + T35 pending | 6.75h | ~5h35min |
 
 ---
 
@@ -478,9 +492,12 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 
 Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
   T34（三 Gate + coverage + MySQL + 禁公网）
+
+Phase 10 · Harness 验证（T35，1h）        ← 2026-07-22 ⚠️ VERIFIED / FAILED
+  T35（L3/L5 已实跑；V5-01～V5-08 待修）
 ```
 
-**总周期**：~3.5 个工作日 · 已用 ~4h40min（T1/T2/T5/T6/T33/T34）· 剩余 ~26.75h
+**总周期**：~3.5 个工作日 · 已用 ~5h35min（含 T35）· 剩余 ~26.75h
 
 **下次实施时**：开始前先看 § 6 总估时 + 实际 commit 历史表 → 知道上回做到哪 → 从未完成的任务继续
 
@@ -492,7 +509,7 @@ Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
 - [x] 每任务 1 commit（commit 字段都填了）
 - [x] 每任务对应 ≥ 1 测试（"测试" 字段填了）
 - [x] 依赖关系 DAG（§ 3 拓扑图无环）
-- [x] 总估时 32.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
+- [x] 总估时 33.5h（与 product-doc § 5.2 P0 MVP 80h 偏差 · 事后验证）
 
 ---
 
@@ -514,7 +531,7 @@ Phase 9 · Harness CI（T34，1h）           ← 2026-07-22 ✅ DONE
 - **文档版本**：v1 · 2026-07-17（2026-07-22 审计修正）
 - **路径**：`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`
 - **下一步**：进 4 步实施 · 按 Phase 1 → 7 顺序 · 配合 spec § 6.7 verify-loop 校验每任务
-- **总任务**：34 个 · 总估时 32.5h
+- **总任务**：35 个 · 总估时 33.5h
 - **MVP 范围**：T1-T29（29 任务）· Phase 2 暂不做（T30 除外）
 
 ---

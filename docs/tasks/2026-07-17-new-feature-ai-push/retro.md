@@ -5,6 +5,8 @@ HEAD：v1 `be80a3f feat(infra+test+docs): T29 e2e + T30 RSSHub + T31 retro + T32
 
 > ⚠️ **2026-07-22 audit 复核偏差**：原标题"实施完成 · 2026-07-19"过于乐观 —— 实际 41 个测试空壳（v1 时 100% · v2 时仍 37 个纯 `pass` + 4 个有内容但 0 assert）被 pytest 计为通过 · 形成"假绿灯" · 详见 § 9 偏差段。
 >
+> ❌ **2026-07-22 阶段五实测 v4**：虽然空测试扫描已清零、pytest 与 coverage 达标，但 LLM 契约不存在、后端 E2E Mock 越界、Playwright 5/5 失败、typecheck/build 失败。§ 12 的“8/9 闭环”不得解释为 Harness 项目完成；最新事实以 § 15 与 `verify.md` 为准。
+>
 > **必填段（CLAUDE.md § 6.6 · 2026-07-11 加规则）**：verify.md commit 后立即写 retro.md · 不要等用户催。
 
 ## 1. 数据（v2 复核）
@@ -283,3 +285,74 @@ v3 新增待写：
 - **路径**：`docs/tasks/2026-07-17-new-feature-ai-push/retro.md`
 - **v2 主要变更**：标题改 · § 1 数据按当前实测更新 · 新增 § 8 audit 偏差段 · 新增 § 9 改进项再分配 · 新增 § 10 memory 清单 · § 11 完成判定
 - **关联**：[`docs/issues.md` 债务 9](../../issues.md) · [`decisions.md` 决策 1](decisions.md) · [`tasks.md` § 9](tasks.md)
+
+---
+
+## 15. 阶段五真实验证复盘（v4 · 2026-07-22）
+
+### 15.1 数据
+
+| 项 | 文档先前判断 | 阶段五实测 | 偏差 |
+|---|---|---|---|
+| 空测试 | 6 violations 待清 | 0 violations / exit 0 | ✅ 已解决 |
+| 后端测试 | 698 pass / 1 skip / 4 xfail | 698 pass / 1 skip / 4 xfail | ✅ 一致 |
+| 覆盖率 | global 61.55%；Digest 85.61% / 82% | 同值，coverage gate 通过 | ✅ 一致 |
+| LLM 契约 | T22“已重写/转移” | 测试文件不存在，Digest `ainvoke` 引用 0 | 🔴 事实错误 |
+| E2E | T24“cron→DB→API→email” | 直接调 service；DB/ORM/偏好/RSS 全 Mock；Email NotImplemented | 🔴 边界错误 |
+| Playwright | T29 待实跑 | 5 failed / 0 passed | 🔴 未完成 |
+| 前端 Gate | CI 会阻断 | Vitest 210 pass；typecheck 12 diagnostics；build failed | 🟡 Gate 正确，业务未绿 |
+| L5 基础路径 | 未有独立证据 | 5 服务同时监听；health/login/dashboard/settings/list 200 | ✅ |
+| 优雅停机 | 未记录 | `NameError: asyncio is not defined` | 🔴 新发现 |
+
+工作量：阶段五计划 1 小时，实际约 55 分钟；新增文档任务 1 个；业务修复 0 个；验证返工 1 次（`start.sh` 后台进程被托管环境回收，改用持续 PTY 重跑）。
+
+返工原因：托管执行环境在命令结束后回收 `nohup` 子进程，并禁止沙箱内绑定端口；为取得 L5 证据，改用授权后的持续 PTY 持有三个应用进程。
+
+### 15.2 做对了什么
+
+- 把“测试命令绿”与“验收链路完成”分开判断；38 个目标测试通过仍没有包装成 E2E 通过。
+- 实际启动五服务、调用 JWT 用户路径并运行 Chromium，而不是只看静态测试文件。
+- CI gate 正确暴露 type/build 失败；AST gate 从 6 violations 收敛到 0。
+- MySQL 使用 TEMPORARY TABLE，验证真实连接但不污染业务数据。
+
+### 15.3 做错了什么与根因
+
+1. **T22 状态误报**：删除空 LLM 测试被写成“重写/转移”，但应用没有对应 `ainvoke` 合约。根因是按文件债务清零统计，不按需求链路统计。
+2. **T24 名称冒充 E2E**：文件名和 docstring 写“cron→DB→API”，实际直接调 `push_daily` 并 Mock DB/ORM。根因是 verifier 只确认断言存在，没有审计 Mock 边界。
+3. **T29 写完即接近完成的错觉**：未运行浏览器就更新了高完成度。实跑后 5/5 失败，页面还是 EmptyState，bookmarks/settings 缺 QueryClientProvider。
+4. **L1 债务被延后**：Vitest 210 绿掩盖了 12 条 TypeScript diagnostics 和 build failure。
+5. **运行时关闭路径未覆盖**：Backend 正常请求均 200，但 SIGINT 才暴露 `asyncio` 未导入。
+
+影响：阶段四以前的“8/9 闭环”“根因解决”等措辞高估完成度；若直接设置 required checks，当前 PR 会被正确阻断，但业务仍不可交付。
+
+### 15.4 调研偏差修正
+
+- “API、LLM、RSS、E2E 四组已补齐”不成立：API/RSS 仅部分覆盖；LLM 缺失；E2E 边界不合格。
+- “Email Mock”不成立：当前不是 mock provider 调用，而是验证生产方法抛 `NotImplementedError`。
+- “T29 只差服务启动”不成立：服务启动后仍有 EmptyState、QueryClientProvider 和页面交互缺失。
+- “文档数字与 pytest 一致即可可信”不充分：测试数量一致仍可能验证了错误边界。
+
+### 15.5 下次改进项
+
+负责人：AI 负责代码、测试和文档修复；用户负责验收行为及配置 GitHub required checks。
+
+| 改进 | 负责人 | 截止条件 | 沉淀位置 |
+|---|---|---|---|
+| 按 V5-01～V5-04 补 LLM/RSS/真实 E2E/Email | AI + 用户验收 | 下次阶段四修复完成 | `verify.md` + `tasks.md` |
+| 修复前端 L1 与 5 个 Playwright 场景 | AI + 用户验收 | 再次进入阶段五前 | `frontend/tests/e2e/digest.spec.ts` |
+| E2E verifier 必须列出每个 Mock 边界 | AI | 下一次 E2E commit | `docs/rules/testing-rules.md` 候选规则 |
+| 修复 Backend shutdown 的 `asyncio` 错误 | AI | 下次 bugfix | `docs/issues.md` 主账 |
+| push 后配置 required checks | 用户 | GitHub workflow 首次运行后 | GitHub ruleset |
+
+### 15.6 沉淀 / memory 更新清单
+
+- ⏳ `feedback-e2e-mock-boundary-audit.md`：文件名或测试名不能证明 E2E；必须列真实层和 Mock 层。
+- ⏳ 在 `DOD.md` / testing 规则增加：步骤五 verify 允许诚实失败，校验脚本不得强迫写“通过”。
+- ⏳ 在 verify 模板增加：缺失链路、Mock 越界、运行时停止路径三个必查项。
+- ✅ 本次已将真实证据写入 `verify.md`，并用本节覆盖 § 12 的过时完成判断。
+
+### 15.7 闭环状态
+
+- 阶段五验证活动：✅ 已执行。
+- 阶段五结果：❌ 未通过。
+- 步骤六：本文仅为自动起草，**等待用户确认改进项，不能判定任务闭环**。
