@@ -5,9 +5,9 @@ import { test, expect } from '@playwright/test';
 test.describe('AI 推送 端到端', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    // dev-login 拿 token
+    // dev-login 拿 token · 用绝对 URL（next.config.ts 无 /api proxy）
     const token = await page.evaluate(async () => {
-      const res = await fetch('/api/auth/dev-login?user_id=1');
+      const res = await fetch('http://localhost:8000/api/auth/dev-login?user_id=1');
       const data = await res.json();
       return data.access_token;
     });
