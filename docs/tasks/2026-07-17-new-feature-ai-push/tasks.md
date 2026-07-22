@@ -295,12 +295,12 @@
 
 ### 阶段 H · Harness 治理（阶段 3 · 1h）
 
-- [x] T33: ✅ DONE — commit `dd546d9`（共享 index 碰撞，与并行 T20 同 commit）· AST 空测试阻断器
+- [x] T33: ✅ DONE — commits `dd546d9` + `05c7d57` · AST 空测试阻断器
   - 文件: `scripts/check_test_quality.py` + `backend/tests/test_check_test_quality.py`
   - 测试: ✅ **24/24 通过**；覆盖 sync/async `pass`、`...`、仅 docstring、占位注释/docstring、函数/类级无理由 `skip/skipif`、有理由 skip 取代未实现测试、合法 `assert` / `pytest.raises` / Mock 断言 / helper 契约、CLI 退出码
   - 依赖: § 9 假绿灯审计基线
-  - 估时: 1h → 实际约 35 min
-  - commit: `dd546d9` `test(api): T20 重写 13 endpoint 真实 case · 3 skip 标生产 bug`；⚠️ 原计划独立 `ci(test)` commit，被并行 T20 在共享工作树抢先提交，未重写他人 commit
+  - 估时: 1h → 实际约 45 min
+  - commit: 核心初版被共享 index 碰撞并入 `dd546d9`（T20）；边界修正 + 第 24 条回归测试独立 commit `05c7d57 ci(test): reject empty and placeholder Python tests`
   - 产出: ✅ `python3 scripts/check_test_quality.py backend/tests` 可复现；当前真实工作树发现 **10 violations** 并返回 **exit 1**（T20 6 个占位标记 + T24 4 个空 E2E）
   - 边界: 本阶段只交付 AST gate；GitHub Actions 接线属于 Harness 阶段 4，不在 T33 范围
 
@@ -413,8 +413,8 @@ T1 ─→ T2 ─→ T3 ─→ T5 ─→ T6 ─→ T7 ─→ T8 ─→ T9 ─→ 
 | T2 | `d7e09cd` | 45min | ~30min |
 | T5 | `4f8c92d` | 1h | ~45min |
 | T6 | `560ba40` | 1h | ~45min |
-| T33 | `dd546d9`（与 T20 混合提交） | 1h | ~40min |
-| **小计** | 5 commits | 4.75h | ~3h40min |
+| T33 | `dd546d9`（初版，与 T20 混合）+ `05c7d57`（边界修正） | 1h | ~45min |
+| **小计** | 6 commits（T33 跨 2 commit） | 4.75h | ~3h45min |
 
 ---
 
@@ -561,6 +561,6 @@ Phase 8 · Harness 治理（T33，1h）         ← 2026-07-22 ✅ DONE
 | 真实仓库扫描 | `40 files / 668 tests / 10 violations`，退出码 `1` |
 | 当前 violations | T20 6 个占位标记 + T24 4 个空 E2E |
 | 本阶段未做 | 不改 T20/T24；不接 GitHub Actions；不写最终 verify/retro |
-| commit 边界 | ⚠️ `dd546d9` 同时含 T20 + T33；原因是并行任务提交共享 index，未做破坏性历史重写 |
+| commit 边界 | ⚠️ `dd546d9` 同时含 T20 + T33 初版；原因是并行任务提交共享 index，未做破坏性历史重写；最终边界修正已独立提交 `05c7d57` |
 
 ---
