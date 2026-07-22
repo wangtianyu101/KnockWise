@@ -216,7 +216,7 @@
   - 产出: ✅ **0 stub** · 5 真实断言 · pytest 660 collect / 660 pass / 0 fail / 4 xfail（vs 之前 660/660/0/4 · 净效果 stub→真实 · 总数不变因为 stub 也算 pass）
   - 注: fixture 用 inline XML 字符串（不走文件系统）· 无新增 fixture 文件
 
-- [x] T24: ✅ DONE — commit pending 重写（5 真实 case · push_daily 编排 + email stub 验证）
+- [x] T24: ✅ DONE — commit `892c9ec` 重写（5 真实 case · push_daily 编排 + email stub 验证）
   - 文件: `backend/tests/e2e/test_digest_push.py`（重写 · 211 行）
   - 测试: ✅ **5 真实 case 全 pass**
     - `test_full_cron_to_db_to_api_happy` — 8 源成功 · 5 候选过阈值 · DB add 6 次（1 daily + 5 items）+ commit
@@ -226,7 +226,7 @@
     - `test_email_send_raises_not_implemented` — EmailService._send_via_resend → NotImplementedError（生产 P0 · 待 resend SDK 集成）
   - 依赖: T8, T15, T18
   - 估时: 1h（vs 估时 2h · 提前）
-  - commit: `test(e2e): T24 重写 5 真实 case · 覆盖 push_daily 编排 + email stub` — **待 commit**
+  - commit: `892c9ec test(e2e): T24 重写 5 真实 case · 覆盖 push_daily 编排 + email stub`
   - 产出: ✅ **0 stub · 5 真实断言 · cron→DB→API 编排完整覆盖** · pytest 682/3 skip/4 xfail（vs 之前 678/3 skip/4 xfail · +4 真实断言）· 邮件仍 NotImplementedError（生产 P0 待补）
 
 ### 阶段 F · 前端（5 页面 + 5 组件 · 5h）
