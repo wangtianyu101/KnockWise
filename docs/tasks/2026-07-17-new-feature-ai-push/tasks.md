@@ -194,12 +194,12 @@
   - 产出: ✅ **0 假绿灯 · 36 真实 digest 测试覆盖** · pytest 668 collect / 664 pass / 4 xfail / 0 fail（vs 681/494/183/4 删除前）
   - verifier: ✅ PASS · 唯一偏差 = T21 commit hash 已补（verifier 报"待 commit" → 改为 `acca478`）
 
-- [x] T22: ✅ DONE — commit pending 拆分（test_digest_llm.py 测不存在的代码 · 删除）
+- [x] T22: ✅ DONE — commit `8fe0f39` 拆分（test_digest_llm.py 测不存在的代码 · 删除）
   - 文件: ✅ **`backend/tests/services/test_digest_llm.py` 已删除**
   - 测试: ✅ **False-positive 纠正**—— `digest` 模块**没有 LLM 调用**（`select_top_n` 是确定性贪心算法 · `summary` 是 RSS feedparser 解析 · `vibe` 是硬编码字符串）· `qa_service` 有 LLM 但不在 digest 路径
   - 依赖: T6, T7
   - 估时: 15 min（vs 估时 1h · 提前 · 决策 1 路径要求"重写 LLM mock"，但代码层面无 LLM → 删除比重写正确）
-  - commit: `test(digest): T22 删 test_digest_llm.py 测不存在代码` — **待 commit**
+  - commit: `8fe0f39 test(digest): T22 删 test_digest_llm.py 测不存在代码`
   - 产出: ✅ **0 假绿灯 · 4 stub 删除** · pytest 660 collect / 660 pass / 0 fail / 4 xfail（vs 之前 664/664/0/4）· 若未来 digest 真的用 LLM 再补 spec + 测试
 
 - [ ] T23: ⚠️ STUB — audit 2026-07-21（详见 § 9）
