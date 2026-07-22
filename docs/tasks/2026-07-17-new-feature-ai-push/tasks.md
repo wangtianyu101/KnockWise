@@ -202,7 +202,7 @@
   - commit: `8fe0f39 test(digest): T22 删 test_digest_llm.py 测不存在代码`
   - 产出: ✅ **0 假绿灯 · 4 stub 删除** · pytest 660 collect / 660 pass / 0 fail / 4 xfail（vs 之前 664/664/0/4）· 若未来 digest 真的用 LLM 再补 spec + 测试
 
-- [x] T23: ✅ DONE — commit pending 重写（5 真实 case · RSS 2.0 + Atom 1.0 + 重试 + 部分失败）
+- [x] T23: ✅ DONE — commit `00441f8` 重写（5 真实 case · RSS 2.0 + Atom 1.0 + 重试 + 部分失败）
   - 文件: `backend/tests/services/test_rss_fetch.py`（重写 · 75 行）
   - 测试: ✅ **5 真实 case 全 pass**（3 解析 + 1 重试 + 1 多源并行）
     - `test_anthropic_rss_parses` — RSS 2.0 解析 · RFC 822 日期 → ISO 8601
