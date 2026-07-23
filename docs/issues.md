@@ -24,6 +24,19 @@
 > - 审计任务：[`docs/tasks/2026-07-21-issues-audit/decisions.md`](tasks/2026-07-21-issues-audit/decisions.md)（议题 A/B/C/D/F · 1-10/15-17）
 > - V4 AI 推送：[`docs/tasks/2026-07-17-new-feature-ai-push/decisions.md`](tasks/2026-07-17-new-feature-ai-push/decisions.md)（V4 决策 1/2 = 原审计 13/14 · 已迁）
 > - **CI 失败自动修复（2026-07-22 v2）**：[`docs/tasks/2026-07-22-new-feature-ci-autofix/decisions.md`](tasks/2026-07-22-new-feature-ci-autofix/decisions.md)（决策 1-10 全拍 = 方案 1 + Draft PR + 3 次/commt + job 白名单加固 + 外部 check + $20/月 + Action pin SHA + 双 job + fork 排除 + 日志净化 · 含安全审查 4 道关）
+> - **pre-commit DOD checker 退出码（2026-07-23）**：[`docs/tasks/2026-07-23-bug-precommit-p0-gates/p0-1-dod-exit/decisions.md`](tasks/2026-07-23-bug-precommit-p0-gates/p0-1-dod-exit/decisions.md)（决策 1：方案 A · POSIX 显式 `output + rc` + 3 个回归场景 · `fix-mini` · ✅ 已完成 commit `d91fdef`+`ee6da13`+`9841c38`）
+> - **pre-commit 环境 Gate（2026-07-23）**：[`docs/tasks/2026-07-23-bug-precommit-p0-gates/p0-2-environment-gate/decisions.md`](tasks/2026-07-23-bug-precommit-p0-gates/p0-2-environment-gate/decisions.md)（决策 1：风险范围感知的 fail closed + 最小健康探针 + 8 个回归场景 · `fix-mini` · ✅ 已完成 commit `e0c9995`）
+> - **任务状态语义与传播链（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-task-status-semantics/decisions.md`](tasks/2026-07-23-refactor-task-status-semantics/decisions.md)（决策 1：任务级三事实 + 阶段级验收 · `[x]` 仅表示 implemented · 删除裸 DONE · `refactor-6`）
+> - **任务路径、阶段与条件产物契约（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-task-artifact-contract/decisions.md`](tasks/2026-07-23-refactor-task-artifact-contract/decisions.md)（决策 1：最小 task.yaml + check-task.py · 测试证据多落点 · INDEX 校验 · `refactor-6`）
+> - **CI Playwright 关键旅程 Smoke（2026-07-23）**：[`docs/tasks/2026-07-23-new-feature-ci-playwright-smoke/decisions.md`](tasks/2026-07-23-new-feature-ci-playwright-smoke/decisions.md)（决策 1：真实 MySQL/FastAPI/Next 核心面试生命周期 · 观察 20 次后再晋升 required · `full-6`）
+> - **Required Checks / Branch Protection（2026-07-23）**：[`docs/tasks/2026-07-23-new-feature-required-checks/decisions.md`](tasks/2026-07-23-new-feature-required-checks/decisions.md)（决策 1：Repository ruleset + enforce admins + 启用前清理 + break-glass 契约 · `full-6`）
+> - **CI auto-fix v4 修复范围与文档漂移（2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-autofix-safety-drift/decisions.md`](tasks/2026-07-23-bug-ci-autofix-safety-drift/decisions.md)（决策 1：v3 + 7 项 P0 残留 + 4 处文档漂移同步；不实施代码 · `refactor-6`）
+> - **P1 测试基础架构 L1-L5 + 追溯 + Fixture（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-test-foundation/decisions.md`](tasks/2026-07-23-refactor-test-foundation/decisions.md)（决策 1：L1-L5 Mock 边界 + Traceability Matrix + E2E Fixture 三位一体 · `refactor-6`）
+> - **P1 测试治理与质量 xfail/AI 评估/a11y+性能（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-test-governance-quality/decisions.md`](tasks/2026-07-23-refactor-test-governance-quality/decisions.md)（决策 1：xfail 静态 metadata + AI 离线 contract + a11y/perf 报告型 · `refactor-6`）
+> - **P1 产品基础分层 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-foundation/decisions.md`](tasks/2026-07-23-refactor-product-foundation/decisions.md)（决策 1：问题证据 baseline 字段 + 指标字典分层 + 埋点按层强制 · `refactor-6`）
+> - **P1 验收与学习 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-verification-learning/decisions.md`](tasks/2026-07-23-refactor-product-verification-learning/decisions.md)（决策 1：轻量用户验收 + Outcome Review 7/14/30 + 旅程追踪按 L0-L3 触发 · `refactor-6`）
+> - **P2 治理清理 4 项合一（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)（决策 1：skill 更新 + 文档 checker + frontmatter 升级 + 长期 §6.11 退役规则 · `refactor-6`）
+> - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
 >
 > 本节是简表镜像 · 详细记录请看对应 decisions.md
 
@@ -51,6 +64,19 @@
 | 20 | 🆕 CI auto-fix 双 job 权限分层（v2 新增）→ [CI 决策 8](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ diagnostic（read-only）+ apply-fix（env approval） | ✅ 已决策 |
 | 21 | 🆕 CI auto-fix Fork PR 排除（v2 新增）→ [CI 决策 9](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 不处理 fork PR | ✅ 已决策 |
 | 22 | 🆕 CI auto-fix 日志净化（v2 新增）→ [CI 决策 10](tasks/2026-07-22-new-feature-ci-autofix/decisions.md) | ✅ 仅传 job 名 + 错误类型 + 截断字符串 | ✅ 已决策 |
+| 23 | 🆕 pre-commit DOD checker 退出码 → [决策 1](tasks/2026-07-23-bug-precommit-p0-gates/p0-1-dod-exit/decisions.md) | ✅ 方案 A：显式 `output + rc` + 3 个回归场景 | ✅ 已完成（commit `d91fdef`+`ee6da13`+`9841c38` · 独立 verifier 4 维度 PASS） |
+| 24 | 🆕 pre-commit 环境缺失/损坏 Gate → [决策 1](tasks/2026-07-23-bug-precommit-p0-gates/p0-2-environment-gate/decisions.md) | ✅ 风险范围感知的 fail closed + 8 个回归场景 | ✅ 已完成（commit `e0c9995` · 30/30 + 722/722 PASSED） |
+| 25 | 🆕 任务状态语义与传播链 → [决策 1](tasks/2026-07-23-refactor-task-status-semantics/decisions.md) | ✅ task 三事实 + phase acceptance；移除裸 DONE | ✅ 已决策 · 待规格 |
+| 26 | 🆕 任务路径、阶段与条件产物契约 → [决策 1](tasks/2026-07-23-refactor-task-artifact-contract/decisions.md) | ✅ 最小 task.yaml + check-task.py；测试证据多落点 | ✅ 自动决策 · 待规格 |
+| 27 | 🆕 CI Playwright 关键旅程 Smoke → [决策 1](tasks/2026-07-23-new-feature-ci-playwright-smoke/decisions.md) | ✅ 真实核心面试生命周期；观察 20 次后再 required | ✅ 自动决策 · 待规格 |
+| 28 | 🆕 Required Checks / Branch Protection → [决策 1](tasks/2026-07-23-new-feature-required-checks/decisions.md) | ✅ Repository ruleset + enforce admins + break-glass 契约 | ✅ 自动决策 · 待规格 |
+| 29 | 🆕 CI auto-fix v4 修复范围与文档漂移 → [决策 1](tasks/2026-07-23-bug-ci-autofix-safety-drift/decisions.md) | ✅ v3 + 7 项 P0 残留 + 4 文档同步 | ✅ 自动决策 · 待实施授权 |
+| 30 | 🆕 P1 测试基础架构 L1-L5 + 追溯 + Fixture → [决策 1](tasks/2026-07-23-refactor-test-foundation/decisions.md) | ✅ L1-L5 + Traceability + E2E Fixture 三位一体 | ✅ 自动决策 · 待规格 |
+| 31 | 🆕 P1 测试治理与质量 xfail/AI 评估/a11y+性能 → [决策 1](tasks/2026-07-23-refactor-test-governance-quality/decisions.md) | ✅ xfail 静态 metadata + AI 离线 contract + a11y/perf 报告型 | ✅ 自动决策 · 待规格 |
+| 32 | 🆕 P1 产品基础分层 L0-L3 → [决策 1](tasks/2026-07-23-refactor-product-foundation/decisions.md) | ✅ 问题证据 baseline 字段 + 指标字典分层 + 埋点按层强制 | ✅ 自动决策 · 待规格 |
+| 33 | 🆕 P1 验收与学习 L0-L3 → [决策 1](tasks/2026-07-23-refactor-product-verification-learning/decisions.md) | ✅ 用户验收 + Outcome Review 7/14/30 + 旅程追踪按 L0-L3 触发 | ✅ 自动决策 · 待规格 |
+| 34 | 🆕 P2 治理清理 4 项合一 → [决策 1](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md) | ✅ skill 更新 + 文档 checker + frontmatter + 长期 §6.11 退役规则 | ✅ 自动决策 · 待规格 |
+| 35 | 🆕 test_ci_workflow.py 旧断言（v39） → [决策 1](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md) | ✅ 最小修复：单函数重命名 + SHA pin 3 断言 | ✅ 已完成（commit `d5c11e1` · 714/714 PASSED） |
 
 ---
 
@@ -308,6 +334,242 @@ DELETE FROM user_questions WHERE user_id = ?;
 - [`docs/tasks/2026-07-17-new-feature-ai-push/tasks.md`](tasks/2026-07-17-new-feature-ai-push/tasks.md) § 9.1/§ 9.6/§ 9.7（双时间线对照 + T33/T34 实施证据）
 - [`docs/tasks/2026-07-17-new-feature-ai-push/retro.md`](tasks/2026-07-17-new-feature-ai-push/retro.md)（标题"实施完成"仍待改为"阶段性实现，验证未完成"）
 - [`docs/rules/milestones.md`](rules/milestones.md) V4 状态（"全部完成"应改"核心功能已实现，测试与交付验证修复中"）
+
+---
+
+### 债务 11 — pre-commit DOD checker 失败退出码被管道吞掉 🔴 P0 NEW
+
+**位置**：`scripts/pre-commit:105-107`
+
+**背景**：DOD 校验使用 `if ! python3 scripts/check-step.py ... 2>&1 | tail -10; then`。当前脚本为 `#!/bin/sh` 且只有 `set -e`；checker 返回非零而 `tail` 正常返回 0 时，管道按末端命令返回 0，`!` 后条件为 false，`failed=1` 不执行。
+
+**影响**：不符合 0-6 步 DOD 的任务文档可能通过本地 pre-commit，形成机器 gate 假绿；不影响业务数据。
+
+**2026-07-23 决策**：✅ 采用方案 A——POSIX 兼容的显式 `output + rc` 捕获，并增加 3 个回归场景：合法文档通过、非法文档阻断、长输出截断后仍阻断。明确不捆绑环境 fail-closed、hook 安装、全局 `pipefail` 或 pre-commit 重构。
+
+**状态**：🔴 已决策 · 待用户明确“开始实施”后按 `fix-mini` 进入 4 步。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-bug-precommit-p0-gates/p0-1-dod-exit/research.md)
+- [`decisions.md`](tasks/2026-07-23-bug-precommit-p0-gates/p0-1-dod-exit/decisions.md)
+
+---
+
+### 债务 12 — pre-commit 环境缺失或损坏时跳过 Gate 🔴 P0 NEW
+
+**位置**：`scripts/pre-commit:21-24,43-46`
+
+**背景**：相关 backend/frontend 文件已暂存时，hook 仅检查 `.venv` / `node_modules` 目录；目录缺失则警告并跳过 pytest/tsc，最后仍可能显示全部通过。现有恢复提示还引用不存在的 `scripts/setup.sh`。
+
+**影响**：本地没有任何测试执行证据却产生成功信号；目录存在但 binary 或工具损坏也缺少明确的前置健康判定。当前 required checks 尚未完全配置，不能仅依赖远程 CI 形成不可绕过闭环。
+
+**2026-07-23 决策**：✅ 采用风险范围感知的 fail closed——相关可执行、测试、依赖和配置改动才触发；测试与生产代码同等要求真实执行；纯文档不触发。后端检查可执行 Python + pytest 探针，前端检查本地 `.bin/tsc`；增加 8 个回归场景并修正恢复命令。
+
+**状态**：🔴 已决策 · 待用户明确“开始实施”后按 `fix-mini` 进入 4 步。
+
+**明确排除**：hook 自动安装、required checks、bypass 审计、多 profile setup、`start.sh` 服务健康、全 hook 重构、债务 11。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-bug-precommit-p0-gates/p0-2-environment-gate/research.md)
+- [`decisions.md`](tasks/2026-07-23-bug-precommit-p0-gates/p0-2-environment-gate/decisions.md)
+
+---
+
+### 债务 13 — `[x] DONE` 混合实施、测试、验证和用户验收语义 🔴 P0 NEW
+
+**位置**：`AGENTS.md` § 6.5/6.7、`scripts/check-step.py::check_tasks()`、各任务 `tasks.md` / `verify.md` / `retro.md` / `docs/rules/milestones.md`
+
+**背景**：当前 `[x]` 与 `✅ DONE` 会在实现 commit 后写入，但独立 verifier 发生在 commit 之后；因此可能先 DONE、后 FAIL。V4 T29 已出现 tasks DONE 与 Playwright 5 failed / 0 passed 并存，且状态曾继续传播到 retro 和 milestones。
+
+**影响**：任务实施事实、测试结果、独立 verifier 和阶段用户验收被压缩成一个布尔值；FAILED 仍可能被下游解释为完成，反向也会出现 verify 已通过但 tasks 未回写。
+
+**2026-07-23 决策**：✅ 采用最小正交事实模型：task 记录 implementation/test/verifier；phase 记录 acceptance。`[x]` 只表示 implementation 已落入 commit，删除新任务格式中的裸 DONE；`[x] + FAIL` 合法，但 `FAIL + DONE/VERIFIED/阶段完成` 非法。不使用 frontmatter/checkbox/table 三份状态副本，不全量迁移历史任务。
+
+**状态**：🔴 已决策 · 按 `refactor-6` 等待用户指令进入步骤 1 规格。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-refactor-task-status-semantics/research.md)
+- [`decisions.md`](tasks/2026-07-23-refactor-task-status-semantics/decisions.md)
+
+---
+
+### 债务 14 — 任务路径、阶段与条件产物缺少目录级机器契约 🔴 P0 NEW
+
+**位置**：`scripts/check-step.py`、`scripts/pre-commit`、`docs/DOD.md`、任务模板与 `docs/tasks/*/`
+
+**背景**：当前 checker 只校验已经存在的单个文件，无法发现当前阶段应存在但缺失的核心或条件产物；也无法区分未到阶段、路径模式跳过与真正违规。pre-commit 还以 staged path 触发、却读取 working-tree 内容，存在检查版本与提交版本错位。
+
+**影响**：缺失 `api-spec`、`design-spec`、测试证据等仍可假绿；机械强制 `test-cases.md` 又会催生空模板和 tasks 双账。合法暂停可能被静态最终文件清单误报。
+
+**2026-07-23 自动决策**：✅ 新任务采用最小 `task.yaml`，唯一记录 mode/current_step/step_state/triggers/test_evidence；新增目录级 `check-task.py`，强制真实测试证据但允许 code/tasks-inline/standalone 多落点；pre-commit 固定检查 INDEX 视图。P0-5 的 task 状态继续留在 tasks.md，不复制到 manifest。旧任务标 `LEGACY_UNVERIFIED`，不维护永久白名单。
+
+**状态**：🔴 自动决策 · 按 `refactor-6` 待步骤 1 规格。
+
+**明确排除**：全量历史迁移、时间调度器、事件账本、证据哈希、自动 verifier/mutation test、第一版完整 diff trigger 推断。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-refactor-task-artifact-contract/research.md)
+- [`decisions.md`](tasks/2026-07-23-refactor-task-artifact-contract/decisions.md)
+
+---
+
+### 债务 15 — CI 缺少真实浏览器关键旅程 Smoke 🔴 P0 NEW
+
+**位置**：`.github/workflows/ci.yml`、`frontend/playwright.config.ts`、`frontend/tests/e2e/`
+
+**背景**：现有 CI 覆盖 pytest、Vitest、typecheck 和 build，但没有 Playwright job。现有 Digest Playwright 五场景主要使用浏览器内 API mock，不能证明 JWT、FastAPI、MySQL 与真实数据链；视觉套件也不适合直接充当功能 required gate。
+
+**影响**：页面路由、Provider、认证、浏览器运行时和前后端接缝问题只能在手工 L5 或审计阶段发现。直接把现有套件设 required 又会形成高成本低置信度假绿或 flaky gate。
+
+**2026-07-23 自动决策**：✅ 新增独立只读观察性 `playwright-smoke`：真实 MySQL + FastAPI + Next production + Chromium，运行 Dev Login → Dashboard → 创建 Interview → Room → Complete → History/API round-trip。零 secrets/写权限，单 worker、0 retries；连续 20 次零 flake且 P95 ≤4 分钟后交 P0-4 决定 required。
+
+**状态**：🔴 自动决策 · 按 `full-6` 待步骤 1 规格。
+
+**明确排除**：现有全套视觉测试、Digest 五场景、语音/LLM/LiveKit/RSS/邮件、Docker Compose 全栈、直接配置 required checks。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-new-feature-ci-playwright-smoke/research.md)
+- [`decisions.md`](tasks/2026-07-23-new-feature-ci-playwright-smoke/decisions.md)
+
+---
+
+### 债务 16 — 缺少 Required Checks / Branch Protection 安全门禁 🔴 P0 NEW
+
+**位置**：仓库 0 ruleset、`.github/workflows/`、AGENTS § 6.10、CI auto-fix 决策、`docs/issues.md` 多次"待配置"主账
+
+**背景**：CI workflow 已部署，但 3 个 check 未设 required；admin 仍可隐式 bypass；`auto-fix/**` 缺独立保护；emergency hotfix 缺 PR-only + 两人原则 + 不可绕过 break-glass policy + 外部审计。Backend tests 最近 3/3 failure、xfail 仍 `strict=False`、env approval 未配、origin/HEAD 漂移。
+
+**影响**：历史 41 空壳与 183 transient 已证明"workflow 存在 ≠ 阻断合并"。当前不锁即无法阻止下一轮假绿；锁错又会立刻 block main PR；auto-fix 与 break-glass 不区分会让不可信代码跨入默认分支。
+
+**2026-07-23 自动决策**：✅ 启用前清理（xfail→strict、Backend 失败、commit auto-fix-ci.yml、配 auto-fix-approval environment、修 origin/HEAD）后，启用 Repository ruleset `knockwise-quality-gates` 覆盖 main/feature/codex，required = `CI / Test quality` + `CI / Backend tests` + `CI / Frontend tests`，enforce admins=true、bypass 空、strict、non-fast-forward、conversation resolution；独立 `knockwise-auto-fix-branch-protection` 禁 force-push 与删除；break-glass 限于 PR + 两人原则 + incident ID + 不可绕过 policy check + 外部审计。auto-fix bot 永不在 bypass list；不做 merge queue / Playwright smoke required。
+
+**状态**：🔴 自动决策 · 按 `full-6` 待步骤 1 规格。
+
+**明确排除**：merge queue、独立 break-glass-policy check、Playwright smoke required、auto-fix env approval、workflow commit 治理（与 P0-6 协同）、admin 默认 bypass。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-new-feature-required-checks/research.md)
+- [`decisions.md`](tasks/2026-07-23-new-feature-required-checks/decisions.md)
+
+---
+
+### 债务 17 — CI auto-fix v3 后仍有 7 项 P0 残留与 4 处文档漂移 🔴 P0 NEW
+
+**位置**：`.github/workflows/auto-fix-ci.yml`、`scripts/ci/sanitize_ci_log.py`、`scripts/ci/test_security_e2e.sh`、`docs/tasks/2026-07-22-new-feature-ci-autofix/{spec,verify,retro}.md`
+
+**背景**：v3 决策（commit `4648d50` FU-3 + `66efa3c` SHA pin）后 4 道关在 workflow 行为层面对齐，但调研发现 7 个 P0 残留：diagnostic checkout PR 分支执行未信任脚本；checkout ref 用 `head_branch` 应为 `head_sha`；label description 计数器可被绕过；environment approval 缺 CI 验证；评论 API 错误；`key_string` 仍是 raw log 前 200 字符无 allowlist；filesystem 是 Claude Read 范围但 prompt 未声明为不可信。还有 4 处文档漂移（spec/verify/retro/test）已与现实矛盾。
+
+**影响**：当前 FU-3 改进仅是局部，AGENTS § 6.10 反例 "Fork PR 自动 checkout 并跑任意代码" 仍成立；自我豁免式假绿灯潜伏在 stale 注释与陈旧判断中；下一次 L5 真 CI 触发会立刻暴露。
+
+**2026-07-23 自动决策**：✅ v4 = v3 + 7 项 P0 残留修复（决策 11-17）+ 4 处文档同步（决策 18）。不立即实施代码；登记为实施阶段独立任务。
+
+**状态**：🔴 自动决策 · 按 `refactor-6` 待用户实施授权。
+
+**明确排除**：立即 workflow 重写、env approval 配置、merge queue、break-glass policy、Playwright smoke required、auto-fix env approval。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-bug-ci-autofix-safety-drift/research.md)
+- [`decisions.md`](tasks/2026-07-23-bug-ci-autofix-safety-drift/decisions.md)
+
+---
+
+### 债务 18 — P1 测试基础架构（L1-L5 边界 + 追溯矩阵 + E2E Fixture）缺统一主账 🔴 P1 NEW
+
+**位置**：`docs/rules/testing-rules.md`、`docs/templates/{tasks,verify,product-doc}-template.md`、`backend/tests/conftest.py`、`frontend/tests/e2e/`、`frontend/playwright.config.ts`
+
+**背景**：当前 L1-L5 Mock 边界散落于 `testing-rules.md § 6.5` + `conftest.py` + `tasks-template.md`，缺统一主账；Requirement→Scenario→TC 闭环没有稳定 ID 体系，verify.md 缺 EV/Metric；E2E fixture 复用默认 dev-user + 共享 DB，dev-login DB 异常回退虚拟 token 制造假绿，前端 `block_external_network` 缺失。
+
+**影响**：测试分类失效、追溯断链、dev-login fallback 可掩盖真实后端故障、E2E 无法真正证明端到端契约。直接进入实施会导致模板/状态机/checks 出现双 schema 漂移。
+
+**2026-07-23 自动决策**：✅ 三位一体合并：L1-L5 边界写入 `testing-rules.md § 6.5.1`；Traceability Matrix 10 列 + 10 条机器校验不变量写在 `verify.md`；E2E Fixture 8 项契约（DB 边界、用户命名空间、登录态、Digest 预生成、seed 只读、时间固定、清理幂等、并行隔离）。不实施代码，不改 mock 默认行为，不动 `seed_data/`，不引入新测试框架。
+
+**状态**：🟡 自动决策 · 按 `refactor-6` 待步骤 1 规格。
+
+**明确排除**：修改 `mock_db / mock_cache / mock_llm` 默认行为；修改 `seed_data/digest_sources.json`；改老 e2e 文件；引入 pytest-xdist / testcontainers / pytest-postgresql；任何代码实施与提交。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-refactor-test-foundation/research.md)
+- [`decisions.md`](tasks/2026-07-23-refactor-test-foundation/decisions.md)
+
+---
+
+### 债务 19 — xfail/skip / AI 评估 / a11y+性能 缺统一治理 🔴 P1 NEW
+
+**位置**：`backend/tests/**`、xfail marker、`pyproject.toml`、`check_test_quality.py`、AI 5 入口、frontend 组件与样式
+
+**背景**：4 个 xfail 全部 `strict=False` 且 issue 关联粗；pytest 全局无 `xfail_strict`；AST gate 不识别 xfail。AI 系统 5 入口（evaluate/report/followup_match/followup_text/qa_service/digest_llm）仅 1/5 有 timeout + 严格 schema，无离线 eval 体系。a11y 4 个 P0 运行时违规（VoiceRoom PTT 不可键盘 / SidebarGroup 假按钮 / Layout mobileOpen 死代码 / 暗色对比度），0 axe/lighthouse/web-vitals/browserslist 集成。
+
+**影响**：xfail 转 XPASS 不阻断；AI 质量无 golden set 与 judge；a11y/perf 全靠人工。直接设 hard gate 必然假绿/假红。
+
+**2026-07-23 自动决策**：✅ 三合一：xfail 静态 metadata（owner/issue/expiry/reason + strict=True）+ pytest 全局 `xfail_strict=true` + AST gate 扩展 4 violation code + 预算只降不升；AI 107 case 离线数据集 + 7 维度契约 + commit/nightly 双层；a11y/perf 9 维度契约 + 6 gate 全部 report-only + 20 次观察晋升。明确排除立即 hard gate 与新测试框架。
+
+**状态**：🟡 自动决策 · 按 `refactor-6` 待步骤 1 规格。
+
+**明确排除**：立即 hard gate；修改 `mock_db / mock_cache / mock_llm` 默认行为；改 `seed_data/digest_sources.json`；引入新测试框架；任何代码实施与提交。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-refactor-test-governance-quality/research.md)
+- [`decisions.md`](tasks/2026-07-23-refactor-test-governance-quality/decisions.md)
+
+---
+
+### 债务 20 — 产品基础缺 baseline 锚点、字典与埋点分层 🔴 P1 NEW
+
+**位置**：`docs/templates/product-doc-template.md`、`docs/templates/tasks-template.md`、`docs/tasks/2026-07-17-new-feature-ai-push/product-doc.md`、`docs/tasks/2026-07-21-issues-audit/`、`backend/utils/metrics.py`
+
+**背景**：product-doc 模板与已实施实例成功指标都缺 baseline 锚点（"DAU +15%"无当前值）；议题 F 关闭条件与产品指标字典完全脱钩；T19 observability 实际是 dead code（0 调用方）；trace_id 是进程级单值 race；audit 9 任务全无埋点挂载；tasks-template 缺 § 9 段；interview 用户角色碎片化（3 任务 3 persona）。CI auto-fix verify.md L4/L5 缺失但仍标"🟢 可进入 6 步"；issues-audit 任务无 verify.md。
+
+**影响**：未经验证阈值伪装为事实；埋点形式化但虚；最基本行为事实尚未可靠产生。
+
+**2026-07-23 自动决策**：✅ 分层 L0-L3 治理：L0 内部/一次性不要求；L1 探索性 1 假设 + 1 核心信号 + ≤3 事件；L2 核心闭环 1 北极星 + 2-3 护栏 + 完整字典 + 埋点测试；L3 稳定用户 + dashboard + cohort。product_baseline 字段含 problem_evidence + target_user + kill_criteria + dangerous_assumptions；指标字典 8 必填 + 4 可选；埋点按层强制并加 § 9 段；counter 真增断言门禁；不全量要求 5 项 AI 推送阈值。**反方纠正**：立即要求完整字典会产生形式主义，单人项目应分层。
+
+**状态**：🟡 自动决策 · 按 `refactor-6` 待步骤 1 规格。
+
+**明确排除**：立即要求所有功能完整字典；引入新分析平台；改业务表 schema 强埋点；改 `mock_db / mock_cache / mock_llm` 默认行为；任何代码实施与提交。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-refactor-product-foundation/research.md)
+- [`decisions.md`](tasks/2026-07-23-refactor-product-foundation/decisions.md)
+
+---
+
+### 债务 21 — 产品验收与学习缺统一治理 🔴 P1 NEW
+
+**位置**：`docs/templates/verify-template.md`、L5 staging 实测、议题 C 路由契约、AI 推送 product-doc 5 项指标、issues-audit verify 缺失、issues.md:516 角色碎片化
+
+**背景**：verify-template § 6 仅 4 行（结论 + 确认人 + 日期），无任务完成率/首次使用耗时/困惑点/访谈；AGENTS 双 gate 由开发者本人 = self-attestation；CI auto-fix verify L4 🟡 L5 ❌ 仍标"🟢 可进入 6 步"；issues-audit 任务无 verify.md；议题 C 路由 3 套并存 + LiveKitVoice 孤儿；AI 推送 `/ai/today` 与设计文档 `/push` 命名冲突；spec.md/api-spec.md 完全无路由契约；前端 hook 字段与后端 schema 无文档化映射；D7 "6-8 周不评估" 已落地但 7/30 天 review 未配套。
+
+**影响**：与已落地 L0-L3 分层冲突；与 5 起流程签字失真同源；立即强制 L2/L3 会推翻 D7 + 在单人项目 / 0 外部用户现状下形式化。
+
+**2026-07-23 自动决策**：✅ P1-10/11/12 三合一按 L0-L3 分层触发：P1-10 用户验收 L0 不要求、L1 1 句话假设、L2 2-3 种子用户、L3 5-10 cohort；P1-11 Outcome Review 三窗口（L2/L3 强制）：Day 7 runtime + Day 14 early-kill + Day 30 outcome，议题 D + F 作为前置依赖追踪内嵌，决策三分类 continue/pivot/kill；P1-12 旅程追踪走"新建 task 目录 + contract.yaml + 4 个机器校验脚本"，不动老 spec/api-spec（避免与议题 C 冲突）。**反方纠正**：与 D7 + L0-L3 + 5 起签字失真同源；前置必做 issues.md:516 角色碎片化合并 + 议题 F 观测基建 + 议题 C 路由收敛。
+
+**状态**：🟡 自动决策 · 按 `refactor-6` 待步骤 1 规格。
+
+**明确排除**：立即 L2/L3 全员强制；推翻 D7；修订已落地 L0-L3；引入新平台；任何代码实施与提交。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-refactor-product-verification-learning/research.md)
+- [`decisions.md`](tasks/2026-07-23-refactor-product-verification-learning/decisions.md)
+
+---
+
+### 债务 22 — P2 治理流程清理 4 项合一 🔴 P2 NEW
+
+**位置**：`.claude/skills/intervue-dev/SKILL.md` 过时架构、5 模板 TODO、4 research 模板缺 frontmatter、AGENTS.md §6.11 缺失
+
+**背景**：`.claude/skills/intervue-dev/SKILL.md:14-17` 声称 LangGraph 1.0 + Tailwind 4 + docker-compose 起服务（实际 langgraph 0.3.18 / tailwind 3.4.19 / Docker 走不通）= 3 处与现实不符；5 模板 TODO 接入的独立 checker 全部未实施；4 research 模板缺 frontmatter；AGENTS.md §6.5/§6.6 与 pre-commit/check-step 重复；12 个 2026-07-23 治理 task 实施率 8.3%。
+
+**影响**：过时 skill 误导 AI 助手；5 模板硬性 DOD 段未机器强制；4 research 模板不可机器解析；治理流程无退役机制。
+
+**2026-07-23 自动决策**：✅ 4 项合一：P2-2 物理删除 `.claude/skills/intervue-dev/` + deprecation banner；P2-3 扩 `check-step.py` 5 模板 + 共享 `check_spec_base.py` + pre-commit 5 行 + EXEMPT_* 白名单；P2-4 写 `_frontmatter-schema.md` + 4 research 补 frontmatter + 新建 `check-frontmatter.py`；长期 AGENTS.md §6.11 退役规则（5 段：删除条件 / 退役 ≠ 删除 / 季度归档 / retro 必须写明）。**反方纠正**：P2-1 物理拆 AGENTS.md 与 P2-5 立即删段不采纳（治理已饱和 + 实施率 8.3%），先实施已写规则。
+
+**状态**：🟡 自动决策 · 按 `refactor-6` 待步骤 1 规格。
+
+**明确排除**：P2-1 物理拆 AGENTS.md；P2-5 立即删 §6.5/§6.6；任何代码实施与提交。
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/research.md)
+- [`decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)
 
 ---
 
