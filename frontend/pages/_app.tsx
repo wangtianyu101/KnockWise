@@ -22,6 +22,21 @@ const LAYOUT_EXCLUDE_PATHS = new Set<string>([
   "/onboarding", // 注册/引导
 ]);
 
+// P1-6: Web Vitals console-only 上报 (不接 web-vitals 库, 不引新依赖)
+if (typeof window !== "undefined") {
+  try {
+    const reportWebVital = (metric: { name: string; value: number; id: string }) => {
+      // eslint-disable-next-line no-console
+      console.log("[web-vitals]", metric.name, metric.value)
+    }
+    // 注: reportWebVitals 实际接入需 web-vitals 库; 这里仅占位
+    // 等 web-vitals 加进 deps 后再 enable
+    void reportWebVital
+  } catch (e) {
+    // ignore
+  }
+}
+
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [queryClient] = useState(() => new QueryClient());

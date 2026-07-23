@@ -1,10 +1,29 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { vi, beforeEach, afterEach } from 'vitest';
 
-// Unit tests must mock every HTTP boundary. Playwright owns real localhost E2E.
-vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-  throw new Error(`network is disabled in Vitest; mock fetch for ${String(input)}`);
-}));
+// P1-6: block_external_network — 默认拦截真网络请求
+// 单测需要真网络时显式声明 (globalThis as any).__allowNetwork__() 即可
+const _realFetch = globalThis.fetch
+let _networkAllowed = false
+
+beforeEach(() => {
+  _networkAllowed = false
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+    if (_networkAllowed) return _realFetch(input as any)
+    throw new Error(
+      `block_external_network (P1-6): Vitest forbids real network. ` +
+      `Mock fetch for ${String(input)} or call (globalThis as any).__allowNetwork__() to override.`
+    )
+  }) as any
+})
+
+afterEach(() => {
+  globalThis.fetch = _realFetch
+})
+
+;(globalThis as any).__allowNetwork__ = () => {
+  _networkAllowed = true
+}
 
 // Mock Next.js router (避免引入 next/router 真实模块)
 vi.mock('next/router', () => ({

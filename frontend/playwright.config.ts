@@ -36,6 +36,13 @@ export default defineConfig({
       use: { ...devices['iPhone 13'] },
       testMatch: /mobile\.spec\.ts$/,
     },
+    // P1-6: a11y axe project (report-only, 不阻断)
+    {
+      name: 'chromium-a11y',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      testMatch: /a11y\.spec\.ts$/,
+      metadata: { purpose: 'P1-6 a11y axe report-only' },
+    },
   ],
 
   // 测试前自动起 dev server（如果端口 3000 没占用）
