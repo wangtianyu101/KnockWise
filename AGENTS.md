@@ -182,6 +182,7 @@
 - [ ] Pydantic schema 的 Literal/Range 校验有测试
 - [ ] Bug 修复有回归测试
 - [ ] `pytest` / `vitest` 全绿才 commit
+- [ ] **Shell/管道退出码测试**：若修改 hook 或含管道命令（`cmd1 | cmd2` / `if ! cmd`），必须有断言真实 rc 的回归测试（`subprocess.run(["sh", ...])` 端到端执行，不只 mock）—— POSIX `/bin/sh` 默认取管道末端退出码，原生 sh 不知道 `pipefail`。触发场景：fix-mini 路径 P0-1 / P0-2 等 hook 改动。
 - [ ] **安全审查**（涉及 CI/CD / Agent / 密钥 / 网络 / 文件系统时必做）
   - [ ] 过 § 6.10 节 4 道关（不可信输入净化 / 权限分层 / 供应链防御 / 人工 gate）
   - [ ] 无移动 tag（`@beta` / `@main` / `@v1`）· 第三方 Action 必 pin 完整 SHA
@@ -206,6 +207,8 @@
 > 4. **顶部总览表**（如 §8 "8.2 实施状态" 或 §10 总览）同步状态（✅ 已做 / ⏸ 暂缓）
 > 5. **§ 6 总估时 / § 7 实施顺序**同步更新（实际 commit hash + 实际耗时 vs 估时）
 > 6. **新增 commit 历史表**（task 文件底部 · 实际 commit hash + 实际耗时 · 偏差分析）
+
+> **tasks.md 提交前自检**：commit 前先跑 `python3 scripts/check-step.py tasks <path>` 确认 tasks.md 通过 DOD 校验 —— 避免提交后才被 hook 拦下（实际发生：P0-2 任务首版用 markdown 表格写任务项，被 check_tasks 的 `- [ ] T\d+` regex 漏过，提交时被 hook 阻断）。
 
 > **示例**：
 > - 完成 PR 6 实施 → 改 `docs/tasks/2026-07-09.../tasks.md`：
