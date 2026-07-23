@@ -96,18 +96,18 @@ T5 依赖 T4
 
 ---
 
-## 4. 任务↔测试映射（必填）
+## 4. 任务↔测试映射（必填 · 含 Traceability ID per P1-2）
 
 ```markdown
-| 任务 | 自动化测试 | 测试场景 |
-|---|---|---|
-| T1 | test_db.py::test_create_table | 建表成功 |
-| T2 | test_schema.py::test_subscribe_request | schema 校验 |
-| T3 | test_api.py::test_post_subscribe | POST /subscribe happy |
-| T4 | test_api.py::test_post_subscribe_error | POST /subscribe error |
+| 任务 | 自动化测试 | 测试场景 | REQ | SCN | TC | Level |
+|---|---|---|---|---|---|---|
+| T1 | test_db.py::test_create_table | 建表成功 | REQ-001 | SCN-001 | TC-001 | L1 |
+| T2 | test_schema.py::test_subscribe_request | schema 校验 | REQ-002 | SCN-002 | TC-002 | L1 |
+| T3 | test_api.py::test_post_subscribe | POST /subscribe happy | REQ-003 | SCN-003 | TC-003 | L3 |
+| T4 | test_api.py::test_post_subscribe_error | POST /subscribe error | REQ-003 | SCN-004 | TC-004 | L3 |
 ```
 
-**每个任务至少 1 个测试**（TDD 强制）。
+**每个任务至少 1 个测试**（TDD 强制）。**Level 列必填**，与 `docs/rules/testing-rules.md` § 6.5.1 L1-L5 主账对齐。**REQ/SCN/TC 列必填**，与 verify.md § 0.4 Traceability Matrix 10 列对齐。
 
 ---
 

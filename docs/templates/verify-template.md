@@ -52,6 +52,30 @@ related:
 |---|---|---|---|---|
 | `<REQ-ID>` | `<file:line>` | `<test node id>` | `<oracle>` | PASS / FAIL / BLOCKED |
 
+## 0.4 Traceability Matrix（必填 · per P1-2）
+
+| REQ | SCN | TC | Task | Test Node | Level | E2E Path | Evidence | Metric/Event | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| REQ-001 | SCN-001 | TC-001 | T8 | backend/tests/e2e/test_digest_push.py::test_full_cron_to_db_to_api_happy | L3 | E2E-001 | EV-001 | METRIC-002:event=digest_read | PASS |
+
+**ID 规则（per P1-2 决策）**：
+- `REQ-NNN` Requirement；`SCN-NNN` Scenario（引用 REQ）；`TC-NNN` Test Case（引用 SCN）
+- `EV-NNN` Evidence；`METRIC-NNN` Product Metric
+
+**10 条不变量（per P1-2 spec）**：
+1. 所有 ID 唯一
+2. SCN 引用存在的 REQ
+3. TC 引用存在的 SCN
+4. Task 至少引用一个 TC + Test Node（`foo.py::test_xxx`）
+5. PASS TC 至少有一个 L2/L3/L5 evidence
+6. E2E 行有 E2E-* + L3/L4 标记
+7. EV-* 退出码 0；BLOCKED 可无 artifact 但需原因
+8. Metric 绑定事件 + REQ
+9. Requirement 全部必需 TC PASS 才 PASS
+10. 禁止仅凭任务 checkbox 或全 pytest 绿判 PASS
+
+## L3 整合测试（必填）
+
 ## L3 整合测试（必填）
 
 - **范围**：<API contract / 数据库事务 / 跨模块 / E2E>

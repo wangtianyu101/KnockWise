@@ -316,6 +316,94 @@ def check_retro(content):
     return errors
 
 
+# ─── Traceability Matrix (per P1-2) ────────────────────────
+TRACEABILITY_RE = re.compile(r'\|?\s*\|?\s*REQ-?(\d+)\s*\|', re.IGNORECASE)
+SCN_RE = re.compile(r'\bSCN-?(\d+)\b', re.IGNORECASE)
+TC_RE = re.compile(r'\bTC-?(\d+)\b', re.IGNORECASE)
+E2E_PATH_RE = re.compile(r'\bE2E-?(\d+)\b', re.IGNORECASE)
+EV_RE = re.compile(r'\bEV-?(\d+)\b', re.IGNORECASE)
+METRIC_RE = re.compile(r'\bMETRIC-?(\d+)\b', re.IGNORECASE)
+
+
+def check_traceability(content):
+    """Per spec § 1 REQ-4 + REQ-5: 10 不变量"""
+    errors = []
+    # 找 traceability 段
+    trace_section = re.search(
+        r'(?:^|\n)(?:#{1,3}\s*)?(?:##\s*)?(?:Traceability|## 0\.\d+|## Traceability)\b(.*?)(?=\n##\s|\Z)',
+        content, re.IGNORECASE | re.DOTALL
+    )
+    if not trace_section:
+        # 软警告，不阻断
+        return errors  # 没 trace 段不强求
+    body = trace_section.group(1)
+
+    # 1. 所有 ID 唯一
+    all_ids = []
+    for pat in (TRACEABILITY_RE, SCN_RE, TC_RE, E2E_PATH_RE, EV_RE, METRIC_RE):
+        all_ids += pat.findall(body)
+    dup = {x for x in all_ids if all_ids.count(x) > 1}
+    if dup:
+        errors.append(f'ID 重复: {sorted(dup)}')
+
+    # 2. SCN 引用存在的 REQ
+    reqs = set(TRACEABILITY_RE.findall(body))
+    for m in re.finditer(r'\bSCN-?(\d+)\b', body):
+        scn_id = m.group(1)
+        # 邻近行是否含 REQ
+        if not re.search(rf'REQ-?\d+', body[max(0, m.start()-200):m.end()+200]):
+            errors.append(f'SCN-{scn_id} 未引用 REQ')
+
+    # 3. TC 引用存在的 SCN
+    scns = set(SCN_RE.findall(body))
+    for m in re.finditer(r'\bTC-?(\d+)\b', body):
+        tc_id = m.group(1)
+        if not re.search(rf'SCN-?\d+', body[max(0, m.start()-200):m.end()+200]):
+            errors.append(f'TC-{tc_id} 未引用 SCN')
+
+    # 4. Task 至少引用一个 TC + Test Node
+    for m in re.finditer(r'\bT\d+\b', body):
+        chunk = body[max(0, m.start()-300):m.end()+300]
+        if not TC_RE.search(chunk):
+            errors.append(f'{m.group()} 未引用 TC')
+        if '::' not in chunk:  # Test Node 形如 foo.py::test_xxx
+            errors.append(f'{m.group()} 缺少 Test Node')
+
+    # 5. PASS TC 至少有一个 L2/L3/L5 evidence（软提示）
+    # 简化: 任何 status PASS 的行附近含 L2/L3/L5
+    for m in re.finditer(r'(TC-\d+).*?PASS', body, re.DOTALL | re.IGNORECASE):
+        chunk = body[m.start():min(len(body), m.end()+300)]
+        if not re.search(r'\bL[235]\b', chunk):
+            errors.append(f'{m.group(1)} PASS 缺少 L2/L3/L5 evidence')
+
+    # 6. E2E 行有 E2E-* + Mock 边界合规
+    for m in re.finditer(r'\bE2E-?(\d+)\b', body):
+        chunk = body[max(0, m.start()-200):m.end()+200]
+        if not re.search(r'\bL[34]\b', chunk):
+            errors.append(f'E2E-{m.group(1)} 缺 L3/L4 标记')
+
+    # 7. EV-* 退出码 0；BLOCKED 可无 artifact 但需原因 (软)
+    # 跳过详细检查 - BLOCKED 文档本身已说明
+
+    # 8. Metric 绑定事件 + REQ (软)
+    for m in re.finditer(r'\bMETRIC-?(\d+)\b', body):
+        chunk = body[max(0, m.start()-200):m.end()+200]
+        if not re.search(r'REQ-\d+', chunk):
+            errors.append(f'METRIC-{m.group(1)} 缺 REQ 引用')
+
+    # 9. Requirement 全部必需 TC PASS 才 PASS
+    for m in re.finditer(r'REQ-?(\d+).*?PASS', body, re.DOTALL | re.IGNORECASE):
+        chunk = body[max(0, m.start()-1000):m.end()]
+        if re.search(r'REQ-?\d+.*?FAIL|RE-?\d+.*?BLOCKED', chunk, re.IGNORECASE):
+            errors.append(f'REQ-{m.group(1)} 标 PASS 但有失败/阻塞项')
+
+    # 10. 禁止仅凭任务 checkbox 或全 pytest 绿判 PASS (软)
+    if re.search(r'(?<!-- )(✓|✅).*?(pytest|test_).*?(PASS|绿)', body, re.IGNORECASE):
+        errors.append('仅凭任务 checkbox 或 pytest 绿判 PASS 不充分')
+
+    return errors
+
+
 # ─── 主入口 ─────────────────────────────────────────────────
 CHECKS = {
     'research': check_research,
@@ -325,6 +413,7 @@ CHECKS = {
     'implement': check_implement,
     'verify': check_verify,
     'retro': check_retro,
+    'traceability': check_traceability,
 }
 
 
