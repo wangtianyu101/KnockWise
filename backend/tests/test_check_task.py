@@ -117,8 +117,8 @@ class TestExempt:
     """Spec § 7.7-7.8: EXEMPT_TASKS 白名单"""
 
     def test_legacy_task_dir_exempted(self):
-        """S-7: 12 个 2026-07 老任务目录豁免"""
-        for day in ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"]:
+        """S-7: 2026-07-01~22 老任务目录豁免（LEGACY_UNVERIFIED）"""
+        for day in [f"{i:02d}" for i in range(1, 23)]:  # 01 to 22
             legacy = f"docs/tasks/2026-07-{day}-something"
             assert check_task.is_exempt(legacy) is True, f"Should exempt {legacy}"
 
@@ -127,11 +127,11 @@ class TestExempt:
         assert check_task.is_exempt("docs/archive/some-old-task/task.md") is True
         assert check_task.is_exempt("docs/archive/") is True
 
-    def test_new_task_not_exempted(self):
-        """Future task (2026-08-XX or later) should NOT be exempt"""
-        assert check_task.is_exempt("docs/tasks/2026-08-01-new-task") is True, \
-            "All 2026-XX should be exempt per design"
-        # Actually, after 2026-08 we should tighten - but for now exempt all 2026
+    def test_post_legacy_2026_07_23_not_exempted(self):
+        """2026-07-23 起新任务强制 task.yaml 契约"""
+        assert check_task.is_exempt("docs/tasks/2026-07-23-refactor-task-artifact-contract") is False
+        assert check_task.is_exempt("docs/tasks/2026-08-01-new-task") is False
+        assert check_task.is_exempt("docs/tasks/2027-01-01-future-task") is False
 
 
 @pytest.mark.skipif(not HAS_SCRIPT, reason="check_task module not importable")
