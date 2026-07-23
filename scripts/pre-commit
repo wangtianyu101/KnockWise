@@ -18,48 +18,86 @@ staged_files=$(git diff --cached --name-only)
 backend_changed=$(echo "$staged_files" | grep -E "^backend/" | grep -v "__pycache__" || true)
 frontend_changed=$(echo "$staged_files" | grep -E "^frontend/" | grep -v "node_modules" || true)
 
-# ─── 1. 后端 pytest ────────────────────────────────────────
+# ─── 1. 后端 pytest(风险范围感知的 fail closed + 最小健康探针 · P0-2)───
 if [ -n "$backend_changed" ]; then
   if [ ! -d "backend/.venv" ]; then
-    echo "⚠️  backend/.venv 不存在,跳过 pytest(首次 clone 后跑 ./scripts/setup.sh)"
-  else
-    echo "📦 backend 改动 → 跑 pytest..."
-    # 捕获真实退出码：`... | tail` 的退出码取自末端 tail(恒 0),会吞掉 pytest 失败
-    set +e
-    pytest_out=$(cd backend && ./.venv/bin/python -m pytest tests/ --tb=short -q 2>&1)
-    pytest_rc=$?
-    set -e
-    echo "$pytest_out" | tail -30
-    if [ "$pytest_rc" -ne 0 ]; then
-      echo ""
-      echo "❌ pytest 失败,禁止 commit"
-      echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
-      exit 1
-    fi
-    echo "✅ pytest 通过"
+    echo "❌ backend/.venv 不存在,禁止 commit"
+    echo "   恢复: cd backend && python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt"
+    echo "   绕过(仅紧急): PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
+  elif [ ! -x "backend/.venv/bin/python" ]; then
+    echo "❌ backend/.venv/bin/python 不可执行,禁止 commit"
+    echo "   恢复: rm -rf backend/.venv && cd backend && python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt"
+    echo "   绕过(仅紧急): PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
   fi
+  # 探针:pytest 是否可用(避免直接跑测试时才发现环境损坏)
+  set +e
+  pytest_probe=$(cd backend && ./.venv/bin/python -m pytest --version 2>&1)
+  pytest_probe_rc=$?
+  set -e
+  if [ "$pytest_probe_rc" -ne 0 ]; then
+    echo "❌ pytest 不可用,禁止 commit"
+    echo "   stdout/stderr: $pytest_probe"
+    echo "   恢复: cd backend && ./.venv/bin/python -m pip install -r requirements.txt"
+    echo "   绕过(仅紧急): PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
+  fi
+  echo "📦 backend 改动 → 跑 pytest..."
+  # 捕获真实退出码：`... | tail` 的退出码取自末端 tail(恒 0),会吞掉 pytest 失败
+  set +e
+  pytest_out=$(cd backend && ./.venv/bin/python -m pytest tests/ --tb=short -q 2>&1)
+  pytest_rc=$?
+  set -e
+  echo "$pytest_out" | tail -30
+  if [ "$pytest_rc" -ne 0 ]; then
+    echo ""
+    echo "❌ pytest 失败,禁止 commit"
+    echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
+  fi
+  echo "✅ pytest 通过"
 fi
 
-# ─── 2. 前端 tsc ───────────────────────────────────────────
+# ─── 2. 前端 tsc(风险范围感知的 fail closed + 最小健康探针 · P0-2) ──
 if [ -n "$frontend_changed" ]; then
   if [ ! -d "frontend/node_modules" ]; then
-    echo "⚠️  frontend/node_modules 不存在,跳过 tsc(首次 clone 后跑 npm install)"
-  else
-    echo "🎨 frontend 改动 → 跑 tsc..."
-    # 同 pytest：捕获真实退出码,避免 `| tail` 吞掉 tsc 失败
-    set +e
-    tsc_out=$(cd frontend && npx tsc --noEmit 2>&1)
-    tsc_rc=$?
-    set -e
-    echo "$tsc_out" | tail -30
-    if [ "$tsc_rc" -ne 0 ]; then
-      echo ""
-      echo "❌ tsc 失败,禁止 commit"
-      echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
-      exit 1
-    fi
-    echo "✅ tsc 通过"
+    echo "❌ frontend/node_modules 不存在,禁止 commit"
+    echo "   恢复: cd frontend && npm ci"
+    echo "   绕过(仅紧急): PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
+  elif [ ! -x "frontend/node_modules/.bin/tsc" ]; then
+    echo "❌ frontend/node_modules/.bin/tsc 不可执行,禁止 commit"
+    echo "   恢复: cd frontend && rm -rf node_modules && npm ci"
+    echo "   绕过(仅紧急): PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
   fi
+  # 探针:tsc 是否可用
+  set +e
+  tsc_probe=$(cd frontend && ./node_modules/.bin/tsc --version 2>&1)
+  tsc_probe_rc=$?
+  set -e
+  if [ "$tsc_probe_rc" -ne 0 ]; then
+    echo "❌ tsc 不可用,禁止 commit"
+    echo "   stdout/stderr: $tsc_probe"
+    echo "   恢复: cd frontend && npm ci"
+    echo "   绕过(仅紧急): PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
+  fi
+  echo "🎨 frontend 改动 → 跑 tsc..."
+  # 同 pytest：捕获真实退出码,避免 `| tail` 吞掉 tsc 失败
+  set +e
+  tsc_out=$(cd frontend && ./node_modules/.bin/tsc --noEmit 2>&1)
+  tsc_rc=$?
+  set -e
+  echo "$tsc_out" | tail -30
+  if [ "$tsc_rc" -ne 0 ]; then
+    echo ""
+    echo "❌ tsc 失败,禁止 commit"
+    echo "   绕过: PRE_COMMIT_SKIP=1 git commit ..."
+    exit 1
+  fi
+  echo "✅ tsc 通过"
 fi
 
 # ─── 3. 大 commit 警告(对治问题 #2 代码先行) ──────────────
