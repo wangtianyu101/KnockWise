@@ -1,0 +1,13 @@
+---
+schema: task/v1
+task_id: 2026-07-24-test-task
+mode: full-6
+current_step: 10
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: pending

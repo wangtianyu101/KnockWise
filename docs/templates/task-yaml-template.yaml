@@ -1,0 +1,19 @@
+---
+schema: task/v1
+task_id: YYYY-MM-DD-type-topic
+mode: full-6
+current_step: 0
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: pending
+metadata:
+  created: YYYY-MM-DD
+  author: user
+  related:
+    - research.md
+    - decisions.md

@@ -1,0 +1,23 @@
+---
+schema: task/v1
+task_id: 2026-07-23-refactor-task-artifact-contract
+mode: refactor-6
+current_step: 3
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: code
+  path: backend/tests/test_check_task.py::test_minimal_task_yaml_valid
+metadata:
+  created: 2026-07-23
+  author: user
+  related:
+    - research.md
+    - spec.md
+    - plan.md
+    - decisions.md
+    - tasks.md
