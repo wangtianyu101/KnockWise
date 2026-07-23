@@ -14,3 +14,4 @@ where = ["."]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+xfail_strict = true  # P1-4: xfail marker 必 strict=True

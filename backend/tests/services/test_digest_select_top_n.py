@@ -35,9 +35,13 @@ def make_scored(
 
 class TestSelectTopNDiversity:
     @pytest.mark.xfail(
-        reason="select_top_n 多样性未实现: DIVERSITY_MIN 键是 type/region 的值, "
-        "算法却当键查 (it.get('domestic') 恒 None) · 见 docs/issues.md 债务 9",
-        strict=False,
+        reason=(
+            "owner=backend-digest; "
+            "issue=docs/issues.md#digest-select-top-n-diversity; "
+            "expiry=2026-08-31; "
+            "reason=select_top_n 多样性未实现: DIVERSITY_MIN 键是 type/region 的值, 算法却当键查 (it.get('domestic') 恒 None)"
+        ),
+        strict=True,
     )
     def test_selects_5_with_diversity(self):
         """10 候选（含 2 国内 + 3 国外 + 5 模型 + 3 应用）→ 选 5 条满足多样性。"""

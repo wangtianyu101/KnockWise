@@ -71,9 +71,13 @@ def make_raw_item(
 
 class TestPushDailyHappyPath:
     @pytest.mark.xfail(
-        reason="composite_score 给合成测试项打分 < 0.75 阈值 + _classify_raw_item "
-        "覆盖测试显式 type/region → item_count 不达 5 · 见 docs/issues.md 债务 9",
-        strict=False,
+        reason=(
+            "owner=backend-digest; "
+            "issue=docs/issues.md#digest-digest-push-happy-path-1; "
+            "expiry=2026-08-31; "
+            "reason=composite_score 给合成测试项打分 < 0.75 阈值 + _classify_raw_item 覆盖测试显式 type/region → item_count 不达 5"
+        ),
+        strict=True,
     )
     @pytest.mark.asyncio
     async def test_returns_daily_id_and_vibe(self):
@@ -107,9 +111,13 @@ class TestPushDailyHappyPath:
         db.commit.assert_called_once()
 
     @pytest.mark.xfail(
-        reason="composite_score 给合成测试项打分 < 0.75 阈值 → 0 候选入选 · "
-        "见 docs/issues.md 债务 9",
-        strict=False,
+        reason=(
+            "owner=backend-digest; "
+            "issue=docs/issues.md#digest-digest-push-happy-path-2; "
+            "expiry=2026-08-31; "
+            "reason=composite_score 给合成测试项打分 < 0.75 阈值 → 0 候选入选"
+        ),
+        strict=True,
     )
     @pytest.mark.asyncio
     async def test_writes_5_items_to_db(self):
@@ -172,9 +180,13 @@ class TestPushDailyEmptyCase:
 
 class TestPushDailyPartialFailure:
     @pytest.mark.xfail(
-        reason="composite_score 给合成测试项打分 < 0.75 阈值 → daily_id=None · "
-        "见 docs/issues.md 债务 9",
-        strict=False,
+        reason=(
+            "owner=backend-digest; "
+            "issue=docs/issues.md#digest-digest-push-partial-failure; "
+            "expiry=2026-08-31; "
+            "reason=composite_score 给合成测试项打分 < 0.75 阈值 → daily_id=None"
+        ),
+        strict=True,
     )
     @pytest.mark.asyncio
     async def test_partial_fetch_failure_still_pushes(self):

@@ -13,6 +13,7 @@ import io
 import re
 import tokenize
 from dataclasses import dataclass
+import datetime
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -67,6 +68,105 @@ def _is_skip_decorator(decorator: ast.expr) -> bool:
     target = decorator.func if isinstance(decorator, ast.Call) else decorator
     name = _call_name(target)
     return name.endswith((".skip", ".skipif")) or name in {"skip", "unittest.skip"}
+
+
+def _is_xfail_decorator(decorator: ast.expr) -> bool:
+    """P1-4: 识别 @pytest.mark.xfail / @pytest.xfail"""
+    target = decorator.func if isinstance(decorator, ast.Call) else decorator
+    name = _call_name(target)
+    return name.endswith((".xfail",)) or name == "xfail"
+
+
+# P1-4: xfail metadata 4 字段
+_XFAIL_REQUIRED_FIELDS = ("owner", "issue", "expiry", "reason")
+_XFAIL_FIELD_RE = re.compile(r"\b(owner|issue|expiry|reason)\s*=\s*([^;,\n]+)")
+
+
+def _extract_xfail_metadata(reason_str: str) -> dict:
+    """从 reason 字符串提取 4 字段 metadata"""
+    return {m.group(1): m.group(2).strip() for m in _XFAIL_FIELD_RE.finditer(reason_str)}
+
+
+def _is_static_string(node: ast.AST) -> bool:
+    """reason 必须是静态字符串 (允许常量拼接)"""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return True
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod):
+        return _is_static_string(node.left) and _is_static_string(node.right)
+    if isinstance(node, ast.JoinedStr):
+        return all(_is_static_string(v) for v in node.values if isinstance(v, ast.FormattedValue))
+    return False
+
+
+def _get_xfail_strict(decorator: ast.expr) -> bool:
+    """从 @pytest.mark.xfail(strict=...) 取 strict 值；默认 True"""
+    if not isinstance(decorator, ast.Call):
+        return True  # 没参数 → strict 默认真
+    for kw in decorator.keywords:
+        if kw.arg == "strict":
+            if isinstance(kw.value, ast.Constant):
+                return bool(kw.value.value)
+            return True
+    return True
+
+
+def _xfail_decorator_violations(decorators: Iterable[ast.expr]) -> list[Violation]:
+    """P1-4 决策: 4 个 violation code:
+    - test-debt-metadata: 缺字段
+    - xfail-not-strict: strict=False
+    - test-debt-expired: expiry < today
+    - test-debt-budget-exceeded: 总数超预算 (预算统计由 main() 传)
+    """
+    violations = []
+    today = datetime.date.today()
+    for dec in decorators:
+        if not _is_xfail_decorator(dec):
+            continue
+        # reason must be static string
+        reason_node = _reason_from_call(dec if isinstance(dec, ast.Call) else ast.Call(func=dec, args=[], keywords=[]), skipif=False)
+        if reason_node is None or not _is_static_string(reason_node):
+            violations.append(Violation(
+                path=Path("<xfail>"), lineno=0,
+                code="test-debt-metadata",
+                message="xfail reason must be a static string (no f-strings, no variables)",
+            ))
+            continue
+        if not isinstance(reason_node, ast.Constant):
+            continue
+        reason_str = reason_node.value
+        # extract 4 fields
+        fields = _extract_xfail_metadata(reason_str)
+        missing = [f for f in _XFAIL_REQUIRED_FIELDS if f not in fields]
+        if missing:
+            violations.append(Violation(
+                path=Path("<xfail>"), lineno=0,
+                code="test-debt-metadata",
+                message=f"xfail reason missing fields: {missing} (need: owner=...; issue=...; expiry=YYYY-MM-DD; reason=...)",
+            ))
+            continue
+        # expiry 格式 + 是否过期
+        try:
+            exp_date = datetime.date.fromisoformat(fields["expiry"])
+            if exp_date < today:
+                violations.append(Violation(
+                    path=Path("<xfail>"), lineno=0,
+                    code="test-debt-expired",
+                    message=f"xfail expired on {fields['expiry']} (today: {today.isoformat()})",
+                ))
+        except ValueError:
+            violations.append(Violation(
+                path=Path("<xfail>"), lineno=0,
+                code="test-debt-metadata",
+                message=f"xfail expiry must be ISO YYYY-MM-DD (got: {fields['expiry']!r})",
+            ))
+        # strict
+        if not _get_xfail_strict(dec):
+            violations.append(Violation(
+                path=Path("<xfail>"), lineno=0,
+                code="xfail-not-strict",
+                message="@pytest.mark.xfail must be strict=True (per P1-4 decision)",
+            ))
+    return violations
 
 
 def _has_skip_decorator(decorators: Iterable[ast.expr]) -> bool:
@@ -191,6 +291,12 @@ def scan_file(path: Path) -> tuple[list[Violation], int]:
     for parent in ast.walk(tree):
         for child in ast.iter_child_nodes(parent):
             parents[child] = parent
+
+    # P1-4: xfail violations (function-level)
+    for function in ast.walk(tree):
+        if isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            violations.extend(_xfail_decorator_violations(function.decorator_list))
+
     tests = [
         node
         for node in ast.walk(tree)
