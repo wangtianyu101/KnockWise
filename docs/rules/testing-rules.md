@@ -66,6 +66,21 @@ Scheduler → Service → ORM → 隔离测试数据库 → FastAPI API
 
 E2E 必查：外部源部分失败的降级、持久化结果、API 查询同一数据、重复执行、进程重启后的幂等、启动与关闭路径。
 
+### § 6.5.1 L1-L5 边界主账（per P1-1 决策）
+
+| 层 | 必真实 | 允许 Mock | 禁止 | 触发命令 |
+|---|---|---|---|---|
+| L1 单元 | 被测函数 | 纯 fixture · 时间 (freezegun) | 框架 Runtime | `pytest tests/services -q` |
+| L2 服务集成 | service 公开方法链 | db · cache · clock · llm · email · rss | service 私有方法 | `pytest -m "not e2e"` |
+| L3 API 集成 | router + Pydantic 422 | db (AsyncMock) · get_current_user | mock 整个 handler | `pytest tests/api` + `pytest tests/integration` |
+| L4 E2E | scheduler + service + ORM + DB + API | 仅 rss · llm · email · clock | mock 上述 5 层任何 | `RUN_MYSQL_INTEGRATION=1 pytest tests/e2e` |
+| L5 Staging | 全栈真服务 | 无 | 任何 mock | `verify.md` 引用 |
+
+### § 6.5.2 Provider 边界例外
+
+- `service` 命名形如 `_fetch_and_parse` / `_send_email` 的 provider boundary method 在 L2 中可 patch
+- **不得**用来证明 service 内部逻辑正确性，仅用于替换 IO provider
+
 ## § 6.6 Gate 矩阵与状态口径
 
 | Gate | 最低证据 |
