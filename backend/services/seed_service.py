@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Question
+from models import DigestSource, Question
+
+logger = logging.getLogger(__name__)
 
 
 SEED_DIR = Path(__file__).parent.parent / "seed_data"
@@ -93,3 +96,73 @@ def get_questions_by_topic(topic: str) -> list[dict]:
                 if q.get("topic") == topic:
                     result.append(q)
     return result
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Digest Sources (V2 AI 推送 · 2026-07-25 修复 stub)
+# ═══════════════════════════════════════════════════════════════════
+
+DIGEST_SOURCES_SEED_FILE = "digest_sources.json"
+DEFAULT_DIGEST_SOURCE_COUNT = 8
+
+
+async def seed_default_digest_sources(db: AsyncSession) -> int:
+    """Seed 8 系统默认 digest_sources（幂等）。
+
+    Returns:
+        实际新插入的行数（已存在则返回 0）。
+
+    说明：
+        - 系统默认源 user_id IS NULL · 所有用户共享
+        - enabled=True（默认启用）· spec R5 独立性
+        - 重复调用安全：若 DB 已有 is_default=True 的 8 行 · 跳过
+    """
+    # 1. 幂等检查
+    existing_count = await db.scalar(
+        select(func.count(DigestSource.id)).where(
+            DigestSource.is_default.is_(True),
+            DigestSource.user_id.is_(None),
+        )
+    )
+    if existing_count and existing_count >= DEFAULT_DIGEST_SOURCE_COUNT:
+        logger.info(f"digest default sources already seeded: {existing_count} rows")
+        return 0
+
+    # 2. 读 seed JSON
+    seed_path = SEED_DIR / DIGEST_SOURCES_SEED_FILE
+    if not seed_path.exists():
+        logger.warning(f"digest seed file not found: {seed_path}")
+        return 0
+
+    seed_data = json.loads(seed_path.read_text(encoding="utf-8"))
+
+    # 3. 插入（去重 by URL）
+    inserted = 0
+    for item in seed_data:
+        # 已存在同名同 URL · 跳过
+        existing = await db.scalar(
+            select(DigestSource.id).where(
+                DigestSource.url == item["url"],
+                DigestSource.user_id.is_(None),
+            )
+        )
+        if existing:
+            continue
+
+        db.add(DigestSource(
+            name=item["name"],
+            url=item["url"],
+            category=item["category"],
+            type=item["type"],
+            region=item["region"],
+            enabled=True,
+            is_default=True,
+            last_item_count=0,
+        ))
+        inserted += 1
+
+    if inserted > 0:
+        await db.commit()
+        logger.info(f"seeded {inserted} default digest sources")
+
+    return inserted

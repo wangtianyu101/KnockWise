@@ -191,6 +191,16 @@ async def on_startup():
     except Exception as e:
         logger.warning(f"V3.1 collection seed skipped: {e}")
 
+    # V2 AI 推送: seed 8 默认 digest_sources（幂等 · stub 修复）
+    try:
+        from core.database import async_session
+        from services.seed_service import seed_default_digest_sources
+        async with async_session() as _db:
+            cnt = await seed_default_digest_sources(_db)
+            logger.info(f"digest default sources: {cnt} newly seeded (idempotent)")
+    except Exception as e:
+        logger.warning(f"digest sources seed skipped: {e}")
+
     # V3.7 · PR 3 定时任务调度器启动（混合拉取 · 每 6h 跑一次）
     try:
         from services.scheduler import init_question_sync_task
@@ -198,16 +208,57 @@ async def on_startup():
     except Exception as e:
         logger.warning(f"V3.7 question sync scheduler skipped: {e}")
 
+    # V2 AI 推送: DigestScheduler（每分钟检查 · 到点推 push_daily · stub 修复）
+    try:
+        import asyncio as _asyncio
+        globals()["_digest_task"] = _asyncio.create_task(_digest_loop())
+        logger.info("digest scheduler started (60s loop)")
+    except Exception as e:
+        logger.warning(f"digest scheduler skipped: {e}")
+
+
+async def _digest_loop():
+    """DigestScheduler 主循环 · 每 60s 调一次 check_and_push。
+
+    与 services/archive_service.py:start_archive_task 模式一致。
+    """
+    import asyncio
+    from core.database import async_session
+    from services.digest_scheduler import digest_scheduler
+
+    while True:
+        try:
+            async with async_session() as db:
+                result = await digest_scheduler.check_and_push(db)
+                if result["pushed"] > 0 or result["errors"] > 0:
+                    logger.info(
+                        f"digest scheduler: checked={result['checked']} "
+                        f"pushed={result['pushed']} skipped={result['skipped']} "
+                        f"errors={result['errors']}"
+                    )
+        except Exception as e:
+            logger.exception(f"digest scheduler loop error: {e}")
+        await asyncio.sleep(60)
+
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    """Phase 1a · 关 Redis 连接池 + 取消 archive task + V3.7 取消 question_sync task."""
+    """Phase 1a · 关 Redis 连接池 + 取消 archive task + V3.7 取消 question_sync task + digest task."""
     # V3.7 · PR 3 取消定时任务
     try:
         from services.scheduler import cancel_question_sync_task
         cancel_question_sync_task()
     except Exception as e:
         logger.warning(f"V3.7 question sync cancel skipped: {e}")
+
+    # V2 AI 推送: 取消 digest loop task
+    digest_task = globals().get("_digest_task")
+    if digest_task is not None and not digest_task.done():
+        digest_task.cancel()
+        try:
+            await digest_task
+        except (asyncio.CancelledError, Exception):
+            pass
 
     # 取消 archive task
     task = globals().get("_archive_task")
