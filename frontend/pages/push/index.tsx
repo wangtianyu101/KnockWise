@@ -58,6 +58,14 @@ export default function AiTodayPage() {
         ))}
       </section>
 
+      {/* 底部状态栏（T3 · mockup 01-today.html L217-219） */}
+      <p
+        data-testid="digest-status-bar"
+        className="text-center mt-8 text-[#64748b] text-[13px]"
+      >
+        {data.items.filter((it) => it.is_read).length}/{data.items.length} 已读 · 剩余 {Math.max(0, data.items.length - data.items.filter((it) => it.is_read).length)} 分钟 · 推送时间：每天 08:00 (Asia/Shanghai)
+      </p>
+
       <HideDialog
         open={hiddenCandidate !== null}
         onOpenChange={(open) => !open && setHiddenCandidate(null)}

@@ -1,6 +1,7 @@
 // hooks/useDigest.ts · T27
 import { useQuery, useMutation, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { useState } from 'react';
+import { getToken } from '@/lib/api';
 
 /**
  * 2026-07-22 audit 修复 · hooks 返回值
@@ -75,11 +76,22 @@ interface DigestSettings {
   blocked_tags: string[];
 }
 
+/**
+ * 2026-07-25 auth fix: 所有 fetch 改走 authHeaders() · 自动带 Authorization header
+ * 否则浏览器无 token 时后端返 403 · page 永远空
+ */
+function authHeaders(): Record<string, string> {
+  const t = getToken();
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (t) h['Authorization'] = `Bearer ${t}`;
+  return h;
+}
+
 export function useDigestToday(): QueryHookResult<DigestToday> {
   const qr = useQuery<DigestToday>({
     queryKey: ['digest', 'today'],
     queryFn: async () => {
-      const res = await fetch('/api/digest/today');
+      const res = await fetch('/api/digest/today', { headers: authHeaders() });
       if (!res.ok) throw new Error('Failed to fetch today');
       return res.json();
     },
@@ -93,7 +105,7 @@ export function useDigestDate(date: string | undefined): QueryHookResult<DigestT
     queryKey: ['digest', 'daily', date],
     queryFn: async () => {
       if (!date) throw new Error('date is required');
-      const res = await fetch(`/api/digest/daily/${date}`);
+      const res = await fetch(`/api/digest/daily/${date}`, { headers: authHeaders() });
       if (res.status === 404) {
         const err = new Error('NO_DAILY') as Error & { status?: number };
         err.status = 404;
@@ -113,7 +125,7 @@ export function useDigestBookmarks(filter: 'all' | 'model' | 'application' = 'al
     queryKey: ['digest', 'bookmarks', filter],
     queryFn: async () => {
       const url = filter === 'all' ? '/api/digest/bookmarks' : `/api/digest/bookmarks?type=${filter}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: authHeaders() });
       if (!res.ok) throw new Error('Failed to fetch bookmarks');
       return res.json();
     },
@@ -127,7 +139,7 @@ export function useAddBookmark() {
     mutationFn: async (item_id: string) => {
       const res = await fetch('/api/digest/bookmarks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ item_id }),
       });
       if (!res.ok) throw new Error('Failed to add bookmark');
@@ -144,7 +156,10 @@ export function useRemoveBookmark() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (item_id: string) => {
-      const res = await fetch(`/api/digest/bookmarks/${item_id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/digest/bookmarks/${item_id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
       if (!res.ok) throw new Error('Failed to remove bookmark');
     },
     onSuccess: () => {
@@ -159,7 +174,7 @@ export function useHideItem() {
     mutationFn: async (params: { item_id: string; reason: string; topic_keywords: string[] }) => {
       const res = await fetch('/api/digest/hide', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(params),
       });
       if (!res.ok) throw new Error('Failed to hide');
@@ -174,7 +189,7 @@ export function useMarkRead() {
     mutationFn: async (params: { item_id: string; duration_sec: number }) => {
       const res = await fetch('/api/digest/read', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(params),
       });
       if (!res.ok) throw new Error('Failed to mark read');
@@ -187,7 +202,7 @@ export function useDigestSources(): QueryHookResult<{ system_count: number; user
   const qr = useQuery<{ system_count: number; user_count: number; items: DigestSource[] }>({
     queryKey: ['digest', 'sources'],
     queryFn: async () => {
-      const res = await fetch('/api/digest/sources');
+      const res = await fetch('/api/digest/sources', { headers: authHeaders() });
       if (!res.ok) throw new Error('Failed to fetch sources');
       return res.json();
     },
@@ -201,7 +216,7 @@ export function useAddDigestSource() {
     mutationFn: async (source: { name: string; url: string; category: 'model' | 'application'; type: 'model' | 'application'; region: 'domestic' | 'overseas' }) => {
       const res = await fetch('/api/digest/sources', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(source),
       });
       if (!res.ok) throw new Error('Failed to add source');
@@ -218,7 +233,7 @@ export function usePatchDigestSource() {
       const { id, ...body } = params;
       const res = await fetch(`/api/digest/sources/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error('Failed to patch source');
@@ -232,7 +247,7 @@ export function useDigestSettings(): QueryHookResult<DigestSettings> {
   const qr = useQuery<DigestSettings>({
     queryKey: ['digest', 'settings'],
     queryFn: async () => {
-      const res = await fetch('/api/digest/settings');
+      const res = await fetch('/api/digest/settings', { headers: authHeaders() });
       if (!res.ok) throw new Error('Failed to fetch settings');
       return res.json();
     },
@@ -246,7 +261,7 @@ export function useUpdateDigestSettings() {
     mutationFn: async (patch: Partial<DigestSettings>) => {
       const res = await fetch('/api/digest/settings', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(patch),
       });
       if (!res.ok) throw new Error('Failed to update settings');

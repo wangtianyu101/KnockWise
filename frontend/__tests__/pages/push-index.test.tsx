@@ -10,6 +10,10 @@ vi.mock('next/router', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
+vi.mock('@/lib/api', () => ({
+  getToken: () => null,
+}));
+
 vi.mock('@/hooks/useDigest', () => ({
   useDigestToday: () => ({
     data: {
@@ -39,7 +43,7 @@ vi.mock('@/hooks/useDigest', () => ({
   useHideItem: () => ({ mutate: mocks.hideItem }),
 }));
 
-import AiTodayPage from '@/pages/push';
+import AiTodayPage from '@/pages/push/index';
 
 describe('/push', () => {
   beforeEach(() => vi.clearAllMocks());
