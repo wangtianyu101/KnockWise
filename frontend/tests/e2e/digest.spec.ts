@@ -49,6 +49,14 @@ async function installDigestApi(page: Page) {
         items: digestItems,
       });
     }
+    if (pathname.startsWith('/api/digest/daily/')) {
+      return fulfillJson(route, {
+        date: pathname.split('/').pop() ?? '2026-07-22',
+        vibe: '当日 5 条',
+        item_count: 5,
+        items: digestItems,
+      });
+    }
     if (pathname === '/api/digest/bookmarks' && request.method() === 'GET') {
       return fulfillJson(route, {
         total: 1,
@@ -78,34 +86,34 @@ test.describe('AI 推送端到端', () => {
     await installDigestApi(page);
   });
 
-  test('场景 1: 打开 /ai/today 看到 5 条 digest', async ({ page }) => {
-    await page.goto('/ai/today');
+  test('场景 1: 打开 /push 看到 5 条 digest', async ({ page }) => {
+    await page.goto('/push');
     await expect(page.locator('.digest-card')).toHaveCount(5);
     await expect(page.locator('.vibe-badge')).toContainText('今日 5 条');
   });
 
   test('场景 2: 收藏后卡片显示已收藏', async ({ page }) => {
-    await page.goto('/ai/today');
+    await page.goto('/push');
     const firstCard = page.locator('.digest-card').first();
     await firstCard.getByTitle('收藏').click();
     await expect(firstCard.getByTitle('已收藏')).toBeVisible();
   });
 
   test('场景 3: 屏蔽操作打开 HideDialog', async ({ page }) => {
-    await page.goto('/ai/today');
+    await page.goto('/push');
     await page.locator('.digest-card').first().getByTitle('屏蔽').click();
     await expect(page.locator('.modal-content')).toBeVisible();
     await expect(page.getByText('不再推送类似内容？')).toBeVisible();
   });
 
-  test('场景 4: /ai/bookmarks 显示收藏数据', async ({ page }) => {
-    await page.goto('/ai/bookmarks');
+  test('场景 4: /push/bookmarks 显示收藏数据', async ({ page }) => {
+    await page.goto('/push/bookmarks');
     await expect(page.getByRole('heading', { name: /我的收藏/ })).toBeVisible();
     await expect(page.getByText('Digest fixture 1')).toBeVisible();
   });
 
-  test('场景 5: /ai/settings 保存推送时间', async ({ page }) => {
-    await page.goto('/ai/settings');
+  test('场景 5: /push/settings 保存推送时间', async ({ page }) => {
+    await page.goto('/push/settings');
     await page.locator('input[type="number"]').first().fill('7');
     await page.getByRole('button', { name: '保存设置' }).click();
 
@@ -114,5 +122,20 @@ test.describe('AI 推送端到端', () => {
       const data = await response.json();
       return data.push_hour;
     })).toBe(7);
+  });
+
+  test('场景 6: /push/daily/[date] 详情页加载并展示', async ({ page }) => {
+    await page.goto('/push/daily/2026-07-22');
+    await expect(page.getByTestId('daily-detail')).toBeVisible();
+    await expect(page.getByTestId('daily-title')).toContainText('Digest fixture');
+    await expect(page.getByTestId('source-block')).toContainText('Harness Fixture');
+    await expect(page.getByTestId('btn-bookmark')).toBeVisible();
+    await expect(page.getByTestId('btn-hide')).toBeVisible();
+  });
+
+  test('场景 7: /push/daily/[date] 屏蔽按钮打开 HideDialog', async ({ page }) => {
+    await page.goto('/push/daily/2026-07-22');
+    await page.getByTestId('btn-hide').click();
+    await expect(page.getByText('不再推送类似内容？')).toBeVisible();
   });
 });

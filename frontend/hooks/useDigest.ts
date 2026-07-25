@@ -88,6 +88,26 @@ export function useDigestToday(): QueryHookResult<DigestToday> {
   return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };
 }
 
+export function useDigestDate(date: string | undefined): QueryHookResult<DigestToday> {
+  const qr = useQuery<DigestToday>({
+    queryKey: ['digest', 'daily', date],
+    queryFn: async () => {
+      if (!date) throw new Error('date is required');
+      const res = await fetch(`/api/digest/daily/${date}`);
+      if (res.status === 404) {
+        const err = new Error('NO_DAILY') as Error & { status?: number };
+        err.status = 404;
+        throw err;
+      }
+      if (!res.ok) throw new Error('Failed to fetch daily');
+      return res.json();
+    },
+    enabled: !!date,
+    staleTime: 5 * 60 * 1000,
+  });
+  return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };
+}
+
 export function useDigestBookmarks(filter: 'all' | 'model' | 'application' = 'all'): QueryHookResult<{ total: number; items: DigestBookmarkItem[] }> {
   const qr = useQuery<{ total: number; items: DigestBookmarkItem[] }>({
     queryKey: ['digest', 'bookmarks', filter],

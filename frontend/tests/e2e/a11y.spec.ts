@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test';
 const CORE_PAGES = [
   { path: '/dashboard', label: 'dashboard' },
   { path: '/interview/setup', label: 'interview-setup' },
-  { path: '/ai/today', label: 'ai-today' },
+  { path: '/push', label: 'push' },
   { path: '/interview/history', label: 'interview-history' },
 ];
 

@@ -139,7 +139,7 @@ export const DEFAULT_SIDEBAR_GROUPS: SidebarMenuGroup[] = [
   {
     title: 'AI 推送',
     items: [
-      { page: '/ai/today', href: '/ai/today', label: '今日推荐', icon: ICON.ai, badge: 'v3' },
+      { page: '/push', href: '/push', label: '今日推荐', icon: ICON.ai, badge: 'v3' },
       { page: '/ai/history', href: '/ai/history', label: '推送历史', icon: ICON.history },
     ],
   },
@@ -175,6 +175,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/report': '报告中心',
   '/ai/today': '今日推荐',
   '/ai/history': '推送历史',
+  '/push': '今日推荐',
   '/profile': '我的画像',
   '/settings': '设置',
   '/admin/questions': '题库管理',

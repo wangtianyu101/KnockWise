@@ -26,7 +26,7 @@ const PAGES: { path: string; name: string }[] = [
   { path: '/knowledge', name: '09-knowledge' },
   { path: '/qa', name: '10-qa' },
   { path: '/report', name: '11-report' },
-  { path: '/ai/today', name: '12-ai-today' },
+  { path: '/push', name: '12-push' },
   { path: '/ai/history', name: '13-ai-history' },
   { path: '/profile', name: '14-profile' },
   { path: '/settings', name: '15-settings' },

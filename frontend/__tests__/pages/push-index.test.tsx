@@ -39,9 +39,9 @@ vi.mock('@/hooks/useDigest', () => ({
   useHideItem: () => ({ mutate: mocks.hideItem }),
 }));
 
-import AiTodayPage from '@/pages/ai/today';
+import AiTodayPage from '@/pages/push';
 
-describe('/ai/today', () => {
+describe('/push', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('renders API items and supports bookmark and hide interactions', () => {

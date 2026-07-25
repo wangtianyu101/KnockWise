@@ -28,20 +28,20 @@ test.describe('AI 推送 视觉回归', () => {
     await page.evaluate((t) => localStorage.setItem('token', t), token);
   });
 
-  test('页面 /ai/today 渲染', async ({ page }) => {
-    await page.goto('/ai/today');
+  test('页面 /push 渲染', async ({ page }) => {
+    await page.goto('/push');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveScreenshot('digest-today.png', { maxDiffPixels: 100 });
   });
 
-  test('页面 /ai/bookmarks 渲染', async ({ page }) => {
-    await page.goto('/ai/bookmarks');
+  test('页面 /push/bookmarks 渲染', async ({ page }) => {
+    await page.goto('/push/bookmarks');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveScreenshot('digest-bookmarks.png', { maxDiffPixels: 100 });
   });
 
-  test('页面 /ai/settings 渲染', async ({ page }) => {
-    await page.goto('/ai/settings');
+  test('页面 /push/settings 渲染', async ({ page }) => {
+    await page.goto('/push/settings');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveScreenshot('digest-settings.png', { maxDiffPixels: 100 });
   });
