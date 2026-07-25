@@ -331,19 +331,25 @@ class ProfileSettlementService:
                 )
 
             # 6. V2.2 T14: 触发 Obsidian 写 practice_log（best-effort，决策 7A）
-            try:
-                from services.obsidian_sediment_service import ObsidianSedimentService
-                content = self._build_practice_log_content(
-                    interview_id=interview_id,
-                    blind_spots=top_blind_spots,
-                )
-                await ObsidianSedimentService().write_practice_log(
-                    session_id=interview_id, content=content,
-                )
-            except Exception as e:
-                log.debug(
-                    f"settle_after_interview: write_practice_log best-effort failed: {e}"
-                )
+            # ─────────────────────────────────────────────────────────────
+            # 2026-07-22: 临时禁用
+            # 原因：用户决定暂停将面试复盘沉淀到 Obsidian vault；
+            #       此前反复触发 /complete 在 2 天内堆积 159 份冗余 .md
+            # 恢复方法：取消下面整段代码的注释 + 删除本说明块
+            # ─────────────────────────────────────────────────────────────
+            # try:
+            #     from services.obsidian_sediment_service import ObsidianSedimentService
+            #     content = self._build_practice_log_content(
+            #         interview_id=interview_id,
+            #         blind_spots=top_blind_spots,
+            #     )
+            #     await ObsidianSedimentService().write_practice_log(
+            #         session_id=interview_id, content=content,
+            #     )
+            # except Exception as e:
+            #     log.debug(
+            #         f"settle_after_interview: write_practice_log best-effort failed: {e}"
+            #     )
 
             # 7. 返回 SettlementResult
             return SettlementResult(

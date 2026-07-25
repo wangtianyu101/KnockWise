@@ -485,6 +485,95 @@ class TestSettleAfterInterview:
         assert len(result.weak_topics) == 1
 
 
+# ─── T3.x: Obsidian write_practice_log 临时禁用回归 ───────────
+
+class TestObsidianWritePracticeLogDisabled:
+    """P0-7 决策 7A 反转 · 2026-07-22: 临时禁用 Obsidian 沉淀。
+
+    原因：用户决定暂停将面试复盘沉淀到 Obsidian vault；此前反复触发 /complete 在 2 天内堆积 159 份冗余 .md。
+    恢复方法：取消 `profile_settlement_service.py` settle_after_interview 整段注释 + 删除说明块。
+
+    回归测试断言：settle_after_interview 不应再调用 ObsidianSedimentService.write_practice_log。
+    """
+
+    async def test_settle_after_interview_does_not_call_obsidian_write_practice_log(
+        self, mock_db, monkeypatch,
+    ):
+        """Regression: 整段 Obsidian 段已注释 · 调用 settle_after_interview 后 write_practice_log NOT called。"""
+        from tests.conftest import FakeResult
+        from unittest.mock import AsyncMock, MagicMock
+        from uuid import uuid4
+
+        user_id = uuid4()
+        interview_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        report = SimpleNamespace(
+            interview_id=str(interview_id),
+            top_blind_spots=[
+                {"topic": "分布式锁", "error_rate": 0.7, "related_question_ids": ["q-1"]},
+            ],
+        )
+        report_result = FakeResult(scalar=report)
+        profile = SimpleNamespace(
+            user_id=str(user_id),
+            weak_topics=[],
+            mastered_topics=[],
+            last_active_at=None,
+            updated_at=now,
+        )
+        profile_result = FakeResult(scalar=profile)
+        mock_db.execute = AsyncMock(side_effect=[report_result, profile_result])
+
+        # mock ObsidianSedimentService 类（防止真导入副作用）
+        mock_obsidian_class = MagicMock()
+        mock_obsidian_instance = MagicMock()
+        mock_obsidian_instance.write_practice_log = AsyncMock(
+            return_value="/tmp/should_not_be_written.md"
+        )
+        mock_obsidian_class.return_value = mock_obsidian_instance
+        monkeypatch.setattr(
+            "services.obsidian_sediment_service.ObsidianSedimentService",
+            mock_obsidian_class,
+        )
+
+        result = await svc.ProfileSettlementService().settle_after_interview(
+            user_id, interview_id, db=mock_db,
+        )
+
+        # 业务仍然成功
+        assert result is not None
+        assert result.triggered_by == "interview"
+
+        # 关键断言：write_practice_log 一次都没被调用
+        mock_obsidian_instance.write_practice_log.assert_not_called()
+        # 且 ObsidianSedimentService() 实例化也没发生（整段被注释）
+        mock_obsidian_class.assert_not_called()
+
+    async def test_obsidian_section_is_commented_out(self):
+        """静态断言：`settle_after_interview` 内部不再出现未注释的 Obsidian 调用。"""
+        import inspect
+        from services.profile_settlement_service import ProfileSettlementService
+
+        source = inspect.getsource(ProfileSettlementService.settle_after_interview)
+        # 1. 整段 try block 必须被注释（行首是 #）
+        # 找 "from services.obsidian_sediment_service import" 上下文，要求前导为 # 注释
+        import_lines = [
+            line for line in source.splitlines()
+            if "obsidian_sediment_service" in line
+        ]
+        assert import_lines, "应能找到 Obsidian import 行（即使被注释）"
+        for line in import_lines:
+            stripped = line.lstrip()
+            assert stripped.startswith("#"), (
+                f"Obsidian import 必须被注释（行首 #）：实际行 = {line!r}"
+            )
+
+        # 2. 整段必须包含说明块（标记为临时禁用）
+        assert "2026-07-22" in source, "应含禁用日期标记"
+        assert "临时禁用" in source, "应含'临时禁用'标记"
+
+
 # ─── T4: weekly_full_refresh 业务实现 ─────────────────────
 
 class TestWeeklyFullRefresh:
