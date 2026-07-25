@@ -1,5 +1,5 @@
 /**
- * /push/daily/[date] · 单条 digest 详情页 · v2 mockup 02
+ * /push/daily/[date] · 单条 digest 详情页 · v2 mockup 02 + spec R7/R10 30s 阅读时长
  *
  * 路由：
  *   /push/daily/2026-07-17         → 当日 top item
@@ -7,8 +7,10 @@
  *
  * 数据：useDigestDate(date) → GET /api/digest/daily/{date}
  * 404：当日无 digest → EmptyState + 返回今日
+ *
+ * spec R7 + R10: 详情页 mount 后 30s → POST /api/digest/read
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
@@ -17,8 +19,11 @@ import {
   useAddBookmark,
   useDigestDate,
   useHideItem,
+  useMarkRead,
   useRemoveBookmark,
 } from "@/hooks/useDigest";
+
+const READ_THRESHOLD_SEC = 30;  // spec R7/R10: 30s+ 标已读
 
 const TYPE_COLORS: Record<"model" | "application", string> = {
   model: "bg-[rgba(96,165,250,0.18)] text-[#93c5fd] border-[rgba(96,165,250,0.35)]",
@@ -56,12 +61,32 @@ export default function DailyDetailPage() {
   const addBookmark = useAddBookmark();
   const removeBookmark = useRemoveBookmark();
   const hideItem = useHideItem();
+  const markRead = useMarkRead();
 
+  // Hooks 必须无条件在 early return 之前调用（Rules of Hooks）
+  const items = data?.items ?? [];
+  const item = (itemQuery && items.find((it) => it.id === itemQuery)) || items[0];
   const [hideCandidate, setHideCandidate] = useState<{
     id: string;
     title: string;
     topics: string[];
   } | null>(null);
+  const readStartRef = useRef<number>(Date.now());
+  const markReadFiredRef = useRef<boolean>(false);
+  useEffect(() => {
+    readStartRef.current = Date.now();
+    markReadFiredRef.current = false;
+  }, [item?.id]);
+  useEffect(() => {
+    if (!item || markReadFiredRef.current) return;
+    const timer = setTimeout(() => {
+      const duration = Math.round((Date.now() - readStartRef.current) / 1000);
+      if (duration < READ_THRESHOLD_SEC) return;
+      markReadFiredRef.current = true;
+      markRead.mutate({ item_id: item.id, duration_sec: duration });
+    }, READ_THRESHOLD_SEC * 1000);
+    return () => clearTimeout(timer);
+  }, [item?.id, markRead]);
 
   // 404
   if (error) {
@@ -109,9 +134,6 @@ export default function DailyDetailPage() {
       </div>
     );
   }
-
-  const items = data.items;
-  const item = (itemQuery && items.find((it) => it.id === itemQuery)) || items[0];
 
   if (!item) {
     return (

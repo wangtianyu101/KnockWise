@@ -151,6 +151,30 @@ async def _load_daily(
         .order_by(DigestDailyItemModel.rank)
     )
     rows = list(items_result.scalars().all())
+
+    # spec R7 已读 + R10 用户行为反馈 + R10 bookmark
+    from models import DigestRead as DigestReadModel
+    from models import DigestBookmark as DigestBookmarkModel
+    read_ids: set[str] = set()
+    bookmark_ids: set[str] = set()
+    if rows:
+        item_ids = [r.id for r in rows]
+        reads = await db.execute(
+            select(DigestReadModel.item_id).where(
+                DigestReadModel.user_id == user_id,
+                DigestReadModel.item_id.in_(item_ids),
+                DigestReadModel.duration_sec >= 30,  # spec R7: 30s+
+            )
+        )
+        read_ids = {row[0] for row in reads}
+        bms = await db.execute(
+            select(DigestBookmarkModel.item_id).where(
+                DigestBookmarkModel.user_id == user_id,
+                DigestBookmarkModel.item_id.in_(item_ids),
+            )
+        )
+        bookmark_ids = {row[0] for row in bms}
+
     items = [
         DigestDailyItemSchema(
             id=row.id,
@@ -166,8 +190,8 @@ async def _load_daily(
             published_at=row.published_at,
             estimated_minutes=row.estimated_minutes,
             related_item_ids=list(row.related_item_ids or []),
-            is_read=False,
-            is_bookmarked=False,
+            is_read=row.id in read_ids,
+            is_bookmarked=row.id in bookmark_ids,
         )
         for row in rows
     ]
