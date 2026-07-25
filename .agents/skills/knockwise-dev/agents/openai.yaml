@@ -1,0 +1,4 @@
+interface:
+  display_name: "KnockWise Development"
+  short_description: "Develop and verify the KnockWise AI interview platform"
+  default_prompt: "Use $knockwise-dev to inspect and implement a KnockWise project change safely."

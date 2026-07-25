@@ -1,3 +1,13 @@
+---
+title: 调研模板 · P0 紧急
+type: research
+step: 0
+date: 2026-07-24
+status: draft
+tags: [research, frontmatter]
+related: []
+---
+
 # 调研模板 · P0 紧急
 
 > 触发词：`调研 P0：<topic>` 或 `调研 紧急：<topic>` 或 `调研 线上：<topic>` 或 `调研 故障：<topic>`

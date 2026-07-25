@@ -1,3 +1,13 @@
+---
+title: 调研模板 · 重构
+type: research
+step: 0
+date: 2026-07-24
+status: draft
+tags: [research, frontmatter]
+related: []
+---
+
 # 调研模板 · 重构
 
 > 触发词：`调研 重构：<topic>` 或 `调研 refactor：<topic>` 或 `调研 拆分：<topic>` 或 `调研 优化：<topic>`

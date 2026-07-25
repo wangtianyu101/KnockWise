@@ -45,3 +45,6 @@ backend/dev.db
 # Coverage / Redis dump
 .coverage
 dump.rdb
+
+# Frontend test result artifacts (Playwright / vitest)
+frontend/test-results/

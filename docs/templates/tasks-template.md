@@ -99,15 +99,15 @@ T5 依赖 T4
 ## 4. 任务↔测试映射（必填 · 含 Traceability ID per P1-2）
 
 ```markdown
-| 任务 | 自动化测试 | 测试场景 | REQ | SCN | TC | Level |
+| 任务 | 自动化测试 | 测试场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|
-| T1 | test_db.py::test_create_table | 建表成功 | REQ-001 | SCN-001 | TC-001 | L1 |
-| T2 | test_schema.py::test_subscribe_request | schema 校验 | REQ-002 | SCN-002 | TC-002 | L1 |
-| T3 | test_api.py::test_post_subscribe | POST /subscribe happy | REQ-003 | SCN-003 | TC-003 | L3 |
-| T4 | test_api.py::test_post_subscribe_error | POST /subscribe error | REQ-003 | SCN-004 | TC-004 | L3 |
+| T1 | test_db.py::test_create_table | 建表成功 | REQ-001 | SCN-001 | TC-001 | L1 | `abc1234` | PASS | PASS | ACCEPTED |
+| T2 | test_schema.py::test_subscribe_request | schema 校验 | REQ-002 | SCN-002 | TC-002 | L1 | `def5678` | PASS | PENDING | PENDING |
+| T3 | test_api.py::test_post_subscribe | POST /subscribe happy | REQ-003 | SCN-003 | TC-003 | L3 | — | FAIL | FAIL | REJECTED |
+| T4 | test_api.py::test_post_subscribe_error | POST /subscribe error | REQ-003 | SCN-004 | TC-004 | L3 | — | NOT_RUN | NOT_RUN | PENDING |
 ```
 
-**每个任务至少 1 个测试**（TDD 强制）。**Level 列必填**，与 `docs/rules/testing-rules.md` § 6.5.1 L1-L5 主账对齐。**REQ/SCN/TC 列必填**，与 verify.md § 0.4 Traceability Matrix 10 列对齐。
+**每个任务至少 1 个测试**（TDD 强制）。**Level 列必填**，与 `docs/rules/testing-rules.md` § 6.5.1 L1-L5 主账对齐。**REQ/SCN/TC 列必填**，与 verify.md § 0.4 Traceability Matrix 10 列对齐。**最后 4 列（实施 commit / test / verifier / acceptance）按 P0-5 决策**：三事实（implementation / test / verifier）+ phase_acceptance 必填；只有 `verifier: PASS` + `acceptance: ACCEPTED` 才能写 `[x]`，否则保留 `[ ]`。**移除裸 `✅ DONE` 标记**（如 `- [x] T1: ✅ DONE — commit hash`），`[x]` 仅表示 implementation 已落。
 
 ---
 

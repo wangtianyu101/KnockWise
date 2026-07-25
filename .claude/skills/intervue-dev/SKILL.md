@@ -1,23 +1,13 @@
 ---
 name: intervue-dev
-description: KnockWise project development — AI mock interview platform with LangGraph + FastAPI + Next.js + WebRTC voice. Use when modifying the KnockWise codebase, adding features, fixing bugs, or understanding the multi-agent architecture.
+description: Deprecated 2026-07-24 · Use knockwise-dev instead. This alias retained only for legacy CLI invocations.
 ---
 
-# KnockWise 开发
+# Legacy compatibility alias
 
-## 项目概览
+Read [`../knockwise-dev/SKILL.md`](../knockwise-dev/SKILL.md) completely and follow it as the authoritative KnockWise development skill.
 
-KnockWise 是一个 AI 模拟面试平台，核心差异化是**追问引擎**——不是静态题库，而是根据用户回答动态追问的 AI 面试官。
-
-| 层级 | 技术栈 |
-|------|--------|
-| Agent 引擎 | LangGraph 1.0 + LangChain 1.0 |
-| 后端 | FastAPI + SQLAlchemy 2.0 async + MySQL 8.4 |
-| 语音 | LiveKit WebRTC + WhisperLive STT + Piper TTS |
-| 前端 | Next.js 15 + React 19 + Tailwind CSS 4 |
-| LLM | DeepSeek V3 (via siliconflow/OpenAI-compatible API) |
-
-## 关键文件路径
+Do not reuse historical Intervue architecture, dependency versions, startup commands, file counts, or backlog entries from this alias.
 
 ```
 KnockWise/

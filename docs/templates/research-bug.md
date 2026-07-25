@@ -1,3 +1,13 @@
+---
+title: 调研模板 · Bug 修复
+type: research
+step: 0
+date: 2026-07-24
+status: draft
+tags: [research, frontmatter]
+related: []
+---
+
 # 调研模板 · Bug 修复
 
 > 触发词：`调研 bug：<topic>` 或 `调研 修复：<topic>` 或 `调研 失败：<topic>` 或 `调研 报错：<topic>`

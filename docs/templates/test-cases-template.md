@@ -1,3 +1,13 @@
+---
+title: 测试用例模板
+type: test-cases
+step: 4
+date: 2026-07-24
+status: draft
+tags: [template, frontmatter]
+related: []
+---
+
 # 测试用例 · 模板
 
 > **一句话**：整合所有来源的测试用例，是测试的"单一真相源"。

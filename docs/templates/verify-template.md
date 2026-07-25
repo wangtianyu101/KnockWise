@@ -1,9 +1,10 @@
 ---
 title: 验证文档模板（verify）
-date: 2026-06-30
-updated: 2026-07-22
-status: v3
-tags: [verify, 5步, L3, L5, 模板]
+type: verify
+step: 5
+date: 2026-07-24
+status: draft
+tags: [verify, 5步, L3, L5, 模板, frontmatter]
 related:
   - [test-cases-template.md](test-cases-template.md)
   - [tasks-template.md](tasks-template.md)
@@ -111,13 +112,16 @@ related:
 - **启动 / 关闭**：`<结果与日志>`
 - **重复执行 / 进程重启幂等**：`<结果与数据库证据>`
 
-## L5 staging 运行时验证（必填）
+## L5 staging 运行时验证（必填 · 含 phase_acceptance 必填 per P0-5）
 
 - **环境**：<staging / 本机完整服务；不得只写单元测试环境>
 - **启动方式**：`./scripts/start.sh`
 - **验证人**：<姓名>
 - **日期**：YYYY-MM-DD
+- **phase_acceptance**：PENDING / ACCEPTED / REJECTED
 - **结果**：PASSED / FAILED
+
+> ⚠️ 只有 `phase_acceptance: ACCEPTED` 才能标 "🟢 可进入 6 步"。若 ACCEPTED=REJECTED 或存在 verifier: FAIL 任务，必须在 § 失败与残留风险 段说明下一步动作。
 
 ### 真实路径
 

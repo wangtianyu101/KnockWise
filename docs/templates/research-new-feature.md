@@ -1,3 +1,13 @@
+---
+title: 调研模板 · 新功能
+type: research
+step: 0
+date: 2026-07-24
+status: draft
+tags: [research, frontmatter]
+related: []
+---
+
 # 调研模板 · 新功能
 
 > 触发词：`调研 新功能：<topic>` 或 `调研 设计：<topic>` 或 `调研 feature：<topic>`
