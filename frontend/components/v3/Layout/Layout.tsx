@@ -87,6 +87,16 @@ const ICON = {
       <path d="M2 4H14M2 8H14M2 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   ),
+  bookmark: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M3 2H13V14L8 11L3 14V2Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+    </svg>
+  ),
+  source: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
   profile: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <circle cx="8" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.3" />
@@ -141,6 +151,9 @@ export const DEFAULT_SIDEBAR_GROUPS: SidebarMenuGroup[] = [
     items: [
       { page: '/push', href: '/push', label: '今日推荐', icon: ICON.ai, badge: 'v3' },
       { page: '/ai/history', href: '/ai/history', label: '推送历史', icon: ICON.history },
+      { page: '/push/bookmarks', href: '/push/bookmarks', label: '我的收藏', icon: ICON.bookmark },
+      { page: '/push/settings', href: '/push/settings', label: '推送设置', icon: ICON.settings },
+      { page: '/push/sources', href: '/push/sources', label: '信源管理', icon: ICON.source },
     ],
   },
   {
@@ -176,6 +189,9 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/ai/today': '今日推荐',
   '/ai/history': '推送历史',
   '/push': '今日推荐',
+  '/push/bookmarks': '我的收藏',
+  '/push/settings': '推送设置',
+  '/push/sources': '信源管理',
   '/profile': '我的画像',
   '/settings': '设置',
   '/admin/questions': '题库管理',
