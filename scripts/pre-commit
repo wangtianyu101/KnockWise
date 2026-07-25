@@ -189,6 +189,33 @@ if [ -n "$task_yaml_files" ]; then
   fi
 fi
 
+# ─── 4.6 任务状态语义校验 (P0-5) ─────────────────────────────
+if echo "$staged_files" | grep -qE "^docs/tasks/.*\.md$"; then
+  if [ ! -f "scripts/check_task_state.py" ]; then
+    echo ""
+    echo "⚠️  检测到 docs/tasks/ 改动, 但 scripts/check_task_state.py 不存在"
+    echo "   临时跳过任务状态校验"
+  else
+    echo ""
+    echo "📋 docs/tasks/ 改动 → 跑任务状态语义校验..."
+    for file in $(echo "$staged_files" | grep -E "^docs/tasks/.*\.md$"); do
+      echo "   → $file"
+      # 捕获真实退出码（... | tail 的退出码取自末端 tail(恒 0), 会吞掉 checker 失败）
+      set +e
+      check_out=$(python3 scripts/check_task_state.py "$file" --view index 2>&1)
+      check_rc=$?
+      set -e
+      printf '%s\n' "$check_out" | tail -15
+      if [ "$check_rc" -ne 0 ]; then
+        echo ""
+        echo "❌ 任务状态语义校验失败, 禁止 commit"
+        echo "   修复 tasks.md 三事实 / L5 phase_acceptance / 移除 ✅ DONE 标记"
+        exit 1
+      fi
+    done
+  fi
+fi
+
 # ─── 5. tasks.md 同步校验(对治问题 #N 任务追踪不更新) ─────
 # 规则(CLAUDE.md § 6.5):实施类 commit (backend/ frontend/ scripts/) 必须同步对应 task 的 tasks.md
 # 例外:纯文档 commit (docs/ memory/ CLAUDE.md) → 不要求
