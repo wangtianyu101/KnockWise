@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>Qwen GitHub Releases</title>
+<link>https://github.com/QwenLM</link>
+<description>Qwen 模型发布</description>
+<item>
+<title>Qwen3-Coder 30B 开源 · HumanEval 82.1%</title>
+<link>https://github.com/QwenLM/Qwen3-Coder</link>
+<description>1M 上下文 + 代码补全 · 超过 Code Llama 70B · MIT 协议。</description>
+<pubDate>Mon, 27 Jul 2026 08:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>Qwen3-VL 多模态模型</title>
+<link>https://github.com/QwenLM/Qwen3-VL</link>
+<description>支持图像/视频/文档理解 · 7B/72B 双尺寸。</description>
+<pubDate>Sun, 26 Jul 2026 12:00:00 +0000</pubDate>
+<category>model</category>
+</item>
+<item>
+<title>Qwen-Agent 框架升级</title>
+<link>https://github.com/QwenLM/Qwen-Agent</link>
+<description>Function calling + MCP 协议 + 多 agent 编排。</description>
+<pubDate>Sat, 25 Jul 2026 10:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>Qwen2.5 技术报告</title>
+<link>https://github.com/QwenLM/Qwen2.5</link>
+<description>72B 模型在 MMLU/GSM8K/HumanEval 全面对标国际前沿。</description>
+<pubDate>Fri, 24 Jul 2026 18:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+</channel>
+</rss>

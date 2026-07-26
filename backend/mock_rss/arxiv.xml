@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>arXiv cs.CL (Computation and Language)</title>
+<link>https://arxiv.org/list/cs.CL</link>
+<description>arXiv 学术论文</description>
+<item>
+<title>Sparse MoE: 1T Active Params with 4x Inference Speedup</title>
+<link>https://arxiv.org/abs/2026.sparse-moe</link>
+<description>MIT + Together AI propose efficient routing for trillion-param sparse models.</description>
+<pubDate>Mon, 27 Jul 2026 08:30:00 +0000</pubDate>
+<category>paper</category>
+</item>
+<item>
+<title>Constitutional AI: Scalable Oversight via Self-Critique</title>
+<link>https://arxiv.org/abs/2026.const-ai</link>
+<description>Models evaluate their own outputs against explicit principles.</description>
+<pubDate>Sun, 26 Jul 2026 09:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+<item>
+<title>Test-Time Compute Scaling for Reasoning</title>
+<link>https://arxiv.org/abs/2026.ttc-reasoning</link>
+<description>Increasing inference compute improves o1-style reasoning benchmarks.</description>
+<pubDate>Sat, 25 Jul 2026 15:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+<item>
+<title>RAG with Long-Context Memory: A Survey</title>
+<link>https://arxiv.org/abs/2026.rag-lcm</link>
+<description>Comprehensive survey on retrieval-augmented generation.</description>
+<pubDate>Fri, 24 Jul 2026 13:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+</channel>
+</rss>

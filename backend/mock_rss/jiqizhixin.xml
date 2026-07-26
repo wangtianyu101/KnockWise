@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>机器之心</title>
+<link>https://www.jiqizhixin.com</link>
+<description>机器之心 · 专业 AI 媒体</description>
+<item>
+<title>阿里通义 Qwen3-Coder 30B 开源 · HumanEval 82.1%</title>
+<link>https://www.jiqizhixin.com/articles/qwen3-coder-30b</link>
+<description>1M 上下文 + 代码补全 · 超过 Code Llama 70B · MIT 协议可商用。</description>
+<pubDate>Mon, 27 Jul 2026 09:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>DeepSeek V4 Pro 永久降价至原价 1/4</title>
+<link>https://www.jiqizhixin.com/articles/deepseek-v4-pricing</link>
+<description>缓存命中输入 0.025 元/M tokens · 月成本降至 25%。</description>
+<pubDate>Sun, 26 Jul 2026 11:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>Anthropic 推出 Agentic Tool Use 协议 MCP v2</title>
+<link>https://www.jiqizhixin.com/articles/mcp-v2</link>
+<description>Claude Code 全量支持 · 开发者生态进一步开放。</description>
+<pubDate>Sat, 25 Jul 2026 14:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+</channel>
+</rss>

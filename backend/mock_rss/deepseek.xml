@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>DeepSeek Docs News</title>
+<link>https://api-docs.deepseek.com/news</link>
+<description>DeepSeek 模型更新与文档</description>
+<item>
+<title>DeepSeek V4 Pro 正式发布</title>
+<link>https://api-docs.deepseek.com/news/v4-pro-ga</link>
+<description>V4 Pro 上下文升至 1M · 推理对标 GPT-5 中端 · 中文场景优化。</description>
+<pubDate>Mon, 27 Jul 2026 09:30:00 +0000</pubDate>
+<category>model</category>
+</item>
+<item>
+<title>DeepSeek V4 缓存命中降价 75%</title>
+<link>https://api-docs.deepseek.com/news/v4-pricing</link>
+<description>命中缓存输入 0.025 元/M tokens · 月成本降至 25%。</description>
+<pubDate>Sun, 26 Jul 2026 10:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>DeepSeek-R 系列学术报告</title>
+<link>https://api-docs.deepseek.com/news/r1-paper</link>
+<description>强化学习推理路径优化 · 7B 模型逼近 GPT-4 性能。</description>
+<pubDate>Sat, 25 Jul 2026 14:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+<item>
+<title>DeepSeek 企业版 GA</title>
+<link>https://api-docs.deepseek.com/news/enterprise-ga</link>
+<description>支持私有部署 · SOC2 合规 · 99.9% SLA。</description>
+<pubDate>Fri, 24 Jul 2026 09:00:00 +0000</pubDate>
+<category>business</category>
+</item>
+</channel>
+</rss>

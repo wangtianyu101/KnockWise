@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>Anthropic News</title>
+<link>https://www.anthropic.com/news</link>
+<description>Official news from Anthropic</description>
+<item>
+<title>Claude 4.7 Sonnet Released with 1M Context Window</title>
+<link>https://www.anthropic.com/news/claude-4-7-sonnet</link>
+<description>Anthropic releases Claude 4.7 Sonnet with 1M token context, agentic coding improvements, and SWE-bench Verified 78.4%.</description>
+<pubDate>Mon, 27 Jul 2026 09:00:00 +0000</pubDate>
+<category>model</category>
+</item>
+<item>
+<title>Claude Code Agentic Tool Use Protocol MCP v2</title>
+<link>https://www.anthropic.com/news/mcp-v2</link>
+<description>MCP v2 enables multi-step agent workflows with persistent memory.</description>
+<pubDate>Mon, 27 Jul 2026 08:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>Constitutional AI 2.0 Whitepaper</title>
+<link>https://www.anthropic.com/news/cai-2</link>
+<description>New safety methodology paper introduces scalable oversight.</description>
+<pubDate>Sun, 26 Jul 2026 16:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+<item>
+<title>Claude for Enterprise GA</title>
+<link>https://www.anthropic.com/news/enterprise</link>
+<description>Enterprise tier with SSO, audit logs, and SOC2 compliance.</description>
+<pubDate>Sat, 25 Jul 2026 12:00:00 +0000</pubDate>
+<category>business</category>
+</item>
+</channel>
+</rss>

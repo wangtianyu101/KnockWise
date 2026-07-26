@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>智谱 AI</title>
+<link>https://www.zhipuai.cn</link>
+<description>智谱 AI 官方</description>
+<item>
+<title>GLM-5 正式发布 · 推理能力对标 GPT-5</title>
+<link>https://www.zhipuai.cn/news/glm5</link>
+<description>200K 上下文 · 中文理解 SOTA · 开源权重。</description>
+<pubDate>Mon, 27 Jul 2026 08:00:00 +0000</pubDate>
+<category>model</category>
+</item>
+<item>
+<title>GLM-Edge 端侧模型</title>
+<link>https://www.zhipuai.cn/news/glm-edge</link>
+<description>1B/3B/9B 三档 · 手机端实时推理。</description>
+<pubDate>Sun, 26 Jul 2026 16:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>BigModel 开放平台 · 接入 MCP</title>
+<link>https://www.zhipuai.cn/news/bigmodel-mcp</link>
+<description>支持 Anthropic MCP 协议 · Claude 生态互通。</description>
+<pubDate>Sat, 25 Jul 2026 09:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+</channel>
+</rss>

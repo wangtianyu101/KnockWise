@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>HuggingFace Blog</title>
+<link>https://huggingface.co/blog</link>
+<description>HF 官方博客 · 模型与工具</description>
+<item>
+<title>Open-Source 70B Model Beats GPT-4 on Reasoning Benchmarks</title>
+<link>https://huggingface.co/blog/open-70b-reasoning</link>
+<description>New open-weight 70B model achieves 92% on GSM8K · MIT license.</description>
+<pubDate>Mon, 27 Jul 2026 09:00:00 +0000</pubDate>
+<category>model</category>
+</item>
+<item>
+<title>Diffusers v0.30 Released with Multi-GPU Support</title>
+<link>https://huggingface.co/blog/diffusers-0-30</link>
+<description>Native multi-GPU + LoRA inference optimization.</description>
+<pubDate>Sun, 26 Jul 2026 14:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>Transformers 4.50: Quantization-Aware Training</title>
+<link>https://huggingface.co/blog/transformers-4-50</link>
+<description>QAT integration + 4-bit fine-tuning.</description>
+<pubDate>Sat, 25 Jul 2026 16:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+<item>
+<title>Sparse Mixture-of-Experts for Multi-Modal Models</title>
+<link>https://huggingface.co/blog/sparse-moe-mm</link>
+<description>1T active params · 4x inference speedup.</description>
+<pubDate>Fri, 24 Jul 2026 11:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+</channel>
+</rss>

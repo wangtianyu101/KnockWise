@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+<title>Google DeepMind Blog</title>
+<link>https://deepmind.google/discover/blog</link>
+<description>DeepMind 官方博客</description>
+<item>
+<title>Gemini 3 Ultra: Multimodal Reasoning at Scale</title>
+<link>https://deepmind.google/discover/blog/gemini-3-ultra</link>
+<description>10M context window · native video understanding · agentic coding benchmark #1.</description>
+<pubDate>Mon, 27 Jul 2026 10:00:00 +0000</pubDate>
+<category>model</category>
+</item>
+<item>
+<title>AlphaFold 4: Protein Dynamics Prediction</title>
+<link>https://deepmind.google/discover/blog/alphafold-4</link>
+<description>Predicts protein motion at millisecond resolution.</description>
+<pubDate>Sun, 26 Jul 2026 14:00:00 +0000</pubDate>
+<category>paper</category>
+</item>
+<item>
+<title>Veo 2 Video Generation API</title>
+<link>https://deepmind.google/discover/blog/veo-2-api</link>
+<description>60s 1080p video · native audio · available globally.</description>
+<pubDate>Sat, 25 Jul 2026 11:00:00 +0000</pubDate>
+<category>engineering</category>
+</item>
+</channel>
+</rss>
