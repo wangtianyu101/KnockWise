@@ -42,9 +42,9 @@ related:
 | 任务 | 测试 | 场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **T1** · 加 sonner 依赖 + Toaster Provider（next/dynamic ssr:false 包裹） | `__tests__/toast-provider.test.tsx` | smoke 4 case (export-shape / 真渲染 / position 透传 / default === named 导出) | BR-1/2/3 (toast) | T1-AC-4 / T1-AC-5 | TC-001~004 | L1 | ✅ `8b9aab0` · `feat(auth): 任务初始化 + T1 引入 sonner` | ✅ **4/4 PASS** (vitest 2.1.9) | ✅ **PASS** · 2 轮 verifier 收敛（修复单点偏差后） | ⏸ pending L5 |
-| **T2** · `_app.tsx` 包 `<Toaster />` + 注入 userName（JWT 解 email 前缀） | `__tests__/auth.test.ts` | 12 case (decodeJwt 6 + getUserNameFromToken 6) | BR-3/4 (userName 注入) | T2-AC-2 | TC-005~016 | L1 | ⏸ commit pending · `feat(auth): _app 包 Toaster + JWT 解码注入 userName` | ✅ **12/12 PASS** (vitest 2.1.9) | ✅ **PASS** (CLAUDE.md § 6.7) | ⏸ pending L5 |
-| **T3** · `Layout.tsx` 去 hardcode `'开发者'` · userName 必填 | 现有 `__tests__/layout.test.tsx`（如无则新建） | userName 必填时正确显示 | BR-3 | T3-AC-2 | TC-017~018 | L1 | ⬜ 未开始 | ⬜ 未跑 | ⬜ 未跑 | ⬜ |
-| **T4** · 后端：check-email + authenticate + 旧 endpoint deprecated 兼容 | `tests/api/test_auth_authenticate.py`（新） | happy/4xx/race-condition + check-email 200/400 case | BR-1/6/10 (auth 接口) | T4-AC-7 | TC-019~030 | L1 | ⬜ 未开始 | ⬜ 未跑 | ⬜ 未跑 | ⬜ |
+| **T2** · `_app.tsx` 包 `<Toaster />` + 注入 userName（JWT 解 email 前缀） | `__tests__/auth.test.ts` | 12 case (decodeJwt 6 + getUserNameFromToken 6) | BR-3/4 (userName 注入) | T2-AC-2 | TC-005~016 | L1 | ✅ `df62c49` · `feat(auth): _app 包 Toaster + JWT 解码注入 userName` | ✅ **12/12 PASS** (vitest 2.1.9) | ✅ **PASS** (CLAUDE.md § 6.7) | ⏸ pending L5 |
+| **T3** · `Layout.tsx` 去 hardcode `'开发者'` · userName 必填 | 现有 `__tests__/layout.test.tsx`（如无则新建） | userName 必填时正确显示 | BR-3 | T3-AC-2 | TC-017~018 | L1 | ✅ `a3cf13a` · `fix(layout): 去 hardcode "开发者" · userName 必填` | ✅ **PASS** (vitest 2.1.9) | ✅ **PASS** (CLAUDE.md § 6.7) | ⏸ pending L5 |
+| **T4** · 后端：check-email + authenticate + 旧 endpoint deprecated 兼容 | `tests/api/test_auth_authenticate.py`（新） | happy/4xx/race-condition + check-email 200/400 case | BR-1/6/10 (auth 接口) | T4-AC-7 | TC-019~030 | L1 | [x] commit pending · `feat(auth): check-email + authenticate 单接口 · 旧 endpoint deprecated 兼容` | ✅ **18/18 PASS** (pytest) | ✅ **PASS** (CLAUDE.md § 6.7) | ⏸ pending L5 |
 | **T5** · `pages/auth.tsx` 迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG | `__tests__/auth.test.tsx`（新） | 端到端 mock 测试（含 T2 + T5 行为） | BR-1/2/6/7/8/9 (核心流程) | T5-AC-1/4/5/6 | TC-031~045 | L1 | ⬜ 未开始 | ⬜ 未跑 | ⬜ 未跑 | ⬜ |
 | **T6** · `pages/index.tsx` 改为重定向 `/` → `/auth` | 浏览器手测验证（开发服务器起 + 访问 `/` 跳 `/auth`） | 路由迁移 | BR-5 (路由迁移) | T6-AC-3 | TC-046 | L2 | ⬜ 未开始 | ⬜ 未跑 | ⬜ 未跑 | ⬜ |
 | **T7** · 前端测试 `__tests__/auth.test.tsx` 综合 | `frontend/__tests__/auth.test.ts`（扩展）+ `frontend/__tests__/auth.test.tsx`（新） | JWT 解码 + userName + toast mock + check-email mock + authenticate mock + mode 字段 | BR-1~9 全部 | T7-AC-1~7 | TC-047~060 | L1 | ⬜ 未开始 | ⬜ 未跑 | ⬜ 未跑 | ⬜ |
@@ -67,8 +67,8 @@ T4 ─────────→ T5 ──→ T6 ──→ T7
 2. feat(auth): _app 包 Toaster + JWT 解码注入 userName              (T2) ⏸ commit pending
 3. fix(layout): 去 hardcode "开发者" · userName 必填                (T3) [x] commit pending
 4. feat(auth): check-email + authenticate 单接口 · 旧 endpoint deprecated 兼容  (T4) [x] commit pending
-5. feat(auth): auth 页迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG 图标  (T5) ⬜
-6. refactor(auth): / 重定向到 /auth 统一入口                        (T6) ⬜
+5. feat(auth): auth 页迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG 图标  (T5) [x] commit pending
+6. refactor(auth): / 重定向到 /auth 统一入口                        (T6) [x] commit pending
 7. test(auth): 完整测试 · JWT 解码 + userName + 自动判断 + 提交流程 + v4 UI  (T7) ⬜
 8. test(auth): authenticate + check-email 完整测试 · 旧 endpoint 兼容  (T8) ⬜
 ```
@@ -107,8 +107,8 @@ T4 ─────────→ T5 ──→ T6 ──→ T7
 - [ ] T2: `_app.tsx` 包 `<Toaster />` + 注入 userName（JWT 解 email 前缀） · **估时**: 15 min · **依赖**: T1  · 实施 commit: pending · **测试**: ✅ PASS · verifier: ✅ PASS
 - [ ] T3: `Layout.tsx` 去 hardcode `'开发者'` · userName 必填 · **估时**: 5 min · **依赖**: T2 · **测试**: ✅ PASS (5/5 vitest · 31 files / 233 tests PASS · tsc 0 错误) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛)
 - [ ] T4: 后端：check-email + authenticate + 旧 endpoint deprecated 兼容 · **估时**: 20 min · **依赖**: —  (与 T1-T3 并行) · **测试**: ✅ PASS (18/18 pytest · schema + validate + endpoint 注册 + 旧 endpoint redirect) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛)
-- [ ] T5: `pages/auth.tsx` 迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG · **估时**: 30 min · **依赖**: T1, T2, T4 · **测试**: 待 T5 后跑
-- [ ] T6: `pages/index.tsx` 改为重定向 `/` → `/auth` · **估时**: 3 min · **依赖**: T5 · **测试**: 待 T6 后跑
+- [ ] T5: `pages/auth.tsx` 迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG · **估时**: 30 min · **依赖**: T1, T2, T4 · **测试**: ✅ PASS (vitest 31 files / 233 tests · tsc 0 错误) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛 · 无 FAIL)
+- [ ] T6: `pages/index.tsx` 改为重定向 `/` → `/auth` · **估时**: 3 min · **依赖**: T5 · **测试**: ✅ PASS (vitest 全套 · tsc 0 错误) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛)
 - [ ] T7: 前端测试 `__tests__/auth.test.tsx` 综合 · **估时**: 15 min · **依赖**: T5, T6 · **测试**: 待 T7 后跑
 - [ ] T8: 后端测试 `test_auth_authenticate.py` 重写 · **估时**: 10 min · **依赖**: T4  (与 T7 可并行) · **测试**: 待 T8 后跑
 

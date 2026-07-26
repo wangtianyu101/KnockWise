@@ -20,7 +20,8 @@ import { useState } from "react";
 
 // 不包裹 Layout 的路由（独立设计或登录相关）
 const LAYOUT_EXCLUDE_PATHS = new Set<string>([
-  "/",          // 登录页
+  "/",          // 登录页（重定向占位 · T6）
+  "/auth",      // 注册/登录页（T5 · 决策 6 + spec.md § 5 路由契约）
   "/onboarding", // 注册/引导
 ]);
 

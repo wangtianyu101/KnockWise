@@ -137,6 +137,30 @@ export async function register(email: string, password: string, display_name: st
   return data;
 }
 
+/**
+ * 🆕 v5 决策 13：合并 login + register → 单一 authenticate 接口
+ *
+ * 后端内部根据 email 是否存在自动判断：
+ * - email 存在 → 验证密码 · 返回 mode="login"
+ * - email 不存在 → 创建用户 · display_name 缺省 = email 前缀 · 返回 mode="register"
+ *
+ * @param email 邮箱
+ * @param password 密码（≥ 6 位）
+ * @param display_name 昵称（仅注册流程用 · 缺省 = email 前缀）
+ */
+export async function authenticate(email: string, password: string, display_name?: string) {
+  const body: Record<string, string> = { email, password };
+  if (display_name) {
+    body.display_name = display_name;
+  }
+  const data = await request("/api/auth/authenticate", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  if (data.access_token) setToken(data.access_token);
+  return data;
+}
+
 export async function getGitHubLoginUrl() {
   return request("/api/auth/github/url");
 }
