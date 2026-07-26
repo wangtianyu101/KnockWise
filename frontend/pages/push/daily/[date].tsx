@@ -190,7 +190,9 @@ export default function DailyDetailPage() {
             {item.region === "domestic" ? "国内" : "国外"}
           </span>
           <span>· {item.source_name}</span>
-          {item.published_at && <span>· {formatRelative(item.published_at)}</span>}
+          {item.published_at && (
+            <span suppressHydrationWarning>· {formatRelative(item.published_at)}</span>
+          )}
           <span>· <span className="text-[#f59e0b]">⭐ {item.quality_score}</span></span>
           <span>· ⏱ {item.estimated_minutes} 分钟</span>
         </div>

@@ -15,6 +15,12 @@ import { getToken } from '@/lib/api';
  */
 type QueryHookResult<T> = { data: T | undefined; isLoading: boolean; error: Error | null; refetch: UseQueryResult<T, Error>['refetch'] };
 
+/** 已登录（client only） */
+function isAuthed(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem('knockwise_token') || !!localStorage.getItem('codemock_token');
+}
+
 interface DigestItem {
   id: string;
   rank: number;
@@ -114,7 +120,6 @@ export function useDigestDate(date: string | undefined): QueryHookResult<DigestT
       if (!res.ok) throw new Error('Failed to fetch daily');
       return res.json();
     },
-    enabled: !!date,
     staleTime: 5 * 60 * 1000,
   });
   return { data: qr.data, isLoading: qr.isLoading, error: qr.error, refetch: qr.refetch };

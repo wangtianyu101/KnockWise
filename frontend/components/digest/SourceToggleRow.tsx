@@ -69,7 +69,10 @@ export function SourceToggleRow({ source, isDefault, enabled, onToggle, onDelete
               ? "bg-[rgba(52,211,153,0.15)] text-[#6ee7b7] border-[rgba(52,211,153,0.3)]"
               : "bg-[rgba(245,158,11,0.15)] text-[#fcd34d] border-[rgba(245,158,11,0.3)]"
           }`}>{isDefault ? "系统" : "自定义"}</span>
-          <span className="text-[#64748b]">· {formatRelative(source.last_fetched_at)} · {source.last_item_count} 条</span>
+          {/* suppressHydrationWarning: 相对时间 SSR/CSR Date.now() 不同 */}
+          <span className="text-[#64748b]" suppressHydrationWarning>
+            · {formatRelative(source.last_fetched_at)} · {source.last_item_count} 条
+          </span>
           {source.last_error && (
             <span className="text-[#fca5a5] ml-1" title={source.last_error}>⚠ 抓取失败</span>
           )}
