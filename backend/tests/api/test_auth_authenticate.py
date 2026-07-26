@@ -10,6 +10,9 @@ T8 阶段会扩展 happy path + race condition + 真实 DB mock 测试。
 """
 from __future__ import annotations
 
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
@@ -292,3 +295,333 @@ def test_new_authenticate_calls_authenticate_core_no_override(monkeypatch):
     assert len(calls) == 1
     assert calls[0]["mode_override"] is None  # 新接口不强制 mode
     assert calls[0]["display_name"] == "昵称"  # display_name 透传
+
+
+# ─── T8 后端 auth 综合测试（happy / race / 旧 endpoint 兼容） ─────────
+# 使用 pytest-asyncio (asyncio_mode = "auto" · 来自 pyproject.toml)
+# 用 AsyncMock 替换 async_session 上下文管理器（不依赖真实 DB）
+
+import pytest
+
+
+def make_mock_db_session(user_in_db=None, raise_integrity_error=False):
+    """创建 mock async DB session 上下文管理器
+
+    user_in_db: None (邮箱不存在 · 走注册) 或 SimpleNamespace (邮箱存在 · 走登录)
+    raise_integrity_error: True 时 flush() 抛 IntegrityError（模拟 race condition）
+
+    用 class 模拟 async context manager（避免 AsyncMock __aenter__ 不被 await 的问题）
+    """
+    from sqlalchemy.exc import IntegrityError
+
+    class FakeDB:
+        def __init__(self):
+            self.user = user_in_db
+            self._raise_integrity = raise_integrity_error
+
+        async def execute(self, query):
+            class _Result:
+                def scalar_one_or_none(self_inner):
+                    return self.user
+            return _Result()
+
+        async def flush(self):
+            if self._raise_integrity:
+                raise IntegrityError("INSERT", {}, Exception("Duplicate entry"))
+
+        async def commit(self):
+            pass
+
+        async def refresh(self, user):
+            user.id = 42  # DB INSERT 后分配 id
+
+        async def add(self, obj):
+            pass
+
+        async def rollback(self):
+            pass
+
+    class FakeSessionCtx:
+        def __init__(self):
+            self.db = FakeDB()
+
+        async def __aenter__(self):
+            return self.db
+
+        async def __aexit__(self, *args):
+            return None
+
+    return FakeSessionCtx()
+
+
+# ─── happy path 测试（端到端 + mock DB） ──────────────────────
+
+
+def test_authenticate_register_happy_path_new_email():
+    """新邮箱 → 走注册流程 · 200 + mode=register + token + user"""
+    from api.auth import router
+    from fastapi import FastAPI
+    mock_session = make_mock_db_session(user_in_db=None)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/authenticate", json={
+            "email": "newuser@example.com",
+            "password": "123456",
+            "display_name": "新用户",
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["mode"] == "register"
+        assert body["user"]["email"] == "newuser@example.com"
+        assert body["user"]["display_name"] == "新用户"
+        assert "access_token" in body
+        assert body["token_type"] == "bearer"
+
+
+def test_authenticate_register_default_display_name():
+    """新邮箱 + display_name 缺省 → 用 email 前缀"""
+    from api.auth import router
+    from fastapi import FastAPI
+    mock_session = make_mock_db_session(user_in_db=None)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/authenticate", json={
+            "email": "auto-name@example.com",
+            "password": "123456",
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["user"]["display_name"] == "auto-name"  # email 前缀
+
+
+def test_authenticate_login_happy_path_existing_email():
+    """已注册邮箱 + 正确密码 → 走登录流程 · 200 + mode=login"""
+    from api.auth import _hash_password, router
+    from fastapi import FastAPI
+    user = SimpleNamespace(
+        id=42, email="existing@example.com",
+        display_name="existing", github_username=None, avatar_url=None,
+        password_hash=_hash_password("123456"),
+        last_login_at=None,
+    )
+    mock_session = make_mock_db_session(user_in_db=user)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/authenticate", json={
+            "email": "existing@example.com",
+            "password": "123456",
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["mode"] == "login"
+        assert body["user"]["email"] == "existing@example.com"
+
+
+def test_authenticate_login_wrong_password_returns_401():
+    """已注册邮箱 + 错误密码 → 401"""
+    from api.auth import _hash_password, router
+    from fastapi import FastAPI
+    user = SimpleNamespace(
+        id=42, email="existing@example.com",
+        display_name="existing", github_username=None, avatar_url=None,
+        password_hash=_hash_password("correct"),
+        last_login_at=None,
+    )
+    mock_session = make_mock_db_session(user_in_db=user)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/authenticate", json={
+            "email": "existing@example.com",
+            "password": "wrongpassword",  # ≥ 6 位避免 password length 校验（400）· 测试密码错
+        })
+        assert resp.status_code == 401
+        assert "Invalid email or password" in resp.json()["detail"]
+
+
+# ─── race condition 测试 ─────────────────────────────────
+
+
+def test_authenticate_race_condition_returns_409():
+    """race condition · check-email 后到 submit 之间被抢先注册 → IntegrityError → 409"""
+    from api.auth import router
+    from fastapi import FastAPI
+    # user_in_db=None 模拟 check-email 之后被其他请求抢先注册
+    # flush() 抛 IntegrityError（DB 触发 unique 约束）
+    mock_session = make_mock_db_session(user_in_db=None, raise_integrity_error=True)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/authenticate", json={
+            "email": "race@example.com",
+            "password": "123456",
+            "display_name": "race",
+        })
+        assert resp.status_code == 409
+        assert "just registered" in resp.json()["detail"]
+
+
+# ─── check-email endpoint 测试 ────────────────────────────
+
+
+def test_check_email_returns_200_exists_true():
+    """GET /api/auth/check-email · 邮箱存在 → 200 + exists=true"""
+    from api.auth import router
+    from fastapi import FastAPI
+    user = SimpleNamespace(id=42, email="wangtianyu@example.com")
+    mock_session = make_mock_db_session(user_in_db=user)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.get("/api/auth/check-email?email=wangtianyu@example.com")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["exists"] is True
+        assert body["email"] == "wangtianyu@example.com"
+
+
+def test_check_email_returns_200_exists_false():
+    """GET /api/auth/check-email · 邮箱不存在 → 200 + exists=false"""
+    from api.auth import router
+    from fastapi import FastAPI
+    mock_session = make_mock_db_session(user_in_db=None)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.get("/api/auth/check-email?email=newuser@example.com")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["exists"] is False
+
+
+def test_check_email_invalid_format_returns_400():
+    """GET /api/auth/check-email · 邮箱格式错 → 400"""
+    from api.auth import router
+    from fastapi import FastAPI
+    app = FastAPI()
+    app.include_router(router)
+    client = TestClient(app)
+
+    resp = client.get("/api/auth/check-email?email=invalid-no-at")
+    assert resp.status_code == 400
+    assert "Invalid email" in resp.json()["detail"]
+
+
+# ─── 旧 endpoint 兼容（end-to-end · 不 mock _authenticate_core） ─
+
+
+def test_legacy_register_endpoint_compat_with_email_exists():
+    """旧 /register endpoint · 邮箱已存在 → 409（mode_override=register 强制）"""
+    from api.auth import _hash_password, router
+    from fastapi import FastAPI
+    user = SimpleNamespace(
+        id=42, email="existing@example.com",
+        display_name="existing", github_username=None, avatar_url=None,
+        password_hash=_hash_password("123456"),
+        last_login_at=None,
+    )
+    mock_session = make_mock_db_session(user_in_db=user)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/register", json={
+            "email": "existing@example.com",
+            "password": "123456",
+            "display_name": "duplicate",
+        })
+        assert resp.status_code == 409
+        assert "already registered" in resp.json()["detail"]
+
+
+def test_legacy_login_endpoint_compat_with_email_not_exists():
+    """旧 /login endpoint · 邮箱不存在 → 401（mode_override=login 强制）"""
+    from api.auth import router
+    from fastapi import FastAPI
+    mock_session = make_mock_db_session(user_in_db=None)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/login", json={
+            "email": "notfound@example.com",
+            "password": "123456",
+        })
+        assert resp.status_code == 401
+        assert "Invalid email or password" in resp.json()["detail"]
+
+
+def test_legacy_login_endpoint_compat_login_success():
+    """旧 /login endpoint · 邮箱存在 + 正确密码 → 200 + mode=login"""
+    from api.auth import _hash_password, router
+    from fastapi import FastAPI
+    user = SimpleNamespace(
+        id=42, email="existing@example.com",
+        display_name="existing", github_username=None, avatar_url=None,
+        password_hash=_hash_password("123456"),
+        last_login_at=None,
+    )
+    mock_session = make_mock_db_session(user_in_db=user)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/login", json={
+            "email": "existing@example.com",
+            "password": "123456",
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["mode"] == "login"
+
+
+def test_legacy_register_endpoint_compat_register_success():
+    """旧 /register endpoint · 邮箱不存在 + display_name → 200 + mode=register"""
+    from api.auth import router
+    from fastapi import FastAPI
+    mock_session = make_mock_db_session(user_in_db=None)
+
+    with patch("core.database.async_session", return_value=mock_session):
+        app = FastAPI()
+        app.include_router(router)
+        client = TestClient(app)
+
+        resp = client.post("/api/auth/register", json={
+            "email": "newuser@example.com",
+            "password": "123456",
+            "display_name": "新用户",
+        })
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["mode"] == "register"
+        assert body["user"]["display_name"] == "新用户"

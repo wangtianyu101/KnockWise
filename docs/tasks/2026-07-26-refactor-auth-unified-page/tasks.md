@@ -70,7 +70,7 @@ T4 ─────────→ T5 ──→ T6 ──→ T7
 5. feat(auth): auth 页迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG 图标  (T5) [x] commit pending
 6. refactor(auth): / 重定向到 /auth 统一入口                        (T6) [x] commit pending
 7. test(auth): 完整测试 · JWT 解码 + userName + 自动判断 + 提交流程 + v4 UI  (T7) [x] commit pending
-8. test(auth): authenticate + check-email 完整测试 · 旧 endpoint 兼容  (T8) ⬜
+8. test(auth): authenticate + check-email 完整测试 · 旧 endpoint 兼容  (T8) [x] commit pending
 ```
 
 每 commit 前自检清单（CLAUDE.md § 6.7）：
@@ -110,7 +110,7 @@ T4 ─────────→ T5 ──→ T6 ──→ T7
 - [ ] T5: `pages/auth.tsx` 迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG · **估时**: 30 min · **依赖**: T1, T2, T4 · **测试**: ✅ PASS (vitest 31 files / 233 tests · tsc 0 错误) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛 · 无 FAIL)
 - [ ] T6: `pages/index.tsx` 改为重定向 `/` → `/auth` · **估时**: 3 min · **依赖**: T5 · **测试**: ✅ PASS (vitest 全套 · tsc 0 错误) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛)
 - [ ] T7: 前端测试 `__tests__/pages/auth.test.tsx` 综合 · **估时**: 15 min · **依赖**: T5, T6 · **测试**: ✅ PASS (13/13 vitest · 全套 32 files / 246 tests · tsc 0 错误) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛 · 无 FAIL)
-- [ ] T8: 后端测试 `test_auth_authenticate.py` 重写 · **估时**: 10 min · **依赖**: T4  (与 T7 可并行) · **测试**: 待 T8 后跑
+- [ ] T8: 后端测试 `test_auth_authenticate.py` 重写 · **估时**: 10 min · **依赖**: T4  (与 T7 可并行) · **测试**: ✅ PASS (30/30 pytest · FakeSessionCtx/FakeDB mock · race condition + 旧 endpoint e2e) · verifier: ✅ PASS (CLAUDE.md § 6.7)
 
 **总估时**：~1.5h 实施 + ~30 min verify-loop + ~15 min 复盘 = **~2h**
 
