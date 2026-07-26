@@ -36,19 +36,29 @@ RSS_HEAD_TIMEOUT_SEC = 5.0
 
 
 async def _validate_rss_url(url: str) -> None:
-    """HEAD 请求校验 RSS URL 可达 · spec R5。
+    """校验 RSS URL 可达 · spec R5。
 
+    HEAD 优先 · 405/501 fallback GET（很多 RSS server 不支持 HEAD）
     失败抛 400。timeout 5s。
     """
-    try:
-        async with httpx.AsyncClient(timeout=RSS_HEAD_TIMEOUT_SEC) as client:
-            resp = await client.head(url, follow_redirects=True)
-            if resp.status_code >= 400:
-                raise HTTPException(status_code=400, detail=f"RSS URL 不可达: HTTP {resp.status_code}")
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=400, detail=f"RSS URL 超时（>{RSS_HEAD_TIMEOUT_SEC}s）")
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=400, detail=f"RSS URL 请求失败: {e}")
+    async with httpx.AsyncClient(timeout=RSS_HEAD_TIMEOUT_SEC, follow_redirects=True) as client:
+        # 1) HEAD 尝试
+        resp = None
+        try:
+            resp = await client.head(url)
+        except (httpx.TimeoutException, httpx.RequestError) as e:
+            raise HTTPException(status_code=400, detail=f"RSS URL 请求失败: {type(e).__name__}")
+
+        # HEAD 不支持时（405/501）· fallback GET (with Range: bytes=0-1023 限流量)
+        if resp.status_code in (405, 501) or (resp.status_code >= 400 and resp.status_code != 404):
+            try:
+                headers = {"Range": "bytes=0-1023"} if resp.status_code in (405, 501) else {}
+                resp = await client.get(url, headers=headers)
+            except (httpx.TimeoutException, httpx.RequestError) as e:
+                raise HTTPException(status_code=400, detail=f"RSS URL 请求失败: {type(e).__name__}")
+
+        if resp.status_code >= 400:
+            raise HTTPException(status_code=400, detail=f"RSS URL 不可达: HTTP {resp.status_code}")
 
 
 @router.get("/sources", response_model=DigestSourceListResponse)
@@ -140,13 +150,18 @@ async def patch_source(
         if source is None:
             raise HTTPException(status_code=404, detail="信源不存在")
 
-        # 所有权：仅自定义源允许 PATCH（系统默认 is_default=True 不能改）
-        if source.is_default or source.user_id != str(user.id):
-            raise HTTPException(status_code=403, detail="无权修改此信源")
+        # spec R5: 系统默认源可启停（enabled），但不能改 name（系统所有权）
+        # 用户自定义源可全改
+        is_owner = source.user_id == str(user.id) and not source.is_default
+        is_system = source.is_default
 
         if body.enabled is not None:
+            if not (is_owner or is_system):
+                raise HTTPException(status_code=403, detail="无权修改此信源")
             source.enabled = body.enabled
         if body.name is not None:
+            if not is_owner:
+                raise HTTPException(status_code=403, detail="无权重命名系统默认源")
             source.name = body.name
 
         await db.commit()

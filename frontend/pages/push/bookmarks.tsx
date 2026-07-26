@@ -34,8 +34,10 @@ export default function BookmarksPage() {
   const [sort, setSort] = useState<Sort>('bookmarked_desc');
 
   // 后端目前 type filter 只支持 model|application，论文 tab 走客户端 filter
-  const backendFilter = filter === 'paper' ? null : filter === 'all' ? null : filter;
-  const { data, isLoading } = useDigestBookmarks(backendFilter as 'all' | 'model' | 'application' | undefined);
+  // 用 undefined 触发 hook 默认 'all' · 不要传 null（会拼出 ?type=null → 后端 422）
+  const backendFilter: 'all' | 'model' | 'application' | undefined =
+    filter === 'all' || filter === 'paper' ? undefined : filter;
+  const { data, isLoading } = useDigestBookmarks(backendFilter);
 
   const allItems = data?.items ?? [];
 
