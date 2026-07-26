@@ -15,7 +15,9 @@
 > - 🟡 **议题 D + F** 暂缓，与 🔴 组并行不冲突
 > - 🔴 **2026-07-22 新增债务 9**：V4 AI 推送模块存在 **41 个测试空壳被 pytest 计为通过**（详见三、债务 9）· 用户原话「先改两个 P0」
 > - 🟡 **2026-07-22 新增任务 · CI 失败自动修复**（[`tasks/2026-07-22-new-feature-ci-autofix/`](tasks/2026-07-22-new-feature-ci-autofix/research.md)）：v2 安全审查完成（research.md v2 + decisions.md 10/10 全拍 · CLAUDE.md § 6.10 4 道关全部对齐）· 进 1 步写 spec.md（10 Requirement）
-> - 🟡 **2026-07-26 新增任务 · 注册/登录合并页 + 注册流程 Bug**（[`tasks/2026-07-26-refactor-auth-unified-page/`](tasks/2026-07-26-refactor-auth-unified-page/research.md)）：用户拍板路径 B（决策 1：修 Bug **+** 改 `/` → `/auth` 单页 · refactor-6）+ Explore agent 证据发现**调研偏差**（决策 2"默认 role=candidate"已取消 · User 模型**无 role 字段** · "开发者"是 Layout hardcode fallback + `_app` 未传 userName）· 决策 6/7/8 待用户重新拍板
+> - ✅ **2026-07-26 已完成 · 注册/登录合并页 + 注册流程 Bug**（[`tasks/2026-07-26-refactor-auth-unified-page/`](tasks/2026-07-26-refactor-auth-unified-page/retro.md)）：用户拍板路径 B（决策 1：修 Bug **+** 改 `/` → `/auth` 单页 · refactor-6）· 9 个 commit（`8b9aab0` ~ `00aedc1`）· 5 步验证全 PASS（L1/L2/L3/L4/L5）· 7/7 AC 全部验证 · phase_acceptance accepted · L5 staging curl 端到端 10/10（替代 GUI 浏览器手测）· 决策 13（合并 login+register → authenticate）落地一致 · 决策 12（v4 视觉精简）严格执行
+> - 🟡 **2026-07-26 P0 · 任务治理 Gate 执行链修复**（[`tasks/2026-07-26-p0-governance-gate-enforcement/`](tasks/2026-07-26-p0-governance-gate-enforcement/verify.md)）：代码侧已提交 `f1cf815` 并经独立 verifier PASS（专项 74/74）；GitHub Ruleset / Required Check 仍为外部 BLOCKED，不能宣称 merge 不可绕过。
+> - 🔴 **2026-07-26 P0 · AI Eval 基线 13 个失败**（[`tasks/2026-07-26-p0-eval-baseline-repair/`](tasks/2026-07-26-p0-eval-baseline-repair/research.md)）：用户选择先修 Eval 批次；基线 `13 failed, 7 passed`，Digest API 9 个失败明确留到下一批。
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 
@@ -40,6 +42,8 @@
 > - **P1 验收与学习 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-verification-learning/decisions.md`](tasks/2026-07-23-refactor-product-verification-learning/decisions.md)（决策 1：轻量用户验收 + Outcome Review 7/14/30 + 旅程追踪按 L0-L3 触发 · `refactor-6`）
 > - **P2 治理清理 4 项合一（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)（决策 1：skill 更新 + 文档 checker + frontmatter 升级 + 长期 §6.11 退役规则 · `refactor-6`）
 > - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
+> - **P0 任务治理 Gate 执行链（2026-07-26）**：[`docs/tasks/2026-07-26-p0-governance-gate-enforcement/decisions.md`](tasks/2026-07-26-p0-governance-gate-enforcement/decisions.md)（决策 1：checker + manifest Gate + 版本化 Hook + CI，只读无 secrets；✅ commit `f1cf815` · ⛔ Ruleset 外部 BLOCKED）
+> - **P0 AI Eval 基线修复（2026-07-26）**：[`docs/tasks/2026-07-26-p0-eval-baseline-repair/decisions.md`](tasks/2026-07-26-p0-eval-baseline-repair/decisions.md)（决策 1：先修 13 个 Eval；决策 2：Digest fallback 保持结构化 schema；🚧 实施中）
 > - **P0-2 空模板 DOD Gate（2026-07-26）**：[`docs/tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md`](tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md)（决策 1：共享模板残留 Gate + 真实模板负例 + 合法技术文本边界；✅ 已实现并独立验证 · 用户验收待完成）
 > - **P0-3 治理工具回归测试可信度（2026-07-26）**：[`docs/tasks/2026-07-26-p0-governance-regression-trust/decisions.md`](tasks/2026-07-26-p0-governance-regression-trust/decisions.md)（决策 1：关键契约以生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言为主证据；✅ commit `f1cf815` 并独立验证 · 用户验收待完成）
 >
