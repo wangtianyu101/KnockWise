@@ -21,6 +21,91 @@ import os
 import re
 
 
+# ─── 通用内容实质性 Gate（P0-2）────────────────────────────
+FENCED_CODE_RE = re.compile(r'```.*?```', re.DOTALL)
+ANGLE_PLACEHOLDER_RE = re.compile(
+    r'<[A-Za-z\u4e00-\u9fff][^>\n]{0,80}>'
+)
+PLACEHOLDER_HINT_RE = re.compile(
+    r'待|填|具体|描述|应该|必须|从.+抄|如何|什么|谁|姓名|行号|'
+    r'原文|数字|估算|短名|假设|输入|输出|功能|角色|能力|价值|'
+    r'场景|前置|动作|期望|业务|证据|原因|环境'
+)
+TEXT_PLACEHOLDER_RE = re.compile(
+    r'同上结构|(?:[0-9一二三四五六七八九十]+\s*步)?后填|⏳\s*待跑'
+)
+
+
+def _frontmatter(content):
+    """返回文件开头的 YAML frontmatter；不存在时返回空字符串。"""
+    match = re.match(r'\A---\s*\n(.*?)\n---(?:\s*\n|$)', content, re.DOTALL)
+    return match.group(1) if match else ''
+
+
+def check_template_residue(content):
+    """
+    阻断仍是模板或含多处高置信度填空标记的文档。
+
+    只检查“明显未填写”的语义，不把任意 <...> 当占位符：
+    JSX <Component>、路径 <id> 和比较符 < 200ms> 都必须保持合法。
+    """
+    errors = []
+    frontmatter = _frontmatter(content)
+    first_h1 = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+
+    tagged_template = bool(
+        re.search(
+            r'^tags:\s*\[[^\]]*(?:^|[\s,])template(?:[\s,\]]|$)',
+            frontmatter,
+            re.MULTILINE | re.IGNORECASE,
+        )
+    )
+    titled_template = bool(
+        first_h1
+        and re.search(
+            r'^(?:'
+            r'调研模板(?:\s*[·（:]|$)|'
+            r'Spec\s+规格模板(?:\s|（|$)|'
+            r'方案文档模板(?:\s|（|$)|'
+            r'任务拆分模板(?:\s|（|$)|'
+            r'测试用例(?:\s*·)?\s*模板(?:\s|（|$)|'
+            r'验证文档模板(?:\s|（|$)|'
+            r'复盘文档模板(?:\s|（|$)'
+            r')',
+            first_h1.group(1),
+            re.IGNORECASE,
+        )
+    )
+    if tagged_template or titled_template:
+        errors.append('模板残留: 文档仍标记为模板，不能作为完成证据')
+
+    if re.search(
+        r'^status:\s*(?:draft|template)\s*$',
+        frontmatter,
+        re.MULTILINE | re.IGNORECASE,
+    ):
+        errors.append('模板残留: frontmatter status 仍为 draft/template')
+
+    # 示例代码块可能故意展示占位语法，不把它当作未填写正文。
+    prose = FENCED_CODE_RE.sub('', content)
+    placeholders = [
+        match.group(0)
+        for match in ANGLE_PLACEHOLDER_RE.finditer(prose)
+        if PLACEHOLDER_HINT_RE.search(match.group(0))
+    ]
+    placeholders.extend(
+        match.group(0) for match in TEXT_PLACEHOLDER_RE.finditer(prose)
+    )
+    if len(placeholders) >= 2:
+        preview = ', '.join(repr(item) for item in placeholders[:3])
+        errors.append(
+            f'模板残留: 发现 {len(placeholders)} 处未填写占位'
+            f'（示例: {preview}）'
+        )
+
+    return errors
+
+
 # ─── 豁免清单（白名单）───────────────────────────────────────
 # 这些文件不参与 DOD 校验（通常是已归档的旧格式文档或重构专用格式）
 # 维护规则：
@@ -450,7 +535,8 @@ def main():
         print(f'❌ 读取文件失败: {e}')
         sys.exit(1)
 
-    errors = CHECKS[step](content)
+    errors = check_template_residue(content)
+    errors.extend(CHECKS[step](content))
 
     if errors:
         print(f'❌ {step} DOD 校验失败 ({filepath}):')

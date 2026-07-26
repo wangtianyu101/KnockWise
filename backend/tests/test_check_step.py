@@ -7,6 +7,10 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import subprocess
+import sys
+
+import pytest
 
 # 直接 import scripts/check-step.py（不在 backend package 里）
 _scripts_path = Path(__file__).parent.parent.parent / "scripts" / "check-step.py"
@@ -18,6 +22,123 @@ check_research = _mod.check_research
 check_plan = _mod.check_plan
 check_verify = _mod.check_verify
 CHECKS = _mod.CHECKS
+REPO_ROOT = Path(__file__).parent.parent.parent
+CHECK_STEP = REPO_ROOT / "scripts" / "check-step.py"
+
+
+def run_checker(step: str, path: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(CHECK_STEP), step, str(path)],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+TEMPLATE_CASES = [
+    ("research", "research-new-feature.md"),
+    ("research", "research-bug.md"),
+    ("research", "research-refactor.md"),
+    ("research", "research-p0.md"),
+    ("spec", "spec-template.md"),
+    ("plan", "plan-template.md"),
+    ("tasks", "tasks-template.md"),
+    ("implement", "test-cases-template.md"),
+    ("verify", "verify-template.md"),
+    ("retro", "retro-template.md"),
+]
+
+
+class TestTemplateResidueGate:
+    """P0-2：模板结构和示例不能冒充真实 DOD 证据。"""
+
+    @pytest.mark.parametrize(("step", "template_name"), TEMPLATE_CASES)
+    def test_repository_templates_are_rejected(self, step, template_name):
+        template = REPO_ROOT / "docs" / "templates" / template_name
+
+        result = run_checker(step, template)
+
+        assert result.returncode == 1, (
+            f"{template_name} is an empty template and must fail, "
+            f"but checker returned {result.returncode}:\n{result.stdout}"
+        )
+
+    def test_renamed_template_with_placeholders_is_rejected(self, tmp_path):
+        content = (
+            (REPO_ROOT / "docs" / "templates" / "spec-template.md")
+            .read_text(encoding="utf-8")
+            .replace("Spec 规格模板（技术脑）", "示例功能规格")
+            .replace("tags: [spec, 1步, 技术脑, 模板]", "tags: [spec, 1步, 技术脑]")
+        )
+        copied_spec = tmp_path / "spec.md"
+        copied_spec.write_text(content, encoding="utf-8")
+
+        result = run_checker("spec", copied_spec)
+
+        assert result.returncode == 1
+        assert "模板残留" in result.stdout
+
+    def test_technical_angle_brackets_are_not_placeholders(self, tmp_path):
+        content = """
+## 0. 上游引用
+调研报告：research.md；用户已确认 2026-07-26。
+
+## 1. 用户故事
+作为开发者，我想验证文档内容，以便阻止空模板。
+
+## 2. 验收标准
+### Requirement: 阻断空模板
+The system SHALL reject documents that still contain template residue.
+
+#### Scenario: valid JSX
+Given 文档包含 React `<Component>`，When 校验，Then 通过。
+#### Scenario: valid path
+Given 文档包含路径 `<id>`，When 校验，Then 通过。
+#### Scenario: valid comparison
+Given 文档包含性能目标 `< 200ms`，When 校验，Then 通过。
+
+说明：`Scenario: <场景名>` 是单处格式示例，不代表整份文档为空。
+
+## 3. 边界条件
+空值、异常、并发、时序、安全、性能、兼容、国际化均已说明。
+
+## 4. 数据契约
+Pydantic BaseModel Schema：字段 content 为 str。
+
+## 5. 测试场景
+- [ ] TC-1: JSX 语法
+- [ ] TC-2: 路径参数
+- [ ] TC-3: 性能比较符
+"""
+        valid_spec = tmp_path / "spec.md"
+        valid_spec.write_text(content, encoding="utf-8")
+
+        result = run_checker("spec", valid_spec)
+
+        assert result.returncode == 0, result.stdout
+
+    def test_document_about_empty_templates_is_not_itself_a_template(self):
+        content = """
+---
+title: P0 调研 · 空模板被 DOD checker 判绿
+status: approved
+tags: [p0, governance]
+---
+# P0 调研 · 空模板被 DOD checker 判绿
+
+本文分析空模板为什么会被误判，不是一个待填写模板。
+"""
+
+        assert _mod.check_template_residue(content) == []
+
+    def test_cli_reports_template_residue(self):
+        template = REPO_ROOT / "docs" / "templates" / "verify-template.md"
+
+        result = run_checker("verify", template)
+
+        assert result.returncode == 1
+        assert "模板残留" in result.stdout
 
 
 # ─── 回归测试：bold-tolerant regex ──────────────────────

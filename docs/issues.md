@@ -16,6 +16,7 @@
 > - 🔴 **2026-07-22 新增债务 9**：V4 AI 推送模块存在 **41 个测试空壳被 pytest 计为通过**（详见三、债务 9）· 用户原话「先改两个 P0」
 > - 🟡 **2026-07-22 新增任务 · CI 失败自动修复**（[`tasks/2026-07-22-new-feature-ci-autofix/`](tasks/2026-07-22-new-feature-ci-autofix/research.md)）：v2 安全审查完成（research.md v2 + decisions.md 10/10 全拍 · CLAUDE.md § 6.10 4 道关全部对齐）· 进 1 步写 spec.md（10 Requirement）
 > - 🟡 **2026-07-26 新增任务 · 注册/登录合并页 + 注册流程 Bug**（[`tasks/2026-07-26-refactor-auth-unified-page/`](tasks/2026-07-26-refactor-auth-unified-page/research.md)）：用户拍板路径 B（决策 1：修 Bug **+** 改 `/` → `/auth` 单页 · refactor-6）+ Explore agent 证据发现**调研偏差**（决策 2"默认 role=candidate"已取消 · User 模型**无 role 字段** · "开发者"是 Layout hardcode fallback + `_app` 未传 userName）· 决策 6/7/8 待用户重新拍板
+> - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 
 ---
 
@@ -38,6 +39,7 @@
 > - **P1 验收与学习 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-verification-learning/decisions.md`](tasks/2026-07-23-refactor-product-verification-learning/decisions.md)（决策 1：轻量用户验收 + Outcome Review 7/14/30 + 旅程追踪按 L0-L3 触发 · `refactor-6`）
 > - **P2 治理清理 4 项合一（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)（决策 1：skill 更新 + 文档 checker + frontmatter 升级 + 长期 §6.11 退役规则 · `refactor-6`）
 > - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
+> - **P0-2 空模板 DOD Gate（2026-07-26）**：[`docs/tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md`](tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md)（决策 1：共享模板残留 Gate + 真实模板负例 + 合法技术文本边界；✅ 已实现并独立验证 · 用户验收待完成）
 >
 > 本节是简表镜像 · 详细记录请看对应 decisions.md
 
