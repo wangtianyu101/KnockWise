@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup Index · /auth · KnockWise</title>
+<style>
+  :root {
+    --bg: #050914;
+    --text: #f8fafc;
+    --text-dim: #94a3b8;
+    --primary: #6366f1;
+    --border: rgba(148, 163, 184, 0.08);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 48px 24px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 28px; margin-bottom: 12px; background: linear-gradient(135deg, #818cf8, #06b6d4); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .tagline { color: var(--text-dim); margin-bottom: 32px; font-size: 14px; }
+  .page-list { display: grid; gap: 12px; }
+  .page-item {
+    padding: 16px;
+    background: rgba(15, 20, 40, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: border-color 0.2s;
+  }
+  .page-item:hover { border-color: rgba(99, 102, 241, 0.5); }
+  .page-item a {
+    color: var(--text);
+    text-decoration: none;
+    display: block;
+  }
+  .page-item .name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 4px;
+  }
+  .page-item .desc { font-size: 13px; color: var(--text-dim); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--primary);
+    color: white;
+    border-radius: 4px;
+    font-size: 11px;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+<h1>✨ Mockup Index · /auth</h1>
+<p class="tagline">KnockWise 注册/登录合并页 · 5 个状态演示 · v4 视觉精简（去副标题 + 去检查状态指示器 + 单一表单自动判断）</p>
+
+<div class="page-list">
+  <div class="page-item">
+    <a href="01-auth.html">
+      <div class="name">01-auth.html <span class="badge">v4</span></div>
+      <div class="desc">单一表单自动判断 · V3 dark glassmorphism · 5 个状态演示（默认 / 已注册 / 未注册 / 注册成功 / Header 修复）</div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+---
+schema: task/v1
+task_id: 2026-07-26-refactor-auth-unified-page
+mode: refactor-6
+current_step: 4
+step_state: in_progress
+triggers:
+  ui_design: true
+  ui_components: true
+  api_change: true
+  db_change: false
+test_evidence:
+  type: tasks-inline
+  path: docs/tasks/2026-07-26-refactor-auth-unified-page/tasks.md
+metadata:
+  created: 2026-07-26
+  author: user
+  related:
+    - research.md
+    - decisions.md
+    - spec.md
+    - design-spec.md
+    - plan.md
+    - tasks.md
+    - verify.md

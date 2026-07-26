@@ -13,6 +13,8 @@ import { useRouter } from "next/router";
 import "@/styles/globals.css";
 import { Layout } from "@/components/v3/Layout/Layout";
 import { getToken } from "@/lib/api";
+import { getUserNameFromToken } from "@/lib/auth";
+import { ToastProvider } from "@/components/ToastProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -46,9 +48,14 @@ export default function App({ Component, pageProps }: AppProps) {
   const shouldWrapLayout =
     hasToken && !LAYOUT_EXCLUDE_PATHS.has(router.pathname);
 
+  // T2 · 决策 8 方案 A：从 JWT email 前缀派生 userName（去 hardcode "开发者"）
+  // SSR 时 getToken() 返回 null → userName = null → Layout 接收 undefined（保持兼容 · T3 再必填）
+  const userName = hasToken ? getUserNameFromToken(getToken()) : null;
+
   if (!shouldWrapLayout) {
     return (
       <QueryClientProvider client={queryClient}>
+        <ToastProvider />
         <Component {...pageProps} />
       </QueryClientProvider>
     );
@@ -56,7 +63,8 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Layout currentPage={router.pathname}>
+      <ToastProvider />
+      <Layout currentPage={router.pathname} userName={userName ?? undefined}>
         <Component {...pageProps} />
       </Layout>
     </QueryClientProvider>
