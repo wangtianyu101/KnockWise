@@ -1,0 +1,21 @@
+schema: task/v1
+task_id: 2026-07-26-p0-governance-regression-trust
+mode: timebox
+current_step: 0
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: standalone
+  path: test-cases.md
+metadata:
+  created: 2026-07-26
+  author: Codex
+  related:
+    - research.md
+    - decisions.md
+    - tasks.md
+    - test-cases.md

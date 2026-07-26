@@ -17,6 +17,7 @@
 > - 🟡 **2026-07-22 新增任务 · CI 失败自动修复**（[`tasks/2026-07-22-new-feature-ci-autofix/`](tasks/2026-07-22-new-feature-ci-autofix/research.md)）：v2 安全审查完成（research.md v2 + decisions.md 10/10 全拍 · CLAUDE.md § 6.10 4 道关全部对齐）· 进 1 步写 spec.md（10 Requirement）
 > - 🟡 **2026-07-26 新增任务 · 注册/登录合并页 + 注册流程 Bug**（[`tasks/2026-07-26-refactor-auth-unified-page/`](tasks/2026-07-26-refactor-auth-unified-page/research.md)）：用户拍板路径 B（决策 1：修 Bug **+** 改 `/` → `/auth` 单页 · refactor-6）+ Explore agent 证据发现**调研偏差**（决策 2"默认 role=candidate"已取消 · User 模型**无 role 字段** · "开发者"是 Layout hardcode fallback + `_app` 未传 userName）· 决策 6/7/8 待用户重新拍板
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
+> - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 
 ---
 
@@ -40,6 +41,7 @@
 > - **P2 治理清理 4 项合一（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)（决策 1：skill 更新 + 文档 checker + frontmatter 升级 + 长期 §6.11 退役规则 · `refactor-6`）
 > - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
 > - **P0-2 空模板 DOD Gate（2026-07-26）**：[`docs/tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md`](tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md)（决策 1：共享模板残留 Gate + 真实模板负例 + 合法技术文本边界；✅ 已实现并独立验证 · 用户验收待完成）
+> - **P0-3 治理工具回归测试可信度（2026-07-26）**：[`docs/tasks/2026-07-26-p0-governance-regression-trust/decisions.md`](tasks/2026-07-26-p0-governance-regression-trust/decisions.md)（决策 1：关键契约以生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言为主证据；✅ commit `f1cf815` 并独立验证 · 用户验收待完成）
 >
 > 本节是简表镜像 · 详细记录请看对应 decisions.md
 
@@ -469,7 +471,7 @@ DELETE FROM user_questions WHERE user_id = ?;
 
 **2026-07-23 自动决策**：✅ 新任务采用最小 `task.yaml`，唯一记录 mode/current_step/step_state/triggers/test_evidence；新增目录级 `check-task.py`，强制真实测试证据但允许 code/tasks-inline/standalone 多落点；pre-commit 固定检查 INDEX 视图。P0-5 的 task 状态继续留在 tasks.md，不复制到 manifest。旧任务标 `LEGACY_UNVERIFIED`，不维护永久白名单。
 
-**状态**：🔴 自动决策 · 按 `refactor-6` 待步骤 1 规格。
+**状态**：🟡 代码侧执行链已落地（2026-07-26 P0-1，独立 verifier PASS）；历史 task manifest 仍不回填，GitHub Required Check 归债务 16 外部配置。
 
 **明确排除**：全量历史迁移、时间调度器、事件账本、证据哈希、自动 verifier/mutation test、第一版完整 diff trigger 推断。
 
