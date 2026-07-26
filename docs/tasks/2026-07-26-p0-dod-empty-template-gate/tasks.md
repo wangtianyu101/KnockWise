@@ -10,7 +10,7 @@ related: [research.md, decisions.md, test-cases.md]
 
 # P0 空模板 DOD Gate · 实施任务
 
-> 路径模式：`timebox`。用户未要求 commit，产出先保留在 worktree。
+> 路径模式：`timebox`。用户已明确授权提交；实施 commit 为 `7fc4d31`。
 
 ## 1. 任务清单
 
@@ -20,7 +20,7 @@ related: [research.md, decisions.md, test-cases.md]
   - **依赖**: —
   - **估时**: 45 min
   - **实际**: 34 min
-  - **产出**: 1 个实施边界；不擅自 commit
+  - **产出**: commit `7fc4d31`
 
 ## 2. 任务依赖
 
@@ -30,7 +30,7 @@ T1 为单一原子任务，无前置依赖、无环。
 
 | 任务 | 自动化测试 | 场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 任务 T1 | `test_check_step.py::TestTemplateResidueGate` | 空模板非零、合法边界不误伤 | REQ-001 | SCN-001 | TC-001~005 | L2 | worktree | PASS | PASS | PENDING |
+| 任务 T1 | `test_check_step.py::TestTemplateResidueGate` | 空模板非零、合法边界不误伤 | REQ-001 | SCN-001 | TC-001~005 | L2 | `7fc4d31` | PASS | PASS | PENDING |
 
 ## 4. 总估时
 
@@ -60,7 +60,13 @@ T1 为单一原子任务，无前置依赖、无环。
 
 ## 7. 任务状态
 
-- implementation：worktree（未 commit）
+- implementation：commit `7fc4d31`
 - test：PASS（77/77）
 - verifier：PASS
 - acceptance：PENDING
+
+## 8. Commit 历史
+
+| commit | 内容 | 实际耗时 | 估时偏差 |
+|---|---|---:|---:|
+| `7fc4d31` | 共享模板残留 Gate、回归测试和任务主账 | 34 min | -24.4% |

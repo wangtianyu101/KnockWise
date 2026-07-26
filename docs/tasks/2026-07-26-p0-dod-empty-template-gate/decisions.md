@@ -38,7 +38,7 @@ related: [research.md, task.yaml]
 
 | 决策 | 落地点 | 状态 |
 |---|---|---|
-| 1 | checker + regression tests | ✅ 已实施 · 77/77 PASS |
+| 1 | checker + regression tests | ✅ 已落地 · commit `7fc4d31` · 77/77 PASS |
 | 1 | 本地 Hook / CI 调用链 | ✅ 相关回归 PASS · 独立 verifier PASS |
 
 ## 元信息
@@ -50,4 +50,4 @@ related: [research.md, task.yaml]
 - **待确认数**：0
 - **暂缓数**：0
 - **负责人**：Codex / 用户
-- **状态**：已实现并独立验证 · 用户验收待完成
+- **状态**：已提交并独立验证 · 用户验收待完成
