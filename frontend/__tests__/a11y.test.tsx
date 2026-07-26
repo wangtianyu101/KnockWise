@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { StatCard } from '@/components/shared/StatCard';
+import StatCard from '@/components/shared/StatCard';
 
 describe('P1-6 a11y unit: StatCard', () => {
   it('has accessible label via aria-label or text', () => {

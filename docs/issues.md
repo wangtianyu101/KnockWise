@@ -15,6 +15,7 @@
 > - 🟡 **议题 D + F** 暂缓，与 🔴 组并行不冲突
 > - 🔴 **2026-07-22 新增债务 9**：V4 AI 推送模块存在 **41 个测试空壳被 pytest 计为通过**（详见三、债务 9）· 用户原话「先改两个 P0」
 > - 🟡 **2026-07-22 新增任务 · CI 失败自动修复**（[`tasks/2026-07-22-new-feature-ci-autofix/`](tasks/2026-07-22-new-feature-ci-autofix/research.md)）：v2 安全审查完成（research.md v2 + decisions.md 10/10 全拍 · CLAUDE.md § 6.10 4 道关全部对齐）· 进 1 步写 spec.md（10 Requirement）
+> - 🟡 **2026-07-26 新增任务 · 注册/登录合并页 + 注册流程 Bug**（[`tasks/2026-07-26-refactor-auth-unified-page/`](tasks/2026-07-26-refactor-auth-unified-page/research.md)）：用户拍板路径 B（决策 1：修 Bug **+** 改 `/` → `/auth` 单页 · refactor-6）+ Explore agent 证据发现**调研偏差**（决策 2"默认 role=candidate"已取消 · User 模型**无 role 字段** · "开发者"是 Layout hardcode fallback + `_app` 未传 userName）· 决策 6/7/8 待用户重新拍板
 
 ---
 
@@ -39,6 +40,23 @@
 > - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
 >
 > 本节是简表镜像 · 详细记录请看对应 decisions.md
+
+### 决策更新（2026-07-26 v5 · 全拍 · 用户"进第二步"默认接受推荐组合）
+
+> 📌 **决策主账**：[`docs/tasks/2026-07-26-refactor-auth-unified-page/decisions.md`](tasks/2026-07-26-refactor-auth-unified-page/decisions.md)（决策 1-13 · **已决策 12 / 已定位 1 / 取消 1**）
+> - ✅ **决策 1**：实施范围 = **路径 B**（修 Bug + 路由迁移 `/` → `/auth`）· 用户原话「B」+「注册登录放一起」
+> - ✅ **决策 3**：合并页 UI = **单一表单 + 自动判断**（v3 撤回 v1 tab 切换）
+> - ✅ **决策 4 已定位**：Header "开发者" = `Layout.tsx:215-251` hardcode + `_app.tsx:56-60` 未传 userName
+> - ✅ **决策 5**：toast 库 = **sonner**（用户"进第二步"默认接受 · 实际 `^1.7.4` · T1 已实施）
+> - ✅ **决策 6**：路径 B 实际对象 = **迁 `/` 到 `/auth`**
+> - ✅ **决策 7**：是否引入 `User.role` = **不引入**
+> - ✅ **决策 8**："开发者"修复方案 = **方案 A 最小改**（去 hardcode + Layout 必填 userName + `_app` 从 JWT 解 email 前缀注入）
+> - ✅ **决策 10**：`/auth` 表单行为 = **单一表单 + 自动判断**（onBlur 调 check-email）
+> - ✅ **决策 11**：`/auth` 视觉 = **继承 V3 glassmorphism**
+> - ✅ **决策 12**：`/auth` UI 精简 = **去副标题 + 去检查状态指示器 + 默认按钮"登录 / 注册" + V3 K logo + SVG toast**
+> - ✅ **决策 13**：**合并 login + register → `authenticate` 单接口**（后端内部按 email 存在性自动判断 · 旧 endpoint deprecated 兼容）
+> - ❌ **决策 2** ~~默认 `User.role=candidate`~~ 已**取消**（调研偏差 · User 模型无 role 字段）
+> - ❌ **决策 9** ~~暗色极简版~~ 已**撤回**（用户要求"颜色与内部统一" → 改回 V3）
 
 | # | 决策项 | 选择 | 状态 |
 |---|---|---|---|
@@ -77,6 +95,18 @@
 | 33 | 🆕 P1 验收与学习 L0-L3 → [决策 1](tasks/2026-07-23-refactor-product-verification-learning/decisions.md) | ✅ 用户验收 + Outcome Review 7/14/30 + 旅程追踪按 L0-L3 触发 | ✅ 自动决策 · 待规格 |
 | 34 | 🆕 P2 治理清理 4 项合一 → [决策 1](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md) | ✅ skill 更新 + 文档 checker + frontmatter + 长期 §6.11 退役规则 | ✅ 自动决策 · 待规格 |
 | 35 | 🆕 test_ci_workflow.py 旧断言（v39） → [决策 1](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md) | ✅ 最小修复：单函数重命名 + SHA pin 3 断言 | ✅ 已完成（commit `d5c11e1` · 714/714 PASSED） |
+| 36 | 🆕 注册/登录合并页 + 注册流程 Bug · 实施范围 → [决策 1](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ✅ 路径 B | ✅ 已决策 |
+| 37 | ❌ 注册接口 `User.role` 默认值 → [决策 2](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ~~`candidate`~~ | ❌ 已取消 · 调研偏差 |
+| 38 | 🆕 "开发者"根因 → [决策 4](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ✅ Layout hardcode + `_app` 未传 userName | ✅ 已定位 |
+| 39 | 🆕 路径 B 实际对象 → [决策 6](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | 🟡 待拍板（之前自动拍 A · 撤回） | 🔄 待决策 |
+| 40 | 🆕 是否引入 `User.role` → [决策 7](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | 🟡 待拍板 | 🔄 待决策 |
+| 41 | 🆕 "开发者"修复方案 → [决策 8](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | 🟡 待拍板 | 🔄 待决策 |
+| 42 | 🆕 toast 库选择 → [决策 5](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ✅ **sonner**（用户"进第二步"默认接受 · 实际 `^1.7.4`） | ✅ 已决策 · T1 已实施 |
+| 43 | ❌ `/auth` 视觉 = 暗色极简版 → [决策 9](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ~~去 V3 glassmorphism~~ | ❌ 已撤回（v3 用户要求"颜色与内部统一"） |
+| 44 | 🆕 `/auth` 表单行为 = 单一表单自动判断 → [决策 10](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ✅ 自动判断（email 失焦调 check-email → 登录/注册态切换） | ✅ 已决策 |
+| 45 | 🆕 `/auth` 视觉 = 继承 V3 glassmorphism → [决策 11](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ✅ 继承 V3（dark + 渐变光晕 + glass + 紫色主按钮） | ✅ 已决策 |
+| 46 | 🆕 `/auth` UI 精简 → [决策 12](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ✅ v4：去副标题 + 去检查状态指示器 + 默认按钮"登录 / 注册" + V3 K logo + SVG toast 图标 | ✅ 已决策 |
+| 47 | 🆕 **合并** login + register → `authenticate` 接口 → [决策 13](tasks/2026-07-26-refactor-auth-unified-page/decisions.md) | ✅ v5：单一 `POST /api/auth/authenticate` · 后端内部按 email 存在性自动判断登录/注册 · 旧 endpoint 保留 deprecated 兼容 | ✅ 已决策 |
 
 ---
 
@@ -229,7 +259,41 @@
 
 ## 二、已发现 bug（待修复）
 
-当前无已登记且完成证据不足的 Bug。新 Bug 必须写明复现路径、影响、优先级和对应回归测试。
+### 🆕 Bug · 注册流程：Layout hardcode "开发者" + 注册后无成功提示 · 2026-07-26
+
+**位置**：
+- `frontend/components/v3/Layout/Layout.tsx:215-251` hardcode `userName ?? '开发者'` fallback
+- `frontend/pages/_app.tsx:56-60` 调 Layout 时**未传 userName**（无 AuthProvider / 无 user 注入）
+- `frontend/pages/index.tsx:33-47` 注册成功只 `router.push('/dashboard')`，无 success state
+
+**现象**：
+- 用户用新账号（如"王天宇"）注册成功后，登录进入应用，**右上 Header 仍显示"开发者"**
+- 注册提交完成后**无任何 toast / alert 反馈**，用户不知道是否成功
+
+**紧急度**：🟡 **P1**（影响所有新用户 · 但**非 P0** · 核心面试流程可用 · 仅 UX 受影响）
+
+**根因**（已 Explore agent 证据确认）：
+- ✅ **真根因**：`Layout.tsx` hardcode `userName ?? '开发者'` fallback + `_app.tsx` 没传 userName → **永远显示"开发者"**
+- ✅ "开发者" 不是 role，是 userName 的默认值（**User 模型根本没有 role 字段**）
+- ✅ 注册成功路径只有 `router.push`，无 success 提示
+- ✅ 项目无 toast 库（grep 无 sonner/react-hot-toast），需要引入
+
+**决策**：[`decisions.md`](tasks/2026-07-26-refactor-auth-unified-page/decisions.md)
+- 决策 1：路径 B（修 Bug + 改 `/` 路由）· 🟡 范围偏差待用户确认
+- 决策 2：~~默认 role=candidate~~ → ❌ 已取消（**调研偏差 · User 模型无 role 字段**）
+- 决策 4：Header "开发者"根因已定位
+- 决策 6/7/8：待用户拍板
+
+**范围扩展**：用户拍板路径 B（refactor-6）= 修 Bug **+** 改 `/` 单页结构（实际对象待决策 6 重新拍板）
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-26-refactor-auth-unified-page/research.md)（调研 · § 9.7 偏差修正）
+- [`decisions.md`](tasks/2026-07-26-refactor-auth-unified-page/decisions.md)（决策主账 · 8 项 · 已拍 2 + 已定位 1 + 待决策 4 + 取消 1）
+- `spec.md` / `design-spec.md` / `plan.md` / `tasks.md`（1-3 步待写）
+
+---
+
+**历史**：当前除上述新登记 Bug 外，无其他已登记且完成证据不足的 Bug。新 Bug 必须写明复现路径、影响、优先级和对应回归测试。
 
 ---
 
