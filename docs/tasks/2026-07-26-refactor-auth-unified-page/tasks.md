@@ -66,7 +66,7 @@ T4 ─────────→ T5 ──→ T6 ──→ T7
 1. feat(toast): 引入 sonner + ToastProvider 组件                    (T1) [x] commit 8b9aab0
 2. feat(auth): _app 包 Toaster + JWT 解码注入 userName              (T2) ⏸ commit pending
 3. fix(layout): 去 hardcode "开发者" · userName 必填                (T3) [x] commit pending
-4. feat(auth): check-email + authenticate 单接口 · 旧 endpoint deprecated 兼容  (T4) ⬜
+4. feat(auth): check-email + authenticate 单接口 · 旧 endpoint deprecated 兼容  (T4) [x] commit pending
 5. feat(auth): auth 页迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG 图标  (T5) ⬜
 6. refactor(auth): / 重定向到 /auth 统一入口                        (T6) ⬜
 7. test(auth): 完整测试 · JWT 解码 + userName + 自动判断 + 提交流程 + v4 UI  (T7) ⬜
@@ -106,7 +106,7 @@ T4 ─────────→ T5 ──→ T6 ──→ T7
 - [ ] T1: 加 sonner 依赖 + Toaster Provider（next/dynamic ssr:false 包裹） · **估时**: 10 min · **依赖**: —  · 实施 commit: `8b9aab0` · **测试**: ✅ PASS · verifier: ✅ PASS
 - [ ] T2: `_app.tsx` 包 `<Toaster />` + 注入 userName（JWT 解 email 前缀） · **估时**: 15 min · **依赖**: T1  · 实施 commit: pending · **测试**: ✅ PASS · verifier: ✅ PASS
 - [ ] T3: `Layout.tsx` 去 hardcode `'开发者'` · userName 必填 · **估时**: 5 min · **依赖**: T2 · **测试**: ✅ PASS (5/5 vitest · 31 files / 233 tests PASS · tsc 0 错误) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛)
-- [ ] T4: 后端：check-email + authenticate + 旧 endpoint deprecated 兼容 · **估时**: 20 min · **依赖**: —  (与 T1-T3 并行) · **测试**: 待 T4 后跑
+- [ ] T4: 后端：check-email + authenticate + 旧 endpoint deprecated 兼容 · **估时**: 20 min · **依赖**: —  (与 T1-T3 并行) · **测试**: ✅ PASS (18/18 pytest · schema + validate + endpoint 注册 + 旧 endpoint redirect) · verifier: ✅ PASS (CLAUDE.md § 6.7 · 1 轮收敛)
 - [ ] T5: `pages/auth.tsx` 迁移 + 单一表单自动判断 + v4 UI 精简 + V3 K logo + SVG · **估时**: 30 min · **依赖**: T1, T2, T4 · **测试**: 待 T5 后跑
 - [ ] T6: `pages/index.tsx` 改为重定向 `/` → `/auth` · **估时**: 3 min · **依赖**: T5 · **测试**: 待 T6 后跑
 - [ ] T7: 前端测试 `__tests__/auth.test.tsx` 综合 · **估时**: 15 min · **依赖**: T5, T6 · **测试**: 待 T7 后跑

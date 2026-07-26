@@ -4,6 +4,7 @@ import httpx
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
+from typing import Literal, Optional
 from jose import jwt
 from datetime import datetime, timedelta, timezone
 
@@ -24,10 +25,22 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class AuthenticateRequest(BaseModel):
+    """v5 合并登录/注册接口（决策 13）"""
+    email: str
+    password: str
+    display_name: Optional[str] = None  # 仅注册流程用 · 缺省 = email 前缀
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: dict
+    mode: Literal["login", "register"] = "login"  # v5 新增
+
+class CheckEmailResponse(BaseModel):
+    """v5 check-email 接口（决策 10 · 自动判断前端用）"""
+    exists: bool
+    email: str
 
 
 # ── Password Hashing (stdlib pbkdf2 — zero deps) ──────────────
@@ -71,67 +84,146 @@ def _user_response(user) -> dict:
     }
 
 
-# ── Auth Endpoints ─────────────────────────────────────────────
+# ── v5 核心：合并登录/注册（决策 13） ────────────────────────
 
-@router.post("/register")
-async def register(data: RegisterRequest):
-    """Register with email + password."""
+async def _authenticate_core(
+    email: str,
+    password: str,
+    display_name: Optional[str] = None,
+    mode_override: Optional[Literal["login", "register"]] = None,
+) -> dict:
+    """合并 login + register 逻辑（v5 决策 13）
+
+    - email 已存在 → 验证密码 · mode="login"
+    - email 不存在 → 创建用户（display_name 缺省 = email 前缀）· mode="register"
+    - race condition → IntegrityError → 返回 409
+
+    mode_override 用于旧 endpoint 强制指定模式（如 login/register deprecated 兼容）
+    """
     from models import User, Profile
     from core.database import async_session
     from sqlalchemy import select
+    from sqlalchemy.exc import IntegrityError
 
     # Validate
-    if len(data.password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
-    if not data.email or "@" not in data.email:
+    if not email or "@" not in email:
         raise HTTPException(status_code=400, detail="Invalid email")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if display_name is not None and len(display_name) > 50:
+        raise HTTPException(status_code=422, detail="display_name too long (max 50)")
 
     async with async_session() as db:
-        # Check duplicate email
-        result = await db.execute(select(User).where(User.email == data.email))
-        if result.scalar_one_or_none():
-            raise HTTPException(status_code=409, detail="Email already registered")
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
 
-        user = User(
-            email=data.email,
-            password_hash=_hash_password(data.password),
-            display_name=data.display_name,
-        )
-        db.add(user)
-        await db.flush()
-
-        # Create default profile
-        profile = Profile(user_id=user.id)
-        db.add(profile)
-        await db.commit()
-        await db.refresh(user)
+        if user:
+            # 邮箱存在 → 走登录流程
+            if mode_override == "register":
+                # 旧 register endpoint 显式要求新账号 · 但邮箱已存在 → 409
+                raise HTTPException(status_code=409, detail="Email already registered")
+            if not user.password_hash:
+                raise HTTPException(status_code=401, detail="Invalid email or password")
+            if not _verify_password(password, user.password_hash):
+                raise HTTPException(status_code=401, detail="Invalid email or password")
+            user.last_login_at = datetime.now(timezone.utc)
+            mode = "login"
+        else:
+            # 邮箱不存在 → 走注册流程
+            if mode_override == "login":
+                # 旧 login endpoint 期望已注册用户 · 邮箱不存在 → 401
+                raise HTTPException(status_code=401, detail="Invalid email or password")
+            # display_name 缺省 = email 前缀
+            effective_display_name = display_name if display_name else email.split("@")[0]
+            try:
+                user = User(
+                    email=email,
+                    password_hash=_hash_password(password),
+                    display_name=effective_display_name,
+                )
+                db.add(user)
+                await db.flush()
+                profile = Profile(user_id=user.id)
+                db.add(profile)
+                await db.commit()
+                await db.refresh(user)
+                mode = "register"
+            except IntegrityError:
+                # race condition · 邮箱被其他请求抢先注册
+                await db.rollback()
+                raise HTTPException(status_code=409, detail="Email just registered, please login")
 
         token = _create_token(user.id, user.email)
-        return {"access_token": token, "token_type": "bearer", "user": _user_response(user)}
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": _user_response(user),
+            "mode": mode,
+        }
 
 
-@router.post("/login")
-async def login(data: LoginRequest):
-    """Login with email + password."""
+# ── Auth Endpoints ─────────────────────────────────────────────
+
+@router.get("/check-email", response_model=CheckEmailResponse)
+async def check_email(email: str):
+    """v5 新增 · 前端 onBlur 调 · 用于 UI 状态自动判断（决策 10）"""
     from models import User
     from core.database import async_session
     from sqlalchemy import select
 
+    # Validate email format
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Invalid email")
+
     async with async_session() as db:
-        result = await db.execute(select(User).where(User.email == data.email))
+        result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
+        return CheckEmailResponse(exists=user is not None, email=email)
 
-        if not user or not user.password_hash:
-            raise HTTPException(status_code=401, detail="Invalid email or password")
 
-        if not _verify_password(data.password, user.password_hash):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
+@router.post("/authenticate", response_model=TokenResponse)
+async def authenticate(data: AuthenticateRequest):
+    """v5 新增 · 合并登录/注册接口（决策 13）
 
-        user.last_login_at = datetime.now(timezone.utc)
-        await db.commit()
+    后端内部根据 email 是否存在自动判断：
+    - 邮箱存在 → 验证密码 → mode="login"
+    - 邮箱不存在 → 创建用户 → mode="register"
 
-        token = _create_token(user.id, user.email)
-        return {"access_token": token, "token_type": "bearer", "user": _user_response(user)}
+    返回 access_token + user + mode · 前端用 mode 决定 toast 文案
+    """
+    return await _authenticate_core(
+        email=data.email,
+        password=data.password,
+        display_name=data.display_name,
+    )
+
+
+@router.post("/register", response_model=TokenResponse, deprecated=True)
+async def register(data: RegisterRequest):
+    """⚠️ DEPRECATED · 内部 redirect 到 /api/auth/authenticate（决策 13）
+
+    旧调用方（onboarding / dev-login / 集成测试）继续可用 · 但新代码应调 /api/auth/authenticate
+    """
+    return await _authenticate_core(
+        email=data.email,
+        password=data.password,
+        display_name=data.display_name,
+        mode_override="register",
+    )
+
+
+@router.post("/login", response_model=TokenResponse, deprecated=True)
+async def login(data: LoginRequest):
+    """⚠️ DEPRECATED · 内部 redirect 到 /api/auth/authenticate（决策 13）
+
+    旧调用方（onboarding / dev-login / 集成测试）继续可用 · 但新代码应调 /api/auth/authenticate
+    """
+    return await _authenticate_core(
+        email=data.email,
+        password=data.password,
+        display_name=None,  # login 流程忽略 display_name
+        mode_override="login",
+    )
 
 
 # ── GitHub OAuth (existing, unchanged) ─────────────────────────
