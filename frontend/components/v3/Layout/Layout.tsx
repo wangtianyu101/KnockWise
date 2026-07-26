@@ -205,8 +205,8 @@ export interface LayoutProps {
   sidebarGroups?: SidebarMenuGroup[];
   /** localStorage 折叠 key */
   storageKey?: string;
-  /** 用户名（TopNav 显示）*/
-  userName?: string;
+  /** 用户名（TopNav 显示 · T3 改为必填 · 去 hardcode "开发者"）*/
+  userName: string;
   /** 退出回调 */
   onLogout?: () => void;
   children: React.ReactNode;
@@ -247,7 +247,7 @@ export function Layout({
     <div className="min-h-screen bg-[#050914] text-[#f1f5f9]">
       <TopNav
         breadcrumb={BREADCRUMB_MAP[currentPage] ?? ''}
-        userName={userName ?? '开发者'}
+        userName={userName}
         onLogout={onLogout}
       />
 

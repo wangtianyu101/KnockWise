@@ -27,7 +27,7 @@ import { TopNav } from '@/components/v3/TopNav/TopNav';
 describe('<Layout />', () => {
   it('渲染 Sidebar + TopNav + main + children', () => {
     render(
-      <Layout currentPage="/dashboard">
+      <Layout currentPage="/dashboard" userName="test-user">
         <div data-testid="page-content">Hello</div>
       </Layout>
     );
@@ -44,7 +44,7 @@ describe('<Layout />', () => {
 
   it('currentPage 传给 Sidebar（让对应菜单项 active）', () => {
     render(
-      <Layout currentPage="/dashboard">
+      <Layout currentPage="/dashboard" userName="test-user">
         <div>x</div>
       </Layout>
     );
@@ -55,7 +55,7 @@ describe('<Layout />', () => {
 
   it('main marginLeft 跟随 Sidebar 折叠（240 → 64）', () => {
     const { container, getByLabelText } = render(
-      <Layout currentPage="/dashboard">
+      <Layout currentPage="/dashboard" userName="test-user">
         <div>x</div>
       </Layout>
     );
@@ -75,12 +75,12 @@ describe('<Layout />', () => {
 
 describe('<TopNav />', () => {
   it('渲染 logo + brand + breadcrumb + 用户菜单', () => {
-    render(<TopNav breadcrumb="今日概览" userName="开发者" />);
+    render(<TopNav breadcrumb="今日概览" userName="test-user" />);
     // brand
     expect(screen.getByText('KnockWise')).toBeInTheDocument();
     // breadcrumb
     expect(screen.getByText('今日概览')).toBeInTheDocument();
     // 用户
-    expect(screen.getByText('开发者')).toBeInTheDocument();
+    expect(screen.getByText('test-user')).toBeInTheDocument();
   });
 });

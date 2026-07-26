@@ -48,9 +48,10 @@ export default function App({ Component, pageProps }: AppProps) {
   const shouldWrapLayout =
     hasToken && !LAYOUT_EXCLUDE_PATHS.has(router.pathname);
 
-  // T2 · 决策 8 方案 A：从 JWT email 前缀派生 userName（去 hardcode "开发者"）
-  // SSR 时 getToken() 返回 null → userName = null → Layout 接收 undefined（保持兼容 · T3 再必填）
-  const userName = hasToken ? getUserNameFromToken(getToken()) : null;
+  // T2 + T3 · 决策 8 方案 A：从 JWT email 前缀派生 userName（去 hardcode "开发者"）
+  // SSR 时 getToken() 返回 null → userName fallback "用户"（中性 fallback · 满足 Layout 必填）
+  // 应该WrapLayout=false 路径（登录页）不渲染 Layout → fallback 不会触发
+  const userName = (hasToken ? getUserNameFromToken(getToken()) : null) ?? "用户";
 
   if (!shouldWrapLayout) {
     return (
@@ -64,7 +65,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider />
-      <Layout currentPage={router.pathname} userName={userName ?? undefined}>
+      <Layout currentPage={router.pathname} userName={userName}>
         <Component {...pageProps} />
       </Layout>
     </QueryClientProvider>

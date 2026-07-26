@@ -60,7 +60,7 @@ describe('interview/room.tsx 在 Layout 包裹下的烟雾测试', () => {
   it('Sidebar + Layout + InterviewRoom 一起 render 不报错', () => {
     expect(() => {
       render(
-        <Layout currentPage="/interview/room">
+        <Layout currentPage="/interview/room" userName="test-user">
           <InterviewRoom />
         </Layout>
       );
@@ -69,7 +69,7 @@ describe('interview/room.tsx 在 Layout 包裹下的烟雾测试', () => {
 
   it('Sidebar 仍能渲染（即使在 interview/room 中）', () => {
     const { getByTestId } = render(
-      <Layout currentPage="/interview/room">
+      <Layout currentPage="/interview/room" userName="test-user">
         <InterviewRoom />
       </Layout>
     );
