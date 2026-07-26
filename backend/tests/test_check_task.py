@@ -6,7 +6,6 @@ Tests for scripts/check-task.py
 """
 import os
 import subprocess
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -19,8 +18,8 @@ import importlib.util
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent  # backend/tests/<this> -> repo root
 _SCRIPT = _REPO_ROOT / "scripts" / "check-task.py"
 _spec = importlib.util.spec_from_file_location("check_task", str(_SCRIPT))
-check_task = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(check_task)
+check_task = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(check_task)
 HAS_SCRIPT = True
 
 FIXTURES = Path(__file__).parent / "fixtures" / "task-yaml"
@@ -29,6 +28,123 @@ FIXTURES = Path(__file__).parent / "fixtures" / "task-yaml"
 def _load(name: str) -> dict:
     """Load a fixture YAML and return parsed dict."""
     return yaml.safe_load((FIXTURES / f"{name}.yaml").read_text())
+
+
+def _run_cli(
+    cwd: Path,
+    *args: str,
+) -> subprocess.CompletedProcess[str]:
+    """Execute the production CLI; never replace its result with a mock."""
+    return subprocess.run(
+        [sys.executable, str(_SCRIPT), *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _write_minimal_manifest(repo: Path, task_id: str) -> Path:
+    task_dir = repo / "docs" / "tasks" / task_id
+    task_dir.mkdir(parents=True)
+    content = (FIXTURES / "valid_minimal.yaml").read_text().replace(
+        "task_id: 2026-07-24-test-task",
+        f"task_id: {task_id}",
+    )
+    (task_dir / "task.yaml").write_text(content)
+    return task_dir
+
+
+class TestCliContract:
+    """Black-box evidence for the documented rc 0/1/2/3 contract."""
+
+    def test_valid_worktree_manifest_returns_zero(self, tmp_path):
+        task_id = "2026-07-24-cli-valid"
+        _write_minimal_manifest(tmp_path, task_id)
+
+        result = _run_cli(
+            tmp_path,
+            "--dir",
+            f"docs/tasks/{task_id}",
+            "--view",
+            "worktree",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "task.yaml valid" in result.stdout
+
+    def test_invalid_worktree_manifest_returns_one(self, tmp_path):
+        task_id = "2026-07-24-cli-invalid"
+        task_dir = _write_minimal_manifest(tmp_path, task_id)
+        manifest = task_dir / "task.yaml"
+        manifest.write_text(manifest.read_text().replace("mode: full-6", "mode: unknown"))
+
+        result = _run_cli(
+            tmp_path,
+            "--dir",
+            f"docs/tasks/{task_id}",
+            "--view",
+            "worktree",
+        )
+
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "E001" in result.stdout
+
+    def test_missing_manifest_returns_two(self, tmp_path):
+        task_id = "2026-07-24-cli-missing"
+        (tmp_path / "docs" / "tasks" / task_id).mkdir(parents=True)
+
+        result = _run_cli(
+            tmp_path,
+            "--dir",
+            f"docs/tasks/{task_id}",
+            "--view",
+            "worktree",
+        )
+
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert "task.yaml not found" in result.stdout
+
+    def test_invocation_error_returns_three(self, tmp_path):
+        result = _run_cli(tmp_path)
+
+        assert result.returncode == 3, result.stdout + result.stderr
+        assert "required" in result.stderr
+
+    def test_index_uses_staged_valid_manifest_not_invalid_worktree(self, tmp_path):
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        task_id = "2026-07-24-cli-index"
+        task_dir = _write_minimal_manifest(tmp_path, task_id)
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+        manifest = task_dir / "task.yaml"
+        manifest.write_text(manifest.read_text().replace("mode: full-6", "mode: unknown"))
+
+        result = _run_cli(
+            tmp_path,
+            "--dir",
+            f"docs/tasks/{task_id}",
+            "--view",
+            "index",
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "task.yaml valid" in result.stdout
+
+    def test_index_missing_manifest_is_not_rescued_by_worktree(self, tmp_path):
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        task_id = "2026-07-24-cli-index-missing"
+        _write_minimal_manifest(tmp_path, task_id)
+
+        result = _run_cli(
+            tmp_path,
+            "--dir",
+            f"docs/tasks/{task_id}",
+            "--view",
+            "index",
+        )
+
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert "task.yaml not found" in result.stdout
 
 
 @pytest.mark.skipif(not HAS_SCRIPT, reason="check_task module not importable")
@@ -71,7 +187,7 @@ class TestSchemaValidation:
         """S-5: task_id 与目录名不匹配 → E007"""
         task_dir = tmp_path / "docs" / "tasks" / "2026-07-24-correct-name"
         task_dir.mkdir(parents=True)
-        (task_dir / "task.yaml").write_text((FIXTURES / "invalid_task_id_mismatch.yaml").read_text())
+        (task_dir / "task.yaml").write_text((FIXTURES / "invalid_task_id_vs_dirname.yaml").read_text())
         errors = check_task.validate_dir(str(task_dir), view="worktree")
         assert any("E007" in e for e in errors), f"Expected E007 in: {errors}"
 
@@ -149,10 +265,64 @@ class TestIndexView:
         assert "task/v1" in content
 
     def test_read_task_yaml_index_requires_git(self, tmp_path):
-        """INDEX view fails outside git repo"""
-        # This test is informational - we don't actually call index view here
-        # since tmp_path isn't a git repo. We just verify the function exists.
-        assert hasattr(check_task, "read_task_yaml")
+        """INDEX view must see artifacts staged in the index, not only HEAD."""
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@test.local"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "test"],
+            cwd=tmp_path,
+            check=True,
+        )
+        task_dir = Path("docs/tasks/2026-07-24-test-ui")
+        absolute_task_dir = tmp_path / task_dir
+        (absolute_task_dir / "mockups").mkdir(parents=True)
+        yaml_content = (FIXTURES / "valid_full_ui.yaml").read_text()
+        yaml_content = yaml_content.replace(
+            "task_id: 2026-07-24-test-ui-task",
+            "task_id: 2026-07-24-test-ui",
+        )
+        (absolute_task_dir / "task.yaml").write_text(yaml_content)
+        (absolute_task_dir / "design-spec.md").write_text("# design\n")
+        (absolute_task_dir / "component-spec.md").write_text("# component\n")
+        (absolute_task_dir / "mockups/index.html").write_text("<!doctype html>\n")
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+
+        old_cwd = Path.cwd()
+        try:
+            os.chdir(tmp_path)
+            errors = check_task.validate_dir(str(task_dir), view="index")
+        finally:
+            os.chdir(old_cwd)
+
+        assert errors == [], errors
+
+    def test_index_validation_ignores_unstaged_worktree_deletion(self, tmp_path):
+        """A staged manifest remains authoritative if worktree deletes it later."""
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        task_dir = Path("docs/tasks/2026-07-24-index-only")
+        absolute_task_dir = tmp_path / task_dir
+        absolute_task_dir.mkdir(parents=True)
+        yaml_content = (FIXTURES / "valid_minimal.yaml").read_text().replace(
+            "task_id: 2026-07-24-test-task",
+            "task_id: 2026-07-24-index-only",
+        )
+        manifest = absolute_task_dir / "task.yaml"
+        manifest.write_text(yaml_content)
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+        manifest.unlink()
+
+        old_cwd = Path.cwd()
+        try:
+            os.chdir(tmp_path)
+            errors = check_task.validate_dir(str(task_dir), view="index")
+        finally:
+            os.chdir(old_cwd)
+
+        assert errors == [], errors
 
 
 @pytest.mark.skipif(not HAS_SCRIPT, reason="check_task module not importable")

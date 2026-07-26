@@ -1,4 +1,8 @@
-"""Static contract tests for the GitHub Actions CI workflow."""
+"""Static wiring/security contracts for CI.
+
+Behavioral governance evidence lives in test_check_governance.py, which runs
+the production CLI against real commits in temporary Git repositories.
+"""
 from pathlib import Path
 
 
@@ -10,13 +14,25 @@ def workflow_text() -> str:
     return WORKFLOW_PATH.read_text(encoding="utf-8")
 
 
-def test_ci_defines_three_independent_gates():
+def test_ci_defines_four_independent_gates():
     content = workflow_text()
 
+    assert "  governance:" in content
     assert "  test-quality:" in content
     assert "  backend-test:" in content
     assert "  frontend-test:" in content
     assert "continue-on-error" not in content
+
+
+def test_governance_workflow_wires_read_only_secretless_shared_checker():
+    content = workflow_text()
+    governance = content.split("  governance:", 1)[1].split("  test-quality:", 1)[0]
+
+    assert "python scripts/check-governance.py" in governance
+    assert "scripts/requirements-governance.txt" in governance
+    assert "secrets:" not in governance
+    assert "contents: write" not in governance
+    assert "pull-requests: write" not in governance
 
 
 def test_ci_runs_quality_checker_as_a_blocking_command():

@@ -1,6 +1,6 @@
 #!/bin/sh
 # pre-commit hook for KnockWise
-# 安装: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# 安装: ./scripts/install-hooks.sh（设置 core.hooksPath=scripts）
 # 跳过: PRE_COMMIT_SKIP=1 git commit ...
 
 set -e
@@ -119,9 +119,9 @@ task_files=$(echo "$staged_files" | grep -E "^docs/tasks/.*\.md$" || true)
 if [ -n "$task_files" ]; then
   if [ ! -f "scripts/check-step.py" ]; then
     echo ""
-    echo "⚠️  检测到 docs/tasks/ 改动,但 scripts/check-step.py 不存在"
-    echo "   TODO: 接入 6 步 v2 DOD 校验"
-    echo "   临时跳过,记得手动验证文档符合 docs/DOD.md"
+    echo "❌ 检测到 docs/tasks/ 改动,但 scripts/check-step.py 不存在"
+    echo "   治理 checker 缺失，fail closed，禁止 commit"
+    exit 1
   else
     echo ""
     echo "📋 docs/tasks/ 改动 → 跑 6 步 v2 DOD 校验..."
@@ -157,22 +157,48 @@ if [ -n "$task_files" ]; then
       echo "   完整 DOD 定义见 docs/DOD.md"
       exit 1
     fi
+    echo "✅ 6 步 v2 DOD 校验通过"
   fi
 fi
 
 # ─── 4.5 task.yaml 契约校验(P0-7) ───────────────────────────
 task_yaml_files=$(echo "$staged_files" | grep -E "^docs/tasks/.+/task\.yaml$" || true)
-if [ -n "$task_yaml_files" ]; then
+# 先收集新增文件所在 task root；只有 HEAD 中不存在任何文件的 root 才是“新增目录”。
+# 否则给历史目录补一份新文档会被误判为必须回填 task.yaml。
+changed_task_dirs=$(
+  git diff --cached --name-only --diff-filter=ACMR \
+    | awk -F/ '$1 == "docs" && $2 == "tasks" && NF >= 4 {print $1 "/" $2 "/" $3}' \
+    | sort -u
+)
+new_task_dirs=$(
+  for task_dir in $changed_task_dirs; do
+    base_files=$(git ls-tree -r --name-only HEAD -- "$task_dir" 2>/dev/null || true)
+    if [ -z "$base_files" ]; then
+      printf '%s\n' "$task_dir"
+    fi
+  done
+)
+task_dirs=$(
+  {
+    for file in $task_yaml_files; do dirname "$file"; done
+    printf '%s\n' "$new_task_dirs"
+  } | sed '/^$/d' | sort -u
+)
+if [ -n "$task_dirs" ]; then
   if [ ! -f "scripts/check-task.py" ]; then
     echo ""
-    echo "⚠️  检测到 task.yaml 改动,但 scripts/check-task.py 不存在"
-    echo "   临时跳过 task 契约校验"
+    echo "❌ scripts/check-task.py 不存在"
+    echo "   治理 checker 缺失，fail closed，禁止 commit"
+    exit 1
   else
     echo ""
-    echo "📋 task.yaml 改动 → 跑任务目录契约校验..."
-    for file in $task_yaml_files; do
-      task_dir=$(dirname "$file")
+    echo "📋 task 目录改动 → 跑 task.yaml 契约校验..."
+    for task_dir in $task_dirs; do
       echo "   → $task_dir"
+      if ! git show ":$task_dir/task.yaml" >/dev/null 2>&1; then
+        echo "❌ 新增任务目录缺少 $task_dir/task.yaml，禁止 commit"
+        exit 1
+      fi
       # 捕获真实退出码：`... | tail` 的退出码取自末端 tail(恒 0),会吞掉 checker 失败
       set +e
       check_out=$(python3 scripts/check-task.py --dir "$task_dir" --view index 2>&1)
@@ -186,19 +212,36 @@ if [ -n "$task_yaml_files" ]; then
         exit 1
       fi
     done
+    echo "✅ task.yaml 契约校验通过"
   fi
 fi
 
 # ─── 4.6 任务状态语义校验 (P0-5) ─────────────────────────────
-if echo "$staged_files" | grep -qE "^docs/tasks/.*\.md$"; then
+state_files=$(echo "$staged_files" | grep -E "^docs/tasks/.+/(tasks|verify)\.md$" || true)
+if [ -n "$state_files" ]; then
   if [ ! -f "scripts/check_task_state.py" ]; then
     echo ""
-    echo "⚠️  检测到 docs/tasks/ 改动, 但 scripts/check_task_state.py 不存在"
-    echo "   临时跳过任务状态校验"
+    echo "❌ 检测到任务状态文档改动,但 scripts/check_task_state.py 不存在"
+    echo "   治理 checker 缺失，fail closed，禁止 commit"
+    exit 1
   else
     echo ""
-    echo "📋 docs/tasks/ 改动 → 跑任务状态语义校验..."
-    for file in $(echo "$staged_files" | grep -E "^docs/tasks/.*\.md$"); do
+    echo "📋 任务状态文档改动 → 跑任务状态语义校验..."
+    state_targets=$(
+      for file in $state_files; do
+        if [ "$(basename "$file")" = "verify.md" ]; then
+          sibling_tasks="$(dirname "$file")/tasks.md"
+          if git cat-file -e ":$sibling_tasks" >/dev/null 2>&1; then
+            printf '%s\n' "$sibling_tasks"
+          else
+            printf '%s\n' "$file"
+          fi
+        else
+          printf '%s\n' "$file"
+        fi
+      done | sort -u
+    )
+    for file in $state_targets; do
       echo "   → $file"
       # 捕获真实退出码（... | tail 的退出码取自末端 tail(恒 0), 会吞掉 checker 失败）
       set +e

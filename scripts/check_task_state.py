@@ -7,13 +7,14 @@ check_task_state.py - 任务状态语义检查 (per P0-5 决策)
 2. FAILED 状态禁止 [x]
 3. 无 `✅ DONE` 标记
 4. L5 段必含 phase_acceptance
-5. 12 个老任务 (2026-07-XX) 豁免 (legacy)
+5. 2026-07-24 状态契约生效前的任务豁免 (legacy)
 
 Usage:
     python3 scripts/check_task_state.py <tasks_md_path> [--view {index,worktree}]
 """
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -24,8 +25,13 @@ ERROR_NAKED_DONE = "task-state-naked-done"
 ERROR_L5_NEEDS_ACCEPTANCE = "task-state-l5-needs-acceptance"
 ERROR_REJECTED_CLAIMS_GREEN = "task-state-rejected-claims-green"
 
-# ─── 豁免模式 (12 个 2026-07 老任务) ──────────────────
-EXEMPT_LEGACY = re.compile(r"^docs/tasks/2026-07-\d{2}-")
+# ─── 豁免模式（状态契约在 2026-07-24 起生效）──────────
+# 禁止使用 `2026-07-\d{2}` 之类的整月正则；它会把新任务永久豁免。
+EXEMPT_LEGACY = (
+    re.compile(r"^docs/tasks/2026-06-"),
+    re.compile(r"^docs/tasks/2026-07-(0[1-9]|1\d|2[0-3])-"),
+    re.compile(r"^docs/archive/"),
+)
 
 # ─── 合法状态枚举 ──────────────────────────────────
 TEST_STATES = {"PASS", "FAIL", "NOT_RUN", "N/A"}
@@ -34,14 +40,27 @@ ACCEPTANCE_STATES = {"PENDING", "ACCEPTED", "REJECTED"}
 
 
 def is_exempt(path: str) -> bool:
-    if EXEMPT_LEGACY.match(path):
-        return True
-    return False
+    return any(pattern.match(path) for pattern in EXEMPT_LEGACY)
 
 
-def parse_tasks_md(path: Path) -> tuple[list, list]:
+def read_content(path: Path, view: str = "worktree") -> str:
+    """Read the worktree file or the exact staged/index version."""
+    if view == "worktree":
+        return path.read_text()
+    result = subprocess.run(
+        ["git", "show", f":{path}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise FileNotFoundError(f"staged file not found: {path}")
+    return result.stdout
+
+
+def parse_tasks_md(path: Path, view: str = "worktree") -> tuple[list, list]:
     """返回 (task_blocks, raw_lines)"""
-    content = path.read_text()
+    content = read_content(path, view)
     lines = content.splitlines()
     blocks = []
     current = None
@@ -56,12 +75,6 @@ def parse_tasks_md(path: Path) -> tuple[list, list]:
                 "lineno": i + 1,
                 "cells": [c.strip() for c in line.split("|")[1:-1]],
             }
-        elif current and "|" in line and line.count("|") >= 5:
-            # 同表格后续行
-            if re.match(r"\|\s*T\d+\s*\|", line):
-                pass  # 新任务
-            else:
-                current["cells"] = [c.strip() for c in line.split("|")[1:-1]]
     if current:
         blocks.append((current["lineno"], current))
     return blocks, lines
@@ -94,12 +107,12 @@ def find_x_checkbox_in_block(blocks: list, target_id: int, lines: list) -> list:
     return []
 
 
-def check_three_facts(path: Path) -> list:
+def check_three_facts(path: Path, view: str = "worktree") -> list:
     """不变量 1: 三事实必填"""
     errors = []
     if not path.exists():
         return [f"task-state-missing-three-facts: tasks.md not found at {path}"]
-    blocks, lines = parse_tasks_md(path)
+    blocks, lines = parse_tasks_md(path, view)
     for lineno, blk in blocks:
         facts = find_three_facts(blk["cells"])
         if not facts:
@@ -116,12 +129,12 @@ def check_three_facts(path: Path) -> list:
     return errors
 
 
-def check_failed_blocks_x(path: Path) -> list:
+def check_failed_blocks_x(path: Path, view: str = "worktree") -> list:
     """不变量 2: FAILED 状态禁止 [x]"""
     errors = []
     if not path.exists():
         return []
-    blocks, lines = parse_tasks_md(path)
+    blocks, lines = parse_tasks_md(path, view)
     for lineno, blk in blocks:
         facts = find_three_facts(blk["cells"])
         if facts.get("verifier") in ("FAIL", "REJECTED"):
@@ -144,12 +157,12 @@ def check_no_naked_done(content: str, path: Path) -> list:
     return errors
 
 
-def check_l5_acceptance(path: Path) -> list:
+def check_l5_acceptance(path: Path, view: str = "worktree") -> list:
     """不变量 4: L5 段必含 phase_acceptance"""
     if not path.exists():
         return []
     errors = []
-    content = path.read_text()
+    content = read_content(path, view)
     # 找 L5 段
     m = re.search(r"## L5[^\n]*\n(.*?)(?=\n## |\Z)", content, re.DOTALL)
     if not m:
@@ -162,12 +175,12 @@ def check_l5_acceptance(path: Path) -> list:
     return errors
 
 
-def check_rejected_claims_green(path: Path) -> list:
+def check_rejected_claims_green(path: Path, view: str = "worktree") -> list:
     """不变量 4 衍生: phase_acceptance=REJECTED 但 L5 结果标 PASSED/🟢"""
     if not path.exists():
         return []
     errors = []
-    content = path.read_text()
+    content = read_content(path, view)
     m = re.search(r"## L5[^\n]*\n(.*?)(?=\n## |\Z)", content, re.DOTALL)
     if not m:
         return []
@@ -185,25 +198,30 @@ def main():
     parser.add_argument("--view", choices=["index", "worktree"], default="worktree")
     args = parser.parse_args()
 
-    tasks_path = Path(args.path)
+    input_path = Path(args.path)
+    tasks_path = (
+        input_path.parent / "tasks.md"
+        if input_path.name == "verify.md"
+        else input_path
+    )
     dir_path = tasks_path.parent
 
     # 豁免检查
-    rel = str(tasks_path).replace(str(Path.cwd()) + "/", "")
+    rel = str(input_path).replace(str(Path.cwd()) + "/", "")
     if is_exempt(rel):
         print(f"⚠️ task-state check exempt for {rel} (legacy pre-P0-5)")
         return 0
 
     errors = []
-    errors.extend(check_three_facts(tasks_path))
+    errors.extend(check_three_facts(tasks_path, args.view))
     if tasks_path.exists():
-        content = tasks_path.read_text()
+        content = read_content(tasks_path, args.view)
         errors.extend(check_no_naked_done(content, tasks_path))
     verify_path = dir_path / "verify.md"
     if verify_path.exists():
-        errors.extend(check_l5_acceptance(verify_path))
-        errors.extend(check_rejected_claims_green(verify_path))
-    errors.extend(check_failed_blocks_x(tasks_path))
+        errors.extend(check_l5_acceptance(verify_path, args.view))
+        errors.extend(check_rejected_claims_green(verify_path, args.view))
+    errors.extend(check_failed_blocks_x(tasks_path, args.view))
 
     if errors:
         for e in errors:

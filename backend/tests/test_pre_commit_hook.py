@@ -28,6 +28,8 @@ import pytest
 REPO_ROOT = Path(__file__).parent.parent.parent
 HOOK_SRC = REPO_ROOT / "scripts" / "pre-commit"
 CHECK_STEP_SRC = REPO_ROOT / "scripts" / "check-step.py"
+CHECK_TASK_SRC = REPO_ROOT / "scripts" / "check-task.py"
+CHECK_TASK_STATE_SRC = REPO_ROOT / "scripts" / "check_task_state.py"
 
 
 # ─── 合法 / 非法 文档 fixtures ─────────────────────────────────
@@ -85,10 +87,38 @@ def _stage_file_in_tmp_repo(relpath: str, content: str) -> Path:
         scripts_dir.mkdir()
         shutil.copy(HOOK_SRC, scripts_dir / "pre-commit")
         shutil.copy(CHECK_STEP_SRC, scripts_dir / "check-step.py")
+        shutil.copy(CHECK_TASK_SRC, scripts_dir / "check-task.py")
+        shutil.copy(CHECK_TASK_STATE_SRC, scripts_dir / "check_task_state.py")
         # 暂存目标文件
         staged = tmp / relpath
         staged.parent.mkdir(parents=True, exist_ok=True)
         staged.write_text(content, encoding="utf-8")
+        parts = Path(relpath).parts
+        if len(parts) >= 4 and parts[:2] == ("docs", "tasks"):
+            task_id = parts[2]
+            manifest_relpath = f"docs/tasks/{task_id}/task.yaml"
+            manifest = tmp / manifest_relpath
+            manifest.write_text(
+                "schema: task/v1\n"
+                f"task_id: {task_id}\n"
+                "mode: timebox\n"
+                "current_step: 0\n"
+                "step_state: in_progress\n"
+                "triggers:\n"
+                "  ui_design: false\n"
+                "  ui_components: false\n"
+                "  api_change: false\n"
+                "  db_change: false\n"
+                "test_evidence:\n"
+                "  type: pending\n",
+                encoding="utf-8",
+            )
+            subprocess.run(
+                ["git", "add", manifest_relpath],
+                cwd=tmp,
+                check=True,
+                capture_output=True,
+            )
         subprocess.run(
             ["git", "add", relpath],
             cwd=tmp, check=True, capture_output=True,

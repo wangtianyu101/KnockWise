@@ -51,6 +51,14 @@ EXEMPT_PATTERNS = [
 ]
 
 
+class ContractArgumentParser(argparse.ArgumentParser):
+    """Keep invocation failures distinct from validation failures."""
+
+    def error(self, message: str) -> None:
+        self.print_usage(sys.stderr)
+        self.exit(3, f"{self.prog}: error: {message}\n")
+
+
 def is_exempt(path: str) -> bool:
     """Check if a path is exempt from task.yaml contract."""
     for pattern in EXEMPT_PATTERNS:
@@ -68,14 +76,13 @@ def read_task_yaml(task_dir: str, view: str = "index") -> str:
     """
     task_yaml_path = Path(task_dir) / "task.yaml"
 
-    if not task_yaml_path.exists():
-        raise FileNotFoundError(f"task.yaml not found in {task_dir}")
-
     if view == "worktree":
+        if not task_yaml_path.exists():
+            raise FileNotFoundError(f"task.yaml not found in {task_dir}")
         return task_yaml_path.read_text()
 
     if view == "index":
-        # Use git show :path to read staged version
+        # INDEX is authoritative: never consult or fall back to worktree state.
         rel_path = str(task_yaml_path)
         result = subprocess.run(
             ["git", "show", f":{rel_path}"],
@@ -84,8 +91,7 @@ def read_task_yaml(task_dir: str, view: str = "index") -> str:
             check=False,
         )
         if result.returncode != 0:
-            # Not in git or not staged - fall back to worktree
-            return task_yaml_path.read_text()
+            raise FileNotFoundError(f"task.yaml not found in index: {task_dir}")
         return result.stdout
 
     raise ValueError(f"Invalid view: {view}")
@@ -202,14 +208,15 @@ def list_dir_artifacts(task_dir: str, view: str = "worktree") -> set:
 
     if view == "index":
         result = subprocess.run(
-            ["git", "ls-tree", "-r", "--name-only", "HEAD", task_dir],
+            ["git", "ls-files", "--cached", "--", task_dir],
             capture_output=True,
             text=True,
             check=False,
         )
         if result.returncode != 0:
             return set()
-        # Strip task_dir prefix
+        # Strip task_dir prefix. `git ls-files --cached` reads the index,
+        # including newly staged artifacts that do not exist in HEAD yet.
         return {
             line[len(task_dir) + 1:]
             for line in result.stdout.splitlines()
@@ -226,7 +233,7 @@ def validate_dir(task_dir: str, view: str = "worktree") -> list:
     Returns list of error messages.
     """
     task_path = Path(task_dir)
-    if not task_path.exists():
+    if view == "worktree" and not task_path.exists():
         return [f"Task directory not found: {task_dir}"]
 
     # Load task.yaml
@@ -265,7 +272,9 @@ def validate_dir(task_dir: str, view: str = "worktree") -> list:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Task directory contract validator")
+    parser = ContractArgumentParser(
+        description="Task directory contract validator"
+    )
     parser.add_argument("--dir", required=True, help="Task directory path")
     parser.add_argument(
         "--view", choices=["index", "worktree"], default="worktree",
@@ -286,7 +295,10 @@ def main():
         for e in errors:
             print(f"::error file={task_dir}/task.yaml::{e}")
         print(f"\n❌ {len(errors)} validation error(s) found for {task_dir}")
-        sys.exit(1)
+        missing_manifest = any(
+            error.startswith("task.yaml not found") for error in errors
+        )
+        sys.exit(2 if missing_manifest else 1)
     else:
         print(f"✅ {task_dir} task.yaml valid")
         sys.exit(0)
