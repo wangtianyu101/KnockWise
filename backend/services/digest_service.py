@@ -430,30 +430,40 @@ class DigestService:
         user_prefs: dict | None,
         source_category: str,
     ) -> float | None:
-        """同步入口：尝试 LLM 评分 · 失败返回 None 让调用方 fallback。
+        """同步入口：尝试 minimax 评分 · 失败返回 None 让调用方 fallback。
 
-        注：composite_score 当前在 sync context（asyncio.gather 内调用）·
-            后续可改造为 async。本期使用 minimax_client 同步 fallback（无 key 时 None）·
-            真接 API 时改造为 _llm_composite_score_async。
+        2026-07-25 LLM5: 真接 minimax（用 chat_json_sync）· 不再占位 None。
         """
+        import logging
+        log = logging.getLogger(__name__)
         try:
             client = get_minimax_client()
-        except Exception:
+        except Exception as e:
+            log.warning(f"[LLM5] minimax get_client 异常: {e}")
             return None
         if not client.is_configured:
+            log.warning(f"[LLM5] minimax 未配置 · fallback (key={bool(client.api_key)})")
             return None
-        # 本期实现：API 真实调用（chat_json）但因为 composite_score 在 sync context ·
-        # 实际执行留到 LLM3 阶段切到 async pipeline。先返回 None 用启发式。
-        return None
+        try:
+            log.warning(f"[LLM5] minimax 评分开始 · title={item.get('title','')[:30]}")
+            score = self._call_minimax_score_sync(client, item, user_prefs, source_category)
+            log.warning(f"[LLM5] minimax 评分完成 · score={score:.3f}")
+            return score
+        except MinimaxError as e:
+            log.warning(f"[LLM5] minimax 评分失败 · fallback: {type(e).__name__}: {e}")
+            return None
+        except Exception as e:
+            log.exception(f"[LLM5] minimax 评分异常 · fallback: {e}")
+            return None
 
-    async def _call_minimax_score(
+    def _call_minimax_score_sync(
         self,
         client: MinimaxClient,
         item: dict,
         user_prefs: dict | None,
         source_category: str,
     ) -> float:
-        """调 minimax 一次拿 5 维分 · 加权求和返回综合分。
+        """调 minimax（同步）一次拿 5 维分 · 加权求和返回综合分。
 
         prompt 注入防护（spec § 3.3）：
         - 用户可控字段（title / summary）做长度限制 ≤ 1000 字符
@@ -489,7 +499,7 @@ class DigestService:
 只返回 JSON · 不要其他文字。"""
 
         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-        data = await client.chat_json(messages, temperature=0.2, max_tokens=200)
+        data = client.chat_json_sync(messages, temperature=0.2, max_tokens=200)
 
         try:
             scores = {
@@ -666,7 +676,7 @@ class DigestService:
     DEFAULT_TOP_N: int = 5
 
     # 最低阈值（spec R1）
-    DEFAULT_SCORE_THRESHOLD: float = 0.4  # spec R1 目标 0.75 · 启发式 mock 调低让真实数据通过
+    DEFAULT_SCORE_THRESHOLD: float = 0.15  # 2026-07-25 LLM5 · 真 minimax 评分普遍 0.15-0.25（LLM 严于启发式）
 
     # 多样性硬约束（spec R4 · 满足才能返回完整 5 条）
     DIVERSITY_MIN: dict[str, int] = {

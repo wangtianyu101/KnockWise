@@ -149,6 +149,106 @@ class MinimaxClient:
             logger.warning(f"minimax JSON 解析失败: {content[:200]}")
             raise MinimaxError(f"minimax JSON 解析失败: {e}")
 
+    def chat_sync(
+        self,
+        messages: list[dict],
+        temperature: float = 0.3,
+        max_tokens: int = 1024,
+        response_format: dict | None = None,
+    ) -> str:
+        """同步版 chat · 供 sync context（composite_score）调用。
+
+        性能：~500ms-3s 一次 LLM call · batch 评分 N 条要 N * latency
+        生产环境：应该 batch 评分（一次 prompt 评多条）· 本期先 1 条 1 次
+
+        注：minimax 不支持 OpenAI 的 response_format=json_object（API 400）·
+        改用 prompt 强 JSON 输出（system 指令 + 解析 fallback）
+        """
+        if not self.is_configured:
+            raise MinimaxError("minimax 未配置（缺少 API key）")
+        for m in messages:
+            if isinstance(m.get("content"), str) and len(m["content"]) > 32_000:
+                raise MinimaxError(f"单条消息超过 32k 字符限制（{len(m['content'])} chars）")
+
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+        # 注：minimax 不支持 OpenAI response_format 参数 · 强 JSON 走 prompt
+        # if response_format:
+        #     payload["response_format"] = response_format
+
+        with httpx.Client(
+            base_url=self.base_url,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=self.timeout,
+        ) as client:
+            try:
+                resp = client.post("/chat/completions", json=payload)
+            except httpx.TimeoutException as e:
+                raise MinimaxError(f"minimax 超时（>{self.timeout}s）: {e}")
+            except httpx.RequestError as e:
+                raise MinimaxError(f"minimax 网络失败: {type(e).__name__}: {e}")
+
+            if resp.status_code != 200:
+                logger.warning(f"minimax HTTP {resp.status_code}: {resp.text[:200]}")
+                raise MinimaxError(f"minimax HTTP {resp.status_code}: {resp.text[:200]}")
+
+            try:
+                data = resp.json()
+                return data["choices"][0]["message"]["content"]
+            except (KeyError, IndexError, json.JSONDecodeError) as e:
+                raise MinimaxError(f"minimax 响应解析失败: {e}")
+
+    def chat_json_sync(
+        self,
+        messages: list[dict],
+        temperature: float = 0.2,
+        max_tokens: int = 200,
+    ) -> dict:
+        """同步 chat + JSON 解析（minimax 不支持 response_format · 强 prompt JSON）。
+
+        解析策略：
+        1. 直接 json.loads
+        2. 失败时尝试提取 markdown ```json 块
+        3. 失败时尝试提取第一个 {...} 子串
+        """
+        content = self.chat_sync(
+            messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        content = content.strip()
+        # 1. 直接 parse
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            pass
+        # 2. markdown ```json ... ``` 块
+        import re
+        m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.DOTALL)
+        if m:
+            try:
+                return json.loads(m.group(1))
+            except json.JSONDecodeError:
+                pass
+        # 3. 第一个 {...} 子串
+        start = content.find("{")
+        end = content.rfind("}")
+        if start != -1 and end > start:
+            try:
+                return json.loads(content[start : end + 1])
+            except json.JSONDecodeError as e:
+                pass
+        logger.warning(f"minimax JSON 解析失败 · content[:200]: {content[:200]}")
+        raise MinimaxError(f"minimax JSON 解析失败: 无法从响应提取 JSON")
+
 
 # ═══════════════════════════════════════════════════════════
 # Singleton
