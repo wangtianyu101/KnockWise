@@ -94,11 +94,12 @@ related:
 
 ---
 
-## commit 历史（待补充）
+## commit 历史
 
-| commit | 摘要 | 阶段 | 估时 | 实际 |
-|---|---|---|---|---|
-| TBD | fix(hydration): _app hasToken 三元 + TopNav 时间边界 | T3 | 10 min | 8 min |
+| commit | 摘要 | 阶段 | 估时 | 实际 | 偏差 |
+|---|---|---|---|---|---|
+| `eff1128` | fix(hydration): _app hasToken 三元 + TopNav 时间边界 (3 files · +137/-12) | T3 + T2 测试 | 25 min | 26 min | +1 min（dev-login 排查） |
+| `1665a5b` | docs(hydration): 5 文档落地 · research/decisions/verify/retro/tasks (6 files · +936) | T1 + T4 + T5 | 35 min | 35 min | 0（按计划） |
 
 ---
 
