@@ -35,6 +35,52 @@ spec.md 5 段里**70% 是产品 + 30% 是技术**，但产品部分**散落**在
 
 ---
 
+## 0. 调研前置必填（product_baseline · P1-7 治理 · v2 必填扩展）
+
+> **用途**：把"问题证据"和"目标用户"和"kill 条件"从散落文字变成**机器可校验的 frontmatter 字段**。
+>
+> **位置**：本文档 frontmatter 顶部 · YAML 格式
+>
+> **校验**：`scripts/check-product-doc.py` · commit gate 强制（缺字段 → exit 1）
+>
+> **关联 Spec**：[`docs/tasks/<date>-<type>-<topic>/spec.md`](../tasks/) § 2.1 Requirement: P1-7
+>
+> **v1 兼容**：旧实例可加 `legacy_skeleton: true` 标记豁免
+
+```yaml
+product_baseline:
+  problem_evidence:                # 必填 · 3-5 条 · 现状痛点的可追溯证据
+    - file: <绝对路径>             # 例：docs/issues.md
+      line: <行号>                 # 例：42
+      quote: <原文片段 ≤ 80 字>    # 例：V4 AI 推送模块存在 41 个测试空壳
+      baseline_value: <数字|"N/A"> # 例：41
+      baseline_source: git_commit | 实测命令 | 估算
+  target_user:                     # 必填 · 5 字段
+    role: <人/产品/开发者>
+    persona_count: <1-10>
+    frequency_per_week: <0-1000>
+    device: 桌面 | 移动 | 混合
+    network: 高带宽 | 低带宽 | N-A
+  kill_criteria:                   # 必填 · 1-3 条 · 什么条件下放弃
+    - name: <短名 ≤ 30 字>
+      trigger: <什么条件下算 kill · 10-200 字>
+      evidence: <如何验证 kill · 10-200 字>
+  dangerous_assumptions:           # 可选 · 高风险假设 + 证伪方法
+    - hypothesis: <假设描述 · 20-200 字>
+      falsification: <如何证伪 · 20-200 字>
+      risk_level: 🔴 | 🟡 | 🟢
+  legacy_skeleton: false           # 可选 · v1 旧实例豁免标记 · true = 跳过校验
+```
+
+**填写指引**：
+- `problem_evidence` 每条必须有 `file + line` 引用 · 不可空泛
+- `target_user.device` 与 `network` 必填 · 不写 N/A 会被拒
+- `kill_criteria` 至少 1 条 · 不可"等出问题再说"
+- `dangerous_assumptions` 高风险假设要写"如何证伪" · 不写 = 不算填了
+- `legacy_skeleton: true` 仅供 v1 → v2 迁移使用 · 临时豁免 · **30 天内补齐**
+
+---
+
 ## 1. 问题定义（必填）
 
 ```markdown
