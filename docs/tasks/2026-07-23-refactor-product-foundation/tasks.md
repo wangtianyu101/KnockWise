@@ -1,7 +1,7 @@
 ---
 title: Tasks · 产品基础分层 L0-L3
 date: 2026-07-27
-status: v1.1（基于 plan v1.1 · 实施前调研偏差修正 · T9-T10 改写为 logger trace_id 字段）
+status: v1.2（基于 plan v1.2 · 4 项调研偏差修正）
 type: tasks
 related:
   - [research.md](research.md) — 调研报告 v1
@@ -77,16 +77,22 @@ related:
   - **REQ 映射**: REQ-P1.7
 ```
 
-#### T4: 新建 scripts/check-product-doc.py
+#### T4: 修订 scripts/check-product-doc.py（v1.2 修正 · checker 已存在 2026-07-25）
 
 ```markdown
-- [ ] T4: 新建 scripts/check-product-doc.py 含 4 schema（ProductBaseline/ProblemEvidence/TargetUser/KillCriterion/DangerousAssumption）
-  - **文件**: `scripts/check-product-doc.py`（新建）
+- [ ] T4: 修订 scripts/check-product-doc.py（v1.2 修正 · checker 已存在 2026-07-25 v2 P2-3 决策 1/5）
+  - **文件**: `scripts/check-product-doc.py`（修订 · 1730 bytes 旧版）
   - **测试**: TC-1, TC-2
   - **依赖**: T1, T2, T3
   - **估时**: 45 min
   - **决策**: D3
   - **REQ 映射**: REQ-P1.7
+  - **v1.2 实施细节**：
+    1. 复用 v0 框架（`check_spec_base.py` 的 `is_exempt` / `has_section` / `main_runner`）
+    2. 加 product_baseline frontmatter 解析（PyYAML safe_load + Pydantic ProductBaseline schema）
+    3. 保留 v0 的"5 段 + 5 成功指标字段"校验（向后兼容）
+    4. `legacy_skeleton: true` 标记豁免
+    5. 失败：exit 1 + stderr 报错字段路径
 ```
 
 #### T5: 写 tests/test_check_product_doc.py
@@ -355,7 +361,7 @@ T1-T18 → T19（L5 staging 验证）
 | T10 | test_logger_trace_id_field.py::test_concurrent_isolation | （同 T9，归属 T10 实施 commit · v1.1 修正）| REQ-P1.9-L1 | SCN-P1.9.1（v1.1）| TC-5 | L2+L3 | — | — | — | — |
 | T11 | test_logger_startup.py::test_knockwise_logger_structured | logger startup 接管 stdout | REQ-P1.9-L1 | SCN-P1.9.3 | TC-9 | L2 | — | — | — | — |
 | T12 | test_logger_startup.py::test_knockwise_logger_structured | （同 T11，归属 T12 实施 commit） | REQ-P1.9-L1 | SCN-P1.9.3 | TC-9 | L2 | — | — | — | — |
-| T13 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | metrics endpoint 4 counter | REQ-P1.9-L1 | SCN-P1.9.4 | TC-8 | L3 | — | — | — | — |
+| T13 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | metrics endpoint 4 counter（**v1.2**：键 = `push_total / push_failed / fetch_failures / rsshub_routes_broken` 与 `backend/utils/metrics.py:32-37` 一致）| REQ-P1.9-L1 | SCN-P1.9.4（v1.2）| TC-8 | L3 | — | — | — | — |
 | T14 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | （同 T13，归属 T14 实施 commit） | REQ-P1.9-L1 | SCN-P1.9.4 | TC-8 | L3 | — | — | — | — |
 | T14 | test_metrics_endpoint.py::test_metrics_endpoint_localhost_only | 仅本地访问 | REQ-P1.9-L1 | SCN-P1.9.7 | TC-8.5 | L3 | — | — | — | — |
 | T15 | — | 模板 § 9 段（无代码） | REQ-P1.9-task-§9 | — | — | — | — | — | — | — |
