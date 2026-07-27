@@ -20,7 +20,7 @@
 > - 🔴 **2026-07-26 P0 · AI Eval 基线 13 个失败**（[`tasks/2026-07-26-p0-eval-baseline-repair/`](tasks/2026-07-26-p0-eval-baseline-repair/research.md)）：用户选择先修 Eval 批次；基线 `13 failed, 7 passed`，Digest API 9 个失败明确留到下一批。
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
-> - 🟡 **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/research.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A（删 hasToken 三元 + 受保护路由始终包 Layout）+ TopNav 修复合并同一 PR + fix-mini 路径；✅ 已完成：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS · [`verify.md`](tasks/2026-07-27-bug-hydration-mismatch/verify.md) + [`retro.md`](tasks/2026-07-27-bug-hydration-mismatch/retro.md) 已写；待用户验收 commit。
+> - ✅ **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A + TopNav 修复合并；✅ 已修复 commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写)；验证全过：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS。
 
 ---
 
@@ -268,7 +268,7 @@
 
 ## 二、已发现 bug（待修复）
 
-### 🆕 Bug · Hydration mismatch 全局 _app.tsx + TopNav 时间边界 · 2026-07-27
+### 🆕 Bug · Hydration mismatch 全局 _app.tsx + TopNav 时间边界 · 2026-07-27 → ✅ 2026-07-27 已修复
 
 **位置**：
 - `frontend/pages/_app.tsx:48` — `hasToken = typeof window !== "undefined" ? !!getToken() : true` 引发 SSR/CSR 结构性 mismatch（Layout 包裹决策不一致）
@@ -280,7 +280,7 @@
 - **已登录用户**访问受保护路由 → TopNav 右上角 `<span>` 文本 SSR "用户" / CSR email 前缀 → 文本 mismatch
 - **UTC+8 时区用户**本地时间 ≥ 08:00 后 → TopNav 右上角 `<span>📅 {today}</span>` 日期跨天
 
-**紧急度**：🟡 **P1**（影响所有受保护路由的 SSR 渲染 · 触发 React 强制 regenerate · 非 P0 阻塞核心流程）
+**紧急度**：✅ **P1 → 已修复**
 
 **根因**（Explore agent + 独立读源码一致确认）：
 - ✅ **真根因 1**：`_app.tsx:48` `hasToken` 三元在 server 永远 `true`、client 走 localStorage → 整棵子树结构不一致
@@ -295,13 +295,28 @@
 - 决策 4：路径 = **fix-mini**（0→4→6）
 - 决策 5：方案 B（cookie 化）/ C（强制 `hasToken=true` 简化）均**排除**
 
+**修复证据**（commit `eff1128` + `1665a5b` + `43f58d4`）：
+- ✅ `_app.tsx:51` 改 `shouldWrapLayout = !LAYOUT_EXCLUDE_PATHS.has(router.pathname)`（仅依赖 pathname · SSR/CSR 一致）
+- ✅ `_app.tsx:56-63` `userName` 改 useState 初始 `'用户'` + useEffect mount 后读 token
+- ✅ `TopNav.tsx:56-61` `today` 改 useState 初始 `''` + useEffect 内调 `new Date()`
+- ✅ `frontend/tests/e2e/hydration.spec.ts` 新增 5 路由 Playwright 主回归（5/5 GREEN）
+- ✅ vitest 246/246 PASS（无单测回归）
+- ✅ L4 独立 verifier 3 维度全 PASS
+- ✅ L5 dev server smoke PASS
+
 **与同源前次修复的关系**：
 - `fb248d5 fix(push): hydration mismatch 根因 + 修复`（2026-07-27 00:35）— 仅修 `/push/*` 5 路由（`SourceToggleRow` 时间 + `useDigest.ts` `enabled: isAuthed()`），**未触及 `_app.tsx` 全局 + TopNav**
 - 本次修复 = **同源不同面**（上次局部 / 本次全局），不是回归
 
+**已知暂缓**：
+- 场景 B (userName 文本) / 场景 C (TopNav 日期) e2e 测试因 dev-login 基础设施问题暂缓 · 修复正确性由其他 4 层验证兜底
+- 永久方案：dev-login 缓存 / 静态 JWT fixture（[retro.md § 4 改进 P2](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）
+
 **关联文档**：
 - [`research.md`](tasks/2026-07-27-bug-hydration-mismatch/research.md)（调研 · § 9.4 调研偏差修正）
 - [`decisions.md`](tasks/2026-07-27-bug-hydration-mismatch/decisions.md)（决策主账 · 5 项）
+- [`verify.md`](tasks/2026-07-27-bug-hydration-mismatch/verify.md)（验证 · 5 AC 全过）
+- [`retro.md`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)（复盘 · 6 段）
 
 ---
 
