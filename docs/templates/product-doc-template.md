@@ -189,10 +189,22 @@ product_baseline:
 ## 5. 成功指标（必填 · 可量化）
 
 ```markdown
-### 核心指标（1-3 个量化）
-- 指标 1: <名字> ≥ <数字>
-- 指标 2: <名字> ≥ <数字>
-- 指标 3: <名字> ≥ <数字>
+### 核心指标（1-3 个量化 · P1-7 v2 baseline 必填扩展）
+- 指标 1:
+  - name: <名字>
+  - target: ≥ <数字>
+  - baseline_value: <当前数字>          # P1-7 v2 必填 · 实施前基线
+  - baseline_source: git_commit | 实测命令 | 估算
+- 指标 2:
+  - name: <名字>
+  - target: ≥ <数字>
+  - baseline_value: <当前数字>
+  - baseline_source: git_commit | 实测命令 | 估算
+- 指标 3:
+  - name: <名字>
+  - target: ≥ <数字>
+  - baseline_value: <当前数字>
+  - baseline_source: git_commit | 实测命令 | 估算
 
 ### 监控方式
 - 指标 1: <怎么测量？埋点 / 日志 / 第三方>
@@ -207,9 +219,9 @@ product_baseline:
 
 **示例**：
 - 核心指标：
-  - 推送 CTR ≥ 5%
-  - 订阅留存率 ≥ 70%
-  - 用户日均推送打开数 ≥ 1.5
+  - 指标 1: 推送 CTR · target ≥ 5% · baseline_value: 0% · baseline_source: 估算（产品未上线）
+  - 指标 2: 订阅留存率 · target ≥ 70% · baseline_value: 0% · baseline_source: 估算
+  - 指标 3: 用户日均推送打开数 · target ≥ 1.5 · baseline_value: 0 · baseline_source: 估算
 - 监控方式：推送系统埋点 + 后台统计 + 推送反馈日志
 - 合格线：上线 30 天后，70% 用户保留 ≥ 1 个标签 + CTR 达 5%
 
