@@ -868,6 +868,7 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 | 文档英文名 → 中文名 + 合并重构方案 | 2026-06-18 | `docs/` git mv |
 | Alembic 启动 ALTER 自动跑 | 2026-06-17 | `core/database.py:_MIGRATIONS` |
 | Bug 9：SM-2 测试参数 `repetition_count` → `review_count` | 2026-06-25 | commit `7a5a21e` · commit 记录 92 passed；2026-07-21 代码复核一致，当前环境无 pytest 未重复执行 |
+| Hydration mismatch 全局 _app.tsx + TopNav 时间边界 | 2026-07-27 | commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写) · [`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md) · 5/5 Playwright 主回归 + 246/246 vitest + L4 独立 verifier PASS |
 
 ---
 
