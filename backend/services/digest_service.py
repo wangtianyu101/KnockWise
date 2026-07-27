@@ -379,9 +379,11 @@ class DigestService:
                     return 0.0
 
         # spec R3 + R10: 真 LLM 评分（minimax 5 维一次返回）· fallback 到启发式
+        # LLM6: 此处只取 score 字段（不取分类 · 分类由 _llm_score_and_classify 提供）
         llm_result = self._llm_composite_score(item, user_prefs, source_category)
         if llm_result is not None:
-            return llm_result
+            # llm_result is dict `{"score":..., "type":..., "region":..., "category":...}`
+            return llm_result["score"] if isinstance(llm_result, dict) else llm_result
 
         # Fallback: 启发式 mock
         hot_score = self._calc_hot(item)
@@ -432,7 +434,8 @@ class DigestService:
     ) -> float | None:
         """同步入口：尝试 minimax 评分 · 失败返回 None 让调用方 fallback。
 
-        2026-07-25 LLM5: 真接 minimax（用 chat_json_sync）· 不再占位 None。
+        2026-07-25 LLM5: 真接 minimax（用 chat_json_sync）
+        2026-07-25 LLM6: 同时返回分类（type/region/category）修 diversity
         """
         import logging
         log = logging.getLogger(__name__)
@@ -446,9 +449,9 @@ class DigestService:
             return None
         try:
             log.warning(f"[LLM5] minimax 评分开始 · title={item.get('title','')[:30]}")
-            score = self._call_minimax_score_sync(client, item, user_prefs, source_category)
-            log.warning(f"[LLM5] minimax 评分完成 · score={score:.3f}")
-            return score
+            result = self._call_minimax_score_sync(client, item, user_prefs, source_category)
+            log.warning(f"[LLM5] minimax 评分完成 · score={result['score']:.3f} type={result.get('type')} region={result.get('region')}")
+            return result
         except MinimaxError as e:
             log.warning(f"[LLM5] minimax 评分失败 · fallback: {type(e).__name__}: {e}")
             return None
@@ -462,8 +465,10 @@ class DigestService:
         item: dict,
         user_prefs: dict | None,
         source_category: str,
-    ) -> float:
-        """调 minimax（同步）一次拿 5 维分 · 加权求和返回综合分。
+    ) -> dict:
+        """调 minimax（同步）一次拿 5 维分 + 类型 + 地域 + 分类。
+
+        返回: {score: float, type: str, region: str, category: str} · 失败抛 MinimaxError
 
         prompt 注入防护（spec § 3.3）：
         - 用户可控字段（title / summary）做长度限制 ≤ 1000 字符
@@ -476,9 +481,12 @@ class DigestService:
         blocked = (user_prefs or {}).get("blocked_tags", [])[:10]
 
         system = (
-            "你是 AI 行业动态评分助手。给每条 digest 候选按 5 维 0-1 评分。"
-            "必须返回合法 JSON：{\"hot\":0.x,\"novel\":0.x,\"changed\":0.x,"
-            "\"source_authority\":0.x,\"user_pref\":0.x}"
+            "你是 AI 行业动态评分助手。给每条 digest 候选按 5 维 0-1 评分，并分类。"
+            "必须返回合法 JSON："
+            "{\"hot\":0.x,\"novel\":0.x,\"changed\":0.x,\"source_authority\":0.x,\"user_pref\":0.x,"
+            "\"type\":\"model|application\","
+            "\"region\":\"domestic|overseas\","
+            "\"category\":\"headline|paper|engineering|opinion\"}"
         )
         user = f"""维度定义:
 - hot: 话题热度（近期重要事件 / 行业关注度）
@@ -486,6 +494,11 @@ class DigestService:
 - changed: 变化程度（对行业格局改变的影响）
 - source_authority: 来源权威性（一手 vs 二手）
 - user_pref: 与用户关注标签的契合度
+
+分类定义:
+- type: model（模型/算法本身）| application（应用/工具/平台）
+- region: domestic（中国公司 · 量子位/机器之心/Qwen/DeepSeek/智谱/GLM/百度/阿里/字节/腾讯 等）| overseas（其他）
+- category: headline（产品发布/上新）| paper（学术论文）| engineering（架构/性能）| opinion（行业观点）
 
 来源类别: {source_category}
 用户关注标签: {interested or '无'}
@@ -499,7 +512,12 @@ class DigestService:
 只返回 JSON · 不要其他文字。"""
 
         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-        data = client.chat_json_sync(messages, temperature=0.2, max_tokens=200)
+        data = client.chat_json_sync(messages, temperature=0.2, max_tokens=300)
+
+        # 限定的 enum 集合
+        VALID_TYPES = {"model", "application"}
+        VALID_REGIONS = {"domestic", "overseas"}
+        VALID_CATEGORIES = {"headline", "paper", "engineering", "opinion"}
 
         try:
             scores = {
@@ -509,14 +527,32 @@ class DigestService:
                 "source_authority": float(data["source_authority"]),
                 "user_pref": float(data["user_pref"]),
             }
+            type_val = str(data["type"]).strip().lower()
+            region_val = str(data["region"]).strip().lower()
+            category_val = str(data["category"]).strip().lower()
         except (KeyError, ValueError, TypeError) as e:
             raise MinimaxError(f"minimax 响应字段解析失败: {e}")
+
+        # 限定到合法 enum
+        if type_val not in VALID_TYPES:
+            type_val = "model"
+        if region_val not in VALID_REGIONS:
+            region_val = "overseas"
+        if category_val not in VALID_CATEGORIES:
+            category_val = "headline"
 
         # 限制到 0-1
         scores = {k: max(0.0, min(1.0, v)) for k, v in scores.items()}
 
         weights = self.DEFAULT_WEIGHTS
-        return sum(scores[k] * weights[k] for k in scores)
+        weighted = sum(scores[k] * weights[k] for k in scores)
+
+        return {
+            "score": weighted,
+            "type": type_val,
+            "region": region_val,
+            "category": category_val,
+        }
         # 0. 屏蔽标签 → 直接 0.0 (spec R5: hide 优先)
         # 用 substring 检查（不是整词匹配）· "深度学习" 在 "深度学习框架" 中也能命中
         if user_prefs and user_prefs.get("blocked_tags"):
@@ -776,20 +812,41 @@ class DigestService:
             source_name = fr.get("source_name", "Unknown")
             source_id = fr.get("source_id")
             for raw_item in fr.get("items", []):
-                # 3a. RSS items 没 type/region/category · 自动分类
-                classified = self._classify_raw_item(raw_item, source_name)
-                enriched = {
-                    **raw_item,
-                    "source_id": source_id,
-                    "source_name": source_name,
-                    **classified,  # type / region / category
-                }
-                # 3b. composite_score（用真实 user_prefs）
-                score = self.composite_score(enriched, user_prefs=user_prefs)
-                if score < self.DEFAULT_SCORE_THRESHOLD:
+                # 3a. LLM6: 优先 LLM 分类（一次出 score+type+region+category）· fallback heuristic
+                llm_sco = self._llm_composite_score(
+                    _raw_item_to_enriched(raw_item, source_id, source_name),
+                    user_prefs=user_prefs,
+                    source_category=_detect_source_category(source_name),
+                )
+                if llm_sco is not None and isinstance(llm_sco, dict):
+                    # LLM 一次性返回 score + 分类
+                    scored = {
+                        "score": llm_sco["score"],
+                        "item": {
+                            **raw_item,
+                            "source_id": source_id,
+                            "source_name": source_name,
+                            "type": llm_sco["type"],
+                            "region": llm_sco["region"],
+                            "category": llm_sco["category"],
+                        },
+                    }
+                else:
+                    # Fallback: 启发式打分类 + 启发式打 score
+                    classified = self._classify_raw_item(raw_item, source_name)
+                    enriched = {
+                        **raw_item,
+                        "source_id": source_id,
+                        "source_name": source_name,
+                        **classified,
+                    }
+                    score = self.composite_score(enriched, user_prefs=user_prefs)
+                    scored = {"score": score, "item": enriched}
+
+                if scored["score"] < self.DEFAULT_SCORE_THRESHOLD:
                     continue
                 all_items_with_score.append(
-                    {"item": enriched, "score": score, **enriched}
+                    {"item": scored["item"], "score": scored["score"], **scored["item"]}
                 )
 
         # 4. select_top_n 选 5 条（diversity 已保证：≥ 2 国内 + 2 国外 + 3 模型 + 2 应用）
@@ -960,6 +1017,40 @@ class DigestService:
             except ValueError:
                 return None
         return None
+
+
+# ─── 模块级 helper（2026-07-25 LLM6）─────────────────
+# 给 push_daily 的 LLM 评分调用提供 raw item → enriched dict 转换
+# 避免在 push_daily 里展开多行内联代码
+
+def _raw_item_to_enriched(
+    raw_item: dict,
+    source_id: str | None,
+    source_name: str,
+) -> dict:
+    """把 fetch_all_sources 返回的 raw_item 包成 envelope（带 source_id / source_name）"""
+    return {
+        **raw_item,
+        "source_id": source_id,
+        "source_name": source_name,
+    }
+
+
+def _detect_source_category(source_name: str) -> str:
+    """source_name → SOURCE_AUTHORITY_SCORE key ('一手' / '二手' / '社区' / '学术')。
+
+    简化启发：仅按 source_name 关键词匹配一期。
+    """
+    sn = (source_name or "").lower()
+    if any(k in sn for k in ["arxiv", "论文", "paper"]):
+        return "学术"
+    if any(k in sn for k in ["github", "release", "代码", "开源"]):
+        return "二手"
+    if any(k in sn for k in ["机器之心", "量子位", "36kr", "虎嗅", "news"]):
+        return "二手"
+    if any(k in sn for k in ["blog", "newsletter"]):
+        return "二手"
+    return "二手"
 
 
 # ─── 模块级 singleton（2026-07-22 audit 修复）────────────────
