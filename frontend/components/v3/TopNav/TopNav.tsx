@@ -7,8 +7,12 @@
  * - 右：日期 + 用户头像 + 用户名
  *
  * V3.8 重构后：不再有 7 tab 横条（全部移到 Sidebar）
+ *
+ * 2026-07-27 修复（hydration mismatch · V3.9 P1）：
+ * - `today` 从 `new Date()` 移到 `useEffect` —— SSR 与 CSR 时区/时刻不同会引发日期跨天 mismatch
+ * - SSR/CSR 首帧 `today = ''`（一致）· mount 后 useEffect 异步写入真实日期
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const LOGO = (
   <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -48,7 +52,13 @@ export function TopNav({
   date,
   'data-testid': testId = 'topnav',
 }: TopNavProps) {
-  const today = date ?? new Date().toISOString().slice(0, 10);
+  // 2026-07-27 修复（hydration mismatch）：SSR/CSR 首帧 today=''（一致）· mount 后异步写入
+  const [today, setToday] = useState<string>(date ?? '');
+  useEffect(() => {
+    if (!date) {
+      setToday(new Date().toISOString().slice(0, 10));
+    }
+  }, [date]);
 
   return (
     <nav
@@ -70,7 +80,9 @@ export function TopNav({
 
       {/* 右：日期 + 用户 */}
       <div className="ml-auto flex items-center gap-4">
-        <span className="text-xs text-gray-500 hidden sm:inline">📅 {today}</span>
+        {today && (
+          <span className="text-xs text-gray-500 hidden sm:inline" data-testid="topnav-date">📅 {today}</span>
+        )}
         <button
           type="button"
           onClick={onLogout}

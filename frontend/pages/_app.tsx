@@ -16,7 +16,7 @@ import { getToken } from "@/lib/api";
 import { getUserNameFromToken } from "@/lib/auth";
 import { ToastProvider } from "@/components/ToastProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // 不包裹 Layout 的路由（独立设计或登录相关）
 const LAYOUT_EXCLUDE_PATHS = new Set<string>([
@@ -44,15 +44,23 @@ export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [queryClient] = useState(() => new QueryClient());
 
-  // SSR + 客户端一致判断：用 router.pathname（同步可用）+ token 同步检查
-  const hasToken = typeof window !== "undefined" ? !!getToken() : true;
-  const shouldWrapLayout =
-    hasToken && !LAYOUT_EXCLUDE_PATHS.has(router.pathname);
+  // 决策 1 方案 A（2026-07-27 · hydration fix）：
+  // 受保护路由**始终**包 Layout —— 仅基于 router.pathname（同步可用 · SSR/CSR 一致）
+  // 避免 `typeof window !== "undefined" ? !!getToken() : true` 引发 SSR/CSR 结构性 mismatch
+  // auth 状态检测下沉到各 page 内部 useEffect（与 pages/index.tsx 现有重定向模式一致）
+  const shouldWrapLayout = !LAYOUT_EXCLUDE_PATHS.has(router.pathname);
 
-  // T2 + T3 · 决策 8 方案 A：从 JWT email 前缀派生 userName（去 hardcode "开发者"）
-  // SSR 时 getToken() 返回 null → userName fallback "用户"（中性 fallback · 满足 Layout 必填）
-  // 应该WrapLayout=false 路径（登录页）不渲染 Layout → fallback 不会触发
-  const userName = (hasToken ? getUserNameFromToken(getToken()) : null) ?? "用户";
+  // 决策 1 方案 A：userName 在 SSR 和 CSR 首帧都用 '用户'（一致性 · 避免文本 mismatch）
+  // 客户端 useEffect 异步读 localStorage → 有 token 则更新为 email 前缀
+  // （re-render 是正常 React 模式 · 不触发 hydration error）
+  const [userName, setUserName] = useState<string>("用户");
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      const name = getUserNameFromToken(token);
+      if (name) setUserName(name);
+    }
+  }, []);
 
   if (!shouldWrapLayout) {
     return (
