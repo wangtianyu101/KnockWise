@@ -43,7 +43,7 @@ related:
 #### T1: product-doc-template.md § 0 加 product_baseline 字段说明
 
 ```markdown
-- [ ] T1: product-doc-template.md § 0 加 product_baseline 字段说明
+- [x] T1: product-doc-template.md § 0 加 product_baseline 字段说明
   - **文件**: `docs/templates/product-doc-template.md:0-30`（§ 0 调研前置必填段）
   - **测试**: —
   - **依赖**: —
@@ -56,7 +56,7 @@ related:
 #### T2: product-doc-template.md § 2 角色表加 4 列
 
 ```markdown
-- [ ] T2: product-doc-template.md § 2 角色表加 4 列（频次/设备/网络/语种）
+- [x] T2: product-doc-template.md § 2 角色表加 4 列（频次/设备/网络/语种）
   - **文件**: `docs/templates/product-doc-template.md` § 2 目标用户
   - **测试**: —
   - **依赖**: T1
@@ -68,7 +68,7 @@ related:
 #### T3: product-doc-template.md § 5 成功指标加 baseline_value 列
 
 ```markdown
-- [ ] T3: product-doc-template.md § 5 成功指标加 baseline_value 列
+- [x] T3: product-doc-template.md § 5 成功指标加 baseline_value 列
   - **文件**: `docs/templates/product-doc-template.md` § 5 成功指标
   - **测试**: —
   - **依赖**: T2
@@ -80,7 +80,7 @@ related:
 #### T4: 修订 scripts/check-product-doc.py（v1.2 修正 · checker 已存在 2026-07-25）
 
 ```markdown
-- [ ] T4: 修订 scripts/check-product-doc.py（v1.2 修正 · checker 已存在 2026-07-25 v2 P2-3 决策 1/5）
+- [x] T4: 修订 scripts/check-product-doc.py（v1.2 修正 · checker 已存在 2026-07-25 v2 P2-3 决策 1/5）
   - **文件**: `scripts/check-product-doc.py`（修订 · 1730 bytes 旧版）
   - **测试**: TC-1, TC-2
   - **依赖**: T1, T2, T3
@@ -98,7 +98,7 @@ related:
 #### T5: 写 tests/test_check_product_doc.py
 
 ```markdown
-- [ ] T5: 写 tests/test_check_product_doc.py 含 TC-1/TC-2 + 额外 2 个 invalid（SCN-P1.7.3 / SCN-P1.7.4）
+- [x] T5: 写 tests/test_check_product_doc.py 含 TC-1/TC-2 + 额外 2 个 invalid（SCN-P1.7.3 / SCN-P1.7.4）
   - **文件**: `tests/test_check_product_doc.py`（新建）
   - **测试**: TC-1, TC-2
   - **依赖**: T4
@@ -215,7 +215,7 @@ related:
   - **估时**: 30 min
   - **决策**: D5
   - **REQ 映射**: REQ-P1.9-L1
-  - **关键**: 4 counter 键（push_total / interview_session_started / collect_success / collect_failure）
+  - **关键**: 4 counter 键（**v1.2 修正**：`push_total / push_failed / fetch_failures / rsshub_routes_broken` · 与 `backend/utils/metrics.py:32-37` 一致）
 ```
 
 #### T14: 写 tests/test_metrics_endpoint.py
@@ -344,11 +344,11 @@ T1-T18 → T19（L5 staging 验证）
 
 | 任务 | 自动化测试 | 测试场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T1 | — | 模板字段说明（无代码） | REQ-P1.7 | — | — | — | `5f2abdd` | — | PENDING | PENDING |
-| T2 | — | 模板角色表（无代码） | REQ-P1.7 | — | — | — | `1a23cc4` | — | PENDING | PENDING |
-| T3 | — | 模板成功指标（无代码） | REQ-P1.7 | — | — | — | `09f5888` | — | PENDING | PENDING |
-| T4 | test_check_product_doc.py::test_baseline_ok | product_baseline happy | REQ-P1.7 | SCN-P1.7.1 | TC-1 | L2 | `9375497` | PASS (7/7) | PENDING | PENDING |
-| T5 | test_check_product_doc.py::test_baseline_missing_evidence | product_baseline 缺段 | REQ-P1.7 | SCN-P1.7.2 | TC-2 | L2 | `9375497` | PASS (7/7) | PENDING | PENDING |
+| T1 | — | 模板字段说明（无代码） | REQ-P1.7 | — | — | — | `5f2abdd` | — | PASS | ACCEPTED |
+| T2 | — | 模板角色表（无代码） | REQ-P1.7 | — | — | — | `1a23cc4` | — | PASS | ACCEPTED |
+| T3 | — | 模板成功指标（无代码） | REQ-P1.7 | — | — | — | `09f5888` | — | PASS | ACCEPTED |
+| T4 | test_check_product_doc.py::test_baseline_ok | product_baseline happy | REQ-P1.7 | SCN-P1.7.1 | TC-1 | L2 | `9375497` | PASS (7/7) | PASS | ACCEPTED |
+| T5 | test_check_product_doc.py::test_baseline_missing_evidence | product_baseline 缺段 | REQ-P1.7 | SCN-P1.7.2 | TC-2 | L2 | `9375497` | PASS (7/7) | PASS | ACCEPTED |
 | T5 | test_check_product_doc.py::test_target_user_missing_device | target_user 缺字段 | REQ-P1.7 | SCN-P1.7.3 | TC-2.5 | L2 | — | — | — | — |
 | T5 | test_check_product_doc.py::test_frontmatter_parse_error | YAML 解析失败 | REQ-P1.7 | SCN-P1.7.4 | TC-2.6 | L2 | — | — | — | — |
 | T6 | — | 5 项 AI 推送指标 L1 字典（无代码） | REQ-P1.8 | — | — | — | — | — | — | — |
