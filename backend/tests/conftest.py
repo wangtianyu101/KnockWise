@@ -225,8 +225,17 @@ from slowapi.util import get_remote_address
 
 @pytest.fixture(autouse=True)
 def reset_limiter():
-    """每个测试前清空 slowapi 限流状态，避免串行测试触发限流。"""
-    from core.limiter import limiter
+    """每个测试前清空 slowapi 限流状态，避免串行测试触发限流。
+
+    v40 启动前环境整治：core.limiter 可能未安装 · 优雅降级为 yield-only no-op。
+    详见 docs/issues.md 决策段 v40 启动前环境整治议题。
+    """
+    try:
+        from core.limiter import limiter
+    except ImportError:
+        # core.limiter 未安装 · 跳过 reset · v40 启动前环境整治议题
+        yield
+        return
     limiter.reset()
     yield
     limiter.reset()

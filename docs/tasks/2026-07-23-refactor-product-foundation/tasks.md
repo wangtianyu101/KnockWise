@@ -347,8 +347,8 @@ T1-T18 → T19（L5 staging 验证）
 | T1 | — | 模板字段说明（无代码） | REQ-P1.7 | — | — | — | `5f2abdd` | — | PENDING | PENDING |
 | T2 | — | 模板角色表（无代码） | REQ-P1.7 | — | — | — | `1a23cc4` | — | PENDING | PENDING |
 | T3 | — | 模板成功指标（无代码） | REQ-P1.7 | — | — | — | `09f5888` | — | PENDING | PENDING |
-| T4 | test_check_product_doc.py::test_baseline_ok | product_baseline happy | REQ-P1.7 | SCN-P1.7.1 | TC-1 | L2 | — | — | — | — |
-| T5 | test_check_product_doc.py::test_baseline_missing_evidence | product_baseline 缺段 | REQ-P1.7 | SCN-P1.7.2 | TC-2 | L2 | — | — | — | — |
+| T4 | test_check_product_doc.py::test_baseline_ok | product_baseline happy | REQ-P1.7 | SCN-P1.7.1 | TC-1 | L2 | `TBD` | PASS (7/7) | PENDING | PENDING |
+| T5 | test_check_product_doc.py::test_baseline_missing_evidence | product_baseline 缺段 | REQ-P1.7 | SCN-P1.7.2 | TC-2 | L2 | `TBD` | PASS (7/7) | PENDING | PENDING |
 | T5 | test_check_product_doc.py::test_target_user_missing_device | target_user 缺字段 | REQ-P1.7 | SCN-P1.7.3 | TC-2.5 | L2 | — | — | — | — |
 | T5 | test_check_product_doc.py::test_frontmatter_parse_error | YAML 解析失败 | REQ-P1.7 | SCN-P1.7.4 | TC-2.6 | L2 | — | — | — | — |
 | T6 | — | 5 项 AI 推送指标 L1 字典（无代码） | REQ-P1.8 | — | — | — | — | — | — | — |
