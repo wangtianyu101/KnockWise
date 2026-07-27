@@ -1,0 +1,29 @@
+---
+schema: task/v1
+task_id: 2026-07-23-refactor-product-foundation
+mode: refactor-6
+current_step: 4
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: true        # GET /api/digest/metrics endpoint（T13 实施）
+  db_change: false        # 决策 1 明确排除业务表 schema 改动
+test_evidence:
+  type: tasks-inline
+  path: docs/tasks/2026-07-23-refactor-product-foundation/tasks.md
+metadata:
+  created: 2026-07-23
+  updated: 2026-07-27
+  author: claude           # 决策 1 自动授权（"循环处理 P1+P2 17 项 · 不需要确认"）
+  decisions: 2             # 决策 1（自动）+ 决策 2（v1.1 调研偏差修正 · 用户拍板选项 A）
+  related:
+    - research.md
+    - decisions.md
+    - spec.md
+    - plan.md
+    - tasks.md
+    - verify.md
+  progress:
+    commits: ["5f2abdd"]   # T1 实施 commit
+    next_task: T2          # 下一步
