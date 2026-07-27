@@ -20,6 +20,7 @@
 > - 🔴 **2026-07-26 P0 · AI Eval 基线 13 个失败**（[`tasks/2026-07-26-p0-eval-baseline-repair/`](tasks/2026-07-26-p0-eval-baseline-repair/research.md)）：用户选择先修 Eval 批次；基线 `13 failed, 7 passed`，Digest API 9 个失败明确留到下一批。
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
+> - 🟡 **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/research.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A（删 hasToken 三元 + 受保护路由始终包 Layout）+ TopNav 修复合并同一 PR + fix-mini 路径；✅ 已完成：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS · [`verify.md`](tasks/2026-07-27-bug-hydration-mismatch/verify.md) + [`retro.md`](tasks/2026-07-27-bug-hydration-mismatch/retro.md) 已写；待用户验收 commit。
 
 ---
 
@@ -266,6 +267,43 @@
 ---
 
 ## 二、已发现 bug（待修复）
+
+### 🆕 Bug · Hydration mismatch 全局 _app.tsx + TopNav 时间边界 · 2026-07-27
+
+**位置**：
+- `frontend/pages/_app.tsx:48` — `hasToken = typeof window !== "undefined" ? !!getToken() : true` 引发 SSR/CSR 结构性 mismatch（Layout 包裹决策不一致）
+- `frontend/pages/_app.tsx:55` — `userName = (hasToken ? getUserNameFromToken(getToken()) : null) ?? "用户"` 引发 SSR/CSR 文本 mismatch（已登录用户 TopNav SSR "用户" / CSR email 前缀）
+- `frontend/components/v3/TopNav/TopNav.tsx:51` — `date ?? new Date().toISOString().slice(0, 10)` 在 render 中调用，SSR vs CSR 时区/时刻不同 → UTC+8 用户跨天时文本 mismatch
+
+**现象**：
+- **未登录用户**访问任意受保护路由（`/dashboard` `/interview/profile` `/push` `/learn` 等 20+ 路由）→ DevTools console 报 hydration error → React 强制 regenerate `<main>` 子树 → 用户感知"页面闪一下"
+- **已登录用户**访问受保护路由 → TopNav 右上角 `<span>` 文本 SSR "用户" / CSR email 前缀 → 文本 mismatch
+- **UTC+8 时区用户**本地时间 ≥ 08:00 后 → TopNav 右上角 `<span>📅 {today}</span>` 日期跨天
+
+**紧急度**：🟡 **P1**（影响所有受保护路由的 SSR 渲染 · 触发 React 强制 regenerate · 非 P0 阻塞核心流程）
+
+**根因**（Explore agent + 独立读源码一致确认）：
+- ✅ **真根因 1**：`_app.tsx:48` `hasToken` 三元在 server 永远 `true`、client 走 localStorage → 整棵子树结构不一致
+- ✅ **真根因 2**：`_app.tsx:55` `userName` 计算依赖 `getToken()`（SSR 永远返 null / CSR 返真实 JWT）→ 已登录用户文本 mismatch
+- ✅ **真根因 3**：`TopNav.tsx:51` `new Date()` 在 render 中调用 → SSR vs CSR 时区/时刻不同
+- ❌ **误判剔除**（来自 Explore agent 报告）：`pages/push/daily/[date].tsx:74` `useRef(Date.now())`（ref 初始值不进 markup）；`pages/interview/room.tsx:75` `toLocaleTimeString` 在 `useCallback` 内（callback 仅事件触发）
+
+**决策**：[`decisions.md`](tasks/2026-07-27-bug-hydration-mismatch/decisions.md)
+- 决策 1：`_app.tsx` 修复方案 = **方案 A**（删 `hasToken` 三元 + 受保护路由始终包 Layout）
+- 决策 2：TopNav `new Date()` 修复 **合并** 同一 PR
+- 决策 3：调研文档 **先落地**（本步已完成）
+- 决策 4：路径 = **fix-mini**（0→4→6）
+- 决策 5：方案 B（cookie 化）/ C（强制 `hasToken=true` 简化）均**排除**
+
+**与同源前次修复的关系**：
+- `fb248d5 fix(push): hydration mismatch 根因 + 修复`（2026-07-27 00:35）— 仅修 `/push/*` 5 路由（`SourceToggleRow` 时间 + `useDigest.ts` `enabled: isAuthed()`），**未触及 `_app.tsx` 全局 + TopNav**
+- 本次修复 = **同源不同面**（上次局部 / 本次全局），不是回归
+
+**关联文档**：
+- [`research.md`](tasks/2026-07-27-bug-hydration-mismatch/research.md)（调研 · § 9.4 调研偏差修正）
+- [`decisions.md`](tasks/2026-07-27-bug-hydration-mismatch/decisions.md)（决策主账 · 5 项）
+
+---
 
 ### 🆕 Bug · 注册流程：Layout hardcode "开发者" + 注册后无成功提示 · 2026-07-26
 
