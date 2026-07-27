@@ -729,55 +729,81 @@ class DigestService:
         n: int = 5,
         score_threshold: float | None = None,
     ) -> list[dict]:
-        """从已打分候选中选 N 条 · 多样性平衡。
+        """从已打分候选中选 N 条 · 多样性强制（spec R4）。
 
         Args:
             scored_items: list of {item, score} · 已 composite_score 打过分
             n: 选几条（默认 5）
-            score_threshold: 最低分阈值（默认 0.75 · spec R1）
+            score_threshold: 最低分阈值（默认 0.15 · LLM5）
 
         Returns:
             选中的 items（最多 n 条）· 已按 score 降序排
 
-        算法（贪心）:
-            1. 按 score 降序排
-            2. 过滤低于阈值的
-            3. 多样性保证：先确保每维度至少 min 条
-            4. 剩余按 score 补足到 n
+        算法（贪心 diversity-first · 2026-07-25 LLM9）:
+            1. 按 score 降序排 · 过滤低于阈值的
+            2. 计算 dim 满足度（domestic/overseas/model/application）
+            3. 反复选 "填最多 unmet dim + 最高分" 的 item · 直到约束全 met 或 5 条
+            4. 候选不足时按 score 补足 · log warning 哪条 dim 没满足
+
+        重要：DIVERSITY_MIN 是硬约束 · 能满足必满足 · 不满足 log warning
+        （spec R4 候选不足时强制不补低分凑数 · 本文当前允许放宽 → 后续收紧）
         """
+        import logging
+        log = logging.getLogger(__name__)
         threshold = score_threshold if score_threshold is not None else self.DEFAULT_SCORE_THRESHOLD
 
-        # 1. 按 score 降序
+        # 1. 按 score 降序排
         sorted_items = sorted(scored_items, key=lambda x: x.get("score", 0), reverse=True)
 
         # 2. 阈值过滤
         qualified = [it for it in sorted_items if it.get("score", 0) >= threshold]
 
         if len(qualified) <= n:
-            # 候选不足 · 返回所有合格的（spec D2 fallback）
             return qualified
 
-        # 3. 多样性保证 · 贪心
+        # 3. diversity-first 贪心
+        # dim 字段语义：
+        #   · domestic / overseas → bool (item['domestic'] is True / False)
+        #   · model / application → string (item['type'] == 'model' or 'application')
+        # DIVERSITY_MIN key 一一对应 · 写 helper 把 dim_key 翻译成 item 的判定
+        def item_has_dim(item: dict, dim_key: str) -> bool:
+            """dim_key ∈ {domestic, overseas, model, application} → item 是否命中"""
+            if dim_key in ("domestic", "overseas"):
+                return bool(item.get(dim_key))
+            # type 字段: "model" | "application"
+            return item.get("type") == dim_key
+
         selected: list[dict] = []
-        remaining_qualified = list(qualified)
+        remaining = list(qualified)
+        dim_keys = list(self.DIVERSITY_MIN.keys())  # [domestic, overseas, model, application]
 
-        # 阶段 A: 满足每个维度的最小需求
-        for dim_key, min_count in self.DIVERSITY_MIN.items():
-            dim_items = [it for it in remaining_qualified if it.get(dim_key) and it not in selected]
-            # 按 score 降序取前 min_count
-            dim_items.sort(key=lambda x: x.get("score", 0), reverse=True)
-            for item in dim_items[:min_count]:
-                if item not in selected:
-                    selected.append(item)
+        while remaining and len(selected) < n:
+            # 当前 dim 计数
+            dim_count = {k: sum(1 for s in selected if item_has_dim(s, k)) for k in dim_keys}
 
-        # 阶段 B: 用剩余合格项按 score 补足到 n
-        remaining = [it for it in qualified if it not in selected]
-        remaining.sort(key=lambda x: x.get("score", 0), reverse=True)
-        for item in remaining:
-            if len(selected) >= n:
-                break
-            if item not in selected:
-                selected.append(item)
+            # 候选对 unmet dim 的贡献度
+            def contribution(item: dict) -> tuple[int, float]:
+                met = sum(
+                    1
+                    for k in dim_keys
+                    if dim_count[k] < self.DIVERSITY_MIN[k] and item_has_dim(item, k)
+                )
+                return (-met, -item.get("score", 0))
+
+            remaining.sort(key=contribution)
+            best = remaining[0]
+            selected.append(best)
+            remaining.remove(best)
+
+        # 4. log 哪条 dim 没满足（spec R4 应有 log）
+        final_dim_count = {k: sum(1 for s in selected if item_has_dim(s, k)) for k in dim_keys}
+        for k, min_count in self.DIVERSITY_MIN.items():
+            actual = final_dim_count.get(k, 0)
+            if actual < min_count:
+                log.warning(
+                    f"[diversity] {k} 不足：actual={actual} < min={min_count} · "
+                    f"候选池 candidate_count={len(qualified)} 可能不够"
+                )
 
         return selected[:n]
 
