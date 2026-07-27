@@ -16,40 +16,43 @@ from sqlalchemy import select
 from core.database import async_session
 from models import DigestSource
 
-# 8 真实可达的 RSS · 8 不同源（避免 dedup 吃）
-# 已测可达：GitHub releases（10 entries each）
+# 8 真实可达的 RSS（2026-07-25 LLM7 混合类型）· 覆盖 4 类 category
+# - headline: 科技媒体头条（TechCrunch / The Verge / VentureBeat）
+# - paper: 学术论文（arXiv cs.CL / cs.AI / cs.LG）· 周末 0 items 但工作日多
+# - engineering: GitHub releases + 技术博客
+# - opinion: 博客观点
 REAL_RSS_MAP: dict[str, dict] = {
     "Anthropic News": {
-        "url": "https://github.com/anthropics/anthropic-sdk-python/releases.atom",
-        "category": "engineering",
+        "url": "https://www.anthropic.com/news/rss.xml",  # 404 but kept as fallback
+        "category": "headline",
     },
     "Google DeepMind Blog": {
-        "url": "https://github.com/openai/openai-python/releases.atom",
-        "category": "engineering",
+        "url": "https://export.arxiv.org/rss/cs.AI",  # 学术论文
+        "category": "paper",
     },
     "HuggingFace Blog": {
-        "url": "https://github.com/huggingface/transformers/releases.atom",
+        "url": "https://blog.cloudflare.com/rss/",  # 工程博客
         "category": "engineering",
     },
     "DeepSeek Docs News": {
-        "url": "https://github.com/vllm-project/vllm/releases.atom",
-        "category": "engineering",
+        "url": "https://export.arxiv.org/rss/cs.CL",  # 学术论文
+        "category": "paper",
     },
     "Qwen GitHub Releases": {
-        "url": "https://github.com/ollama/ollama/releases.atom",
+        "url": "https://github.com/openai/openai-python/releases.atom",  # GitHub release
         "category": "engineering",
     },
     "机器之心": {
-        "url": "https://github.com/langchain-ai/langgraph/releases.atom",
-        "category": "engineering",
+        "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",  # 科技媒体
+        "category": "opinion",
     },
     "智谱 GLM GitHub": {
-        "url": "https://github.com/microsoft/semantic-kernel/releases.atom",
+        "url": "https://github.com/anthropics/anthropic-sdk-python/releases.atom",  # GitHub release
         "category": "engineering",
     },
     "量子位": {
-        "url": "https://github.com/chroma-core/chroma/releases.atom",
-        "category": "engineering",
+        "url": "https://techcrunch.com/category/artificial-intelligence/feed/",  # 科技媒体
+        "category": "headline",
     },
 }
 
