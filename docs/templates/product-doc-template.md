@@ -118,12 +118,22 @@ product_baseline:
 ### 频率
 - <多久用一次？>
 - <每次用多久？>
+
+### P1-7 v2 必填扩展（与 § 0 product_baseline.target_user 对齐）
+
+- **persona_count**: <1-10>            # 必填 · 用户角色种类数（单角色 = 1）
+- **frequency_per_week**: <0-1000>      # 必填 · 周均使用频次
+- **device**: 桌面 | 移动 | 混合        # 必填 · 主用设备类型
+- **network**: 高带宽 | 低带宽 | N-A    # 必填 · 网络条件
 ```
 
 **示例**：
 - 角色：25-35 岁职场人，月收入 1-3 万
 - 场景：早上 8 点通勤（地铁 / 公交）+ 晚上 9 点睡前（床上 / 沙发）
 - 频率：每天 2 次，每次 3-5 分钟
+- P1-7 扩展：persona_count=1 · frequency_per_week=14 · device=移动 · network=高带宽
+
+**校验**：`scripts/check-product-doc.py` · `target_user` 5 字段全必填 · 缺字段 → exit 1
 
 ---
 
