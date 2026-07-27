@@ -432,11 +432,7 @@ class DigestService:
         user_prefs: dict | None,
         source_category: str,
     ) -> float | None:
-        """同步入口：尝试 minimax 评分 · 失败返回 None 让调用方 fallback。
-
-        2026-07-25 LLM5: 真接 minimax（用 chat_json_sync）
-        2026-07-25 LLM6: 同时返回分类（type/region/category）修 diversity
-        """
+        """同步入口：单条 item LLM 评分（保留向后兼容 · 实际 push_daily 用 batch 版）。"""
         import logging
         log = logging.getLogger(__name__)
         try:
@@ -458,6 +454,114 @@ class DigestService:
         except Exception as e:
             log.exception(f"[LLM5] minimax 评分异常 · fallback: {e}")
             return None
+
+    def _llm_score_batch(
+        self,
+        items: list[dict],
+        user_prefs: dict | None,
+    ) -> list[dict | None]:
+        """2026-07-25 LLM10: 批量 LLM 评分（一次 prompt 评 N 条 · 减少 rate limit 风险）。
+
+        Args:
+            items: list of {title, summary, source_name, ...}
+            user_prefs: 用户偏好
+
+        Returns:
+            list of dict {score, type, region, category} | None（per item）
+            None 整体表示 LLM 失败 → caller fallback heuristic
+        """
+        import logging
+        log = logging.getLogger(__name__)
+        if not items:
+            return []
+        try:
+            client = get_minimax_client()
+        except Exception:
+            return [None] * len(items)
+        if not client.is_configured:
+            return [None] * len(items)
+
+        # prompt 一次给所有 items
+        n = len(items)
+        items_text = []
+        for idx, it in enumerate(items):
+            t = (it.get("title") or "")[:200]
+            s = (it.get("summary") or "")[:300]
+            src = (it.get("source_name") or "Unknown")[:100]
+            items_text.append(f"#{idx+1}\n标题: {t}\n摘要: {s}\n来源: {src}")
+        items_block = "\n\n".join(items_text)
+
+        interested = (user_prefs or {}).get("interested_tags", [])[:10]
+        blocked = (user_prefs or {}).get("blocked_tags", [])[:10]
+
+        system = (
+            f"你是 AI 行业动态评分助手。给 {n} 条 digest 候选按 5 维 0-1 评分 + 分类。"
+            "必须返回合法 JSON 数组，按顺序对应候选："
+            "[{\"hot\":0.x,\"novel\":0.x,\"changed\":0.x,\"source_authority\":0.x,\"user_pref\":0.x,"
+            "\"type\":\"model|application\",\"region\":\"domestic|overseas\","
+            "\"category\":\"headline|paper|engineering|opinion\"}, ...]"
+        )
+        user = f"""用户关注标签: {interested or '无'}
+用户屏蔽标签: {blocked or '无'}
+
+候选 {n} 条:
+{items_block}
+
+只返回 JSON 数组 · 不要其他文字。"""
+
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+        try:
+            data_list = client.chat_json_sync(messages, temperature=0.2, max_tokens=400 * n)
+        except MinimaxError as e:
+            log.warning(f"[LLM10] batch minimax 失败 ({n} items): {e}")
+            return [None] * n
+        except Exception as e:
+            log.exception(f"[LLM10] batch minimax 异常: {e}")
+            return [None] * n
+
+        if not isinstance(data_list, list):
+            log.warning(f"[LLM10] batch 响应不是 list · got {type(data_list)}")
+            return [None] * n
+
+        # 限定长度 + 字段
+        VALID_TYPES = {"model", "application"}
+        VALID_REGIONS = {"domestic", "overseas"}
+        VALID_CATEGORIES = {"headline", "paper", "engineering", "opinion"}
+        weights = self.DEFAULT_WEIGHTS
+        results: list[dict | None] = []
+        for i in range(n):
+            if i >= len(data_list):
+                results.append(None)
+                continue
+            d = data_list[i]
+            try:
+                scores = {
+                    "hot": max(0.0, min(1.0, float(d["hot"]))),
+                    "novel": max(0.0, min(1.0, float(d["novel"]))),
+                    "changed": max(0.0, min(1.0, float(d["changed"]))),
+                    "source_authority": max(0.0, min(1.0, float(d["source_authority"]))),
+                    "user_pref": max(0.0, min(1.0, float(d["user_pref"]))),
+                }
+                type_v = str(d.get("type", "model")).strip().lower()
+                region_v = str(d.get("region", "overseas")).strip().lower()
+                cat_v = str(d.get("category", "headline")).strip().lower()
+                if type_v not in VALID_TYPES:
+                    type_v = "model"
+                if region_v not in VALID_REGIONS:
+                    region_v = "overseas"
+                if cat_v not in VALID_CATEGORIES:
+                    cat_v = "headline"
+                weighted = sum(scores[k] * weights[k] for k in scores)
+                results.append({
+                    "score": weighted,
+                    "type": type_v,
+                    "region": region_v,
+                    "category": cat_v,
+                })
+            except (KeyError, ValueError, TypeError) as e:
+                log.warning(f"[LLM10] item {i} parse 失败: {e}")
+                results.append(None)
+        return results
 
     def _call_minimax_score_sync(
         self,
@@ -837,15 +941,21 @@ class DigestService:
                 continue
             source_name = fr.get("source_name", "Unknown")
             source_id = fr.get("source_id")
-            for raw_item in fr.get("items", []):
-                # 3a. LLM6: 优先 LLM 分类（一次出 score+type+region+category）· fallback heuristic
-                llm_sco = self._llm_composite_score(
-                    _raw_item_to_enriched(raw_item, source_id, source_name),
-                    user_prefs=user_prefs,
-                    source_category=_detect_source_category(source_name),
-                )
-                if llm_sco is not None and isinstance(llm_sco, dict):
-                    # LLM 一次性返回 score + 分类
+            # LLM10: 批量 LLM 评分（一次 prompt 评 N 条 · 减少 rate limit 风险）
+            raw_items = fr.get("items", [])
+            if raw_items:
+                enriched_for_batch = [
+                    _raw_item_to_enriched(ri, source_id, source_name)
+                    for ri in raw_items
+                ]
+                batch_results = self._llm_score_batch(enriched_for_batch, user_prefs=user_prefs)
+            else:
+                batch_results = []
+
+            for idx, raw_item in enumerate(raw_items):
+                # 3a. LLM6 + LLM10: 优先 LLM 分类（一次出 score+type+region+category）· fallback heuristic
+                if idx < len(batch_results) and batch_results[idx] is not None:
+                    llm_sco = batch_results[idx]
                     scored = {
                         "score": llm_sco["score"],
                         "item": {

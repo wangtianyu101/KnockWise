@@ -211,8 +211,13 @@ async def on_startup():
     # V2 AI 推送: DigestScheduler（每分钟检查 · 到点推 push_daily · stub 修复）
     try:
         import asyncio as _asyncio
-        globals()["_digest_task"] = _asyncio.create_task(_digest_loop())
-        logger.info("digest scheduler started (60s loop)")
+        # 2026-07-25 FIX: dev 环境禁用 scheduler（60s 跑 + LLM rate limit 触发）· env 控开关
+        import os as _os
+        if _os.getenv("DISABLE_DIGEST_SCHEDULER", "0") == "1":
+            logger.info("digest scheduler DISABLED (DISABLE_DIGEST_SCHEDULER=1)")
+        else:
+            globals()["_digest_task"] = _asyncio.create_task(_digest_loop())
+            logger.info("digest scheduler started (60s loop)")
     except Exception as e:
         logger.warning(f"digest scheduler skipped: {e}")
 
