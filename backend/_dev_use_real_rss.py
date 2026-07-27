@@ -23,32 +23,32 @@ from models import DigestSource
 # - opinion: 博客观点
 REAL_RSS_MAP: dict[str, dict] = {
     "Anthropic News": {
-        "url": "https://www.anthropic.com/news/rss.xml",  # 404 but kept as fallback
-        "category": "headline",
+        "url": "https://blog.cloudflare.com/rss/",  # 工程博客（替代 404 的 anthropic）
+        "category": "engineering",
     },
     "Google DeepMind Blog": {
         "url": "https://export.arxiv.org/rss/cs.AI",  # 学术论文
         "category": "paper",
     },
     "HuggingFace Blog": {
-        "url": "https://blog.cloudflare.com/rss/",  # 工程博客
-        "category": "engineering",
-    },
-    "DeepSeek Docs News": {
-        "url": "https://export.arxiv.org/rss/cs.CL",  # 学术论文
-        "category": "paper",
-    },
-    "Qwen GitHub Releases": {
         "url": "https://github.com/openai/openai-python/releases.atom",  # GitHub release
         "category": "engineering",
     },
+    "DeepSeek Docs News": {
+        "url": "https://www.ithome.com/rss/",  # IT之家 · 国内科技媒体
+        "category": "headline",
+    },
+    "Qwen GitHub Releases": {
+        "url": "https://www.oschina.net/news/rss",  # 开源中国 · 国内开源
+        "category": "headline",
+    },
     "机器之心": {
-        "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",  # 科技媒体
+        "url": "https://www.cnblogs.com/rss",  # 博客园 · 国内开发者社区
         "category": "opinion",
     },
     "智谱 GLM GitHub": {
-        "url": "https://github.com/anthropics/anthropic-sdk-python/releases.atom",  # GitHub release
-        "category": "engineering",
+        "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",  # 科技媒体
+        "category": "opinion",
     },
     "量子位": {
         "url": "https://techcrunch.com/category/artificial-intelligence/feed/",  # 科技媒体
