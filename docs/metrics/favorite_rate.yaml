@@ -1,6 +1,6 @@
 # AI 推送收藏率（favorite_rate · L1 探索性）
 # 决策 1 / L1 探索性标记：阈值 10% 未实测验证 · SCN-P1.8.6 硬阻断 L2 升级
-# ⚠️ v1.2 修正：移除 `---` 分隔 + deadline 加引号
+# ⚠️ v1.2 修正：移除 `---` 分隔 + deadline 加引号 + L1 最小集 3 字段
 metric_id: favorite_rate
 metric_name: AI 推送收藏率
 formula: favorited_count / delivered_count
@@ -21,11 +21,18 @@ target:
   source: 估算（产品未上线 · 阈值未实测）
 failure_action:
   - 上线 30 天后若收藏率 < 5%（target 50%），调研收藏 UX 路径障碍并优化入口位置
-  - 加 A/B 测试：收藏入口位置 + 推荐理由文案，提升收藏转化
+  - 加 A/B 测试：收藏入口位置 + 推荐理由文案，提升收藏转化与长期留存
 current_baseline: null  # L1 探索性 · 未实测
 instrumentation_site: docs/metrics/favorite_rate.yaml（待 frontend 埋点接入）
 owner: claude
 observed_at: null  # L1 探索性 · 未观测
 layer: L1  # SCN-P1.8.6 硬阻断 L2 升级
+
+# ─── L1 最小集（v1.2 加严）───
+problem_hypothesis: 用户是否会收藏高质量 AI 推送内容并形成长期阅读库
+core_signal: 推送收藏率超过 10%
+events:
+  - name: push.delivered
+  - name: push.favorited
 
 # 上线后维护指南：同 push_open_rate.yaml

@@ -1,6 +1,6 @@
 # AI 推送屏蔽率（block_rate · L1 探索性）
 # 决策 1 / L1 探索性标记：阈值 5% 未实测验证 · SCN-P1.8.6 硬阻断 L2 升级
-# ⚠️ v1.2 修正：移除 `---` 分隔 + deadline 加引号
+# ⚠️ v1.2 修正：移除 `---` 分隔 + deadline 加引号 + L1 最小集 3 字段
 metric_id: block_rate
 metric_name: AI 推送屏蔽率
 formula: blocked_count / delivered_count
@@ -21,11 +21,18 @@ target:
   source: 估算（产品未上线 · 阈值未实测）
 failure_action:
   - 上线 30 天后若屏蔽率 > 10%（target 反向），立即降级推送频率并排查屏蔽原因
-  - 排查屏蔽触发场景（内容质量差 / 时机不对 / 频次过高）并加冷却期
+  - 排查屏蔽触发场景（内容质量差 / 时机不对 / 频次过高）并加冷却期与重试策略
 current_baseline: null  # L1 探索性 · 未实测
 instrumentation_site: docs/metrics/block_rate.yaml（待 T6 + T11 接入）
 owner: claude
 observed_at: null  # L1 探索性 · 未观测
 layer: L1  # SCN-P1.8.6 硬阻断 L2 升级
+
+# ─── L1 最小集（v1.2 加严）───
+problem_hypothesis: 用户屏蔽 AI 推送是否反映内容质量低或时机不合适
+core_signal: 推送屏蔽率低于 5%
+events:
+  - name: push.delivered
+  - name: push.blocked
 
 # 上线后维护指南：同 push_open_rate.yaml

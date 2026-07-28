@@ -115,7 +115,7 @@ related:
 #### T6: 新建 docs/metrics/ + 5 项 AI 推送指标 L1 字典
 
 ```markdown
-- [ ] T6: 新建 docs/metrics/ 目录 + 5 项 AI 推送指标 L1 字典（push_open_rate / push_read_rate / favorite_rate / block_rate / 30d_retention）
+- [x] T6: 新建 docs/metrics/ 目录 + 5 项 AI 推送指标 L1 字典（push_open_rate / push_read_rate / favorite_rate / block_rate / 30d_retention）
   - **文件**: `docs/metrics/{push_open_rate,push_read_rate,favorite_rate,block_rate,30d_retention}.yaml`（5 个新建）
   - **测试**: —
   - **依赖**: T4
@@ -128,7 +128,7 @@ related:
 #### T7: 新建 scripts/check_metric_dict.py
 
 ```markdown
-- [ ] T7: 新建 scripts/check_metric_dict.py 含 MetricDict schema（8 必填 + 4 可选 + EventRef + DedupSpec + Target）
+- [x] T7: 新建 scripts/check_metric_dict.py 含 MetricDict schema（8 必填 + 4 可选 + EventRef + DedupSpec + Target）
   - **文件**: `scripts/check_metric_dict.py`（新建）
   - **测试**: TC-3, TC-4, TC-10
   - **依赖**: T6
@@ -140,7 +140,7 @@ related:
 #### T8: 写 tests/test_check_metric_dict.py
 
 ```markdown
-- [ ] T8: 写 tests/test_check_metric_dict.py 含 TC-3/TC-4/TC-10 + 额外 2 个（SCN-P1.8.4 metric_id 正则 / SCN-P1.8.6 阈值未验证阻断）
+- [x] T8: 写 tests/test_check_metric_dict.py 含 TC-3/TC-4/TC-10 + 额外 2 个（SCN-P1.8.4 metric_id 正则 / SCN-P1.8.6 阈值未验证阻断）
   - **文件**: `tests/test_check_metric_dict.py`（新建）
   - **测试**: TC-3, TC-4, TC-10
   - **依赖**: T7
@@ -351,12 +351,12 @@ T1-T18 → T19（L5 staging 验证）
 | T5 | test_check_product_doc.py::test_baseline_missing_evidence | product_baseline 缺段 | REQ-P1.7 | SCN-P1.7.2 | TC-2 | L2 | `9375497` | PASS (7/7) | PASS | ACCEPTED |
 | T5 | test_check_product_doc.py::test_target_user_missing_device | target_user 缺字段 | REQ-P1.7 | SCN-P1.7.3 | TC-2.5 | L2 | — | — | — | — |
 | T5 | test_check_product_doc.py::test_frontmatter_parse_error | YAML 解析失败 | REQ-P1.7 | SCN-P1.7.4 | TC-2.6 | L2 | — | — | — | — |
-| T6 | — | 5 项 AI 推送指标 L1 字典（无代码） | REQ-P1.8 | — | — | — | `29a3f32` + `4234404` (v1.2 fix) | — | PENDING | PENDING |
-| T7 | test_check_metric_dict.py::test_missing_failure_action | 字典缺 failure_action | REQ-P1.8 | SCN-P1.8.2 | TC-3 | L2 | `5851c95` | — | PENDING | PENDING |
-| T7 | test_check_metric_dict.py::test_failure_action_too_short | failure_action 字符数 < 30 | REQ-P1.8 | SCN-P1.8.3 | TC-4 | L2 | `5851c95` | — | PENDING | PENDING |
-| T8 | test_check_metric_dict.py::test_l1_minimal_set | L1 探索性标记最小集 | REQ-P1.8 | SCN-P1.8.5 | TC-10 | L2 | `4234404` | PASS (8/8) | PENDING | PENDING |
-| T8 | test_check_metric_dict.py::test_metric_id_regex | metric_id 正则 | REQ-P1.8 | SCN-P1.8.4 | TC-4.5 | L2 | `4234404` | PASS (8/8) | PENDING | PENDING |
-| T8 | test_check_metric_dict.py::test_l2_unverified_threshold_blocked | 5 项 AI 推送指标 L2 升级阻断 | REQ-P1.8 | SCN-P1.8.6 | TC-3.5 | L2 | `4234404` | PASS (8/8) | PENDING | PENDING |
+| T6 | — | 5 项 AI 推送指标 L1 字典（无代码） | REQ-P1.8 | — | — | — | `29a3f32` + `4234404` (v1.2 fix) | — | PASS | ACCEPTED |
+| T7 | test_check_metric_dict.py::test_missing_failure_action | 字典缺 failure_action | REQ-P1.8 | SCN-P1.8.2 | TC-3 | L2 | `5851c95` | — | PASS | ACCEPTED |
+| T7 | test_check_metric_dict.py::test_failure_action_too_short | failure_action 字符数 < 30 | REQ-P1.8 | SCN-P1.8.3 | TC-4 | L2 | `5851c95` | — | PASS | ACCEPTED |
+| T8 | test_check_metric_dict.py::test_l1_minimal_set | L1 探索性标记最小集 | REQ-P1.8 | SCN-P1.8.5 | TC-10 | L2 | `55765d0` | PASS (10/10) | PASS | ACCEPTED |
+| T8 | test_check_metric_dict.py::test_metric_id_regex | metric_id 正则 | REQ-P1.8 | SCN-P1.8.4 | TC-4.5 | L2 | `55765d0` | PASS (10/10) | PASS | ACCEPTED |
+| T8 | test_check_metric_dict.py::test_l2_unverified_threshold_blocked | 5 项 AI 推送指标 L2 升级阻断 | REQ-P1.8 | SCN-P1.8.6 | TC-3.5 | L2 | `55765d0` | PASS (10/10) | PASS | ACCEPTED |
 | T9 | test_logger_trace_id_field.py::test_concurrent_isolation | logger trace_id 100 并发隔离（v1.1 修正）| REQ-P1.9-L1 | SCN-P1.9.1（v1.1）| TC-5 | L2+L3 | — | — | — | — |
 | T10 | test_logger_trace_id_field.py::test_concurrent_isolation | （同 T9，归属 T10 实施 commit · v1.1 修正）| REQ-P1.9-L1 | SCN-P1.9.1（v1.1）| TC-5 | L2+L3 | — | — | — | — |
 | T11 | test_logger_startup.py::test_knockwise_logger_structured | logger startup 接管 stdout | REQ-P1.9-L1 | SCN-P1.9.3 | TC-9 | L2 | — | — | — | — |

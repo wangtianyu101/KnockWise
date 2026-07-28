@@ -1,7 +1,7 @@
 # AI 推送 30 天留存率（retention_30d · L1 探索性）
 # 决策 1 / L1 探索性标记：阈值 30% 未实测验证 · SCN-P1.8.6 硬阻断 L2 升级
 # metric_id 用 retention_30d（不用 30d_retention · 因为正则 ^[a-z][a-z0-9_]{2,40}$ 不允许数字开头）
-# ⚠️ v1.2 修正：移除 `---` 分隔 + deadline 加引号
+# ⚠️ v1.2 修正：移除 `---` 分隔 + deadline 加引号 + L1 最小集 3 字段
 metric_id: retention_30d
 metric_name: AI 推送 30 天留存率
 formula: day_30_active_users / day_0_active_users
@@ -22,11 +22,18 @@ target:
   source: 估算（产品未上线 · 阈值未实测）
 failure_action:
   - 上线 30 天后若留存率 < 15%（target 50%），调研流失节点（drop-off funnel）并优化召回链路
-  - 加重新激活推送（30 天未活跃用户召回）并测试频次和内容策略
+  - 加重新激活推送（30 天未活跃用户召回）并测试频次和内容策略以提升留存
 current_baseline: null  # L1 探索性 · 未实测
 instrumentation_site: docs/metrics/retention_30d.yaml（待 T6 + T11 接入）
 owner: claude
 observed_at: null  # L1 探索性 · 未观测
 layer: L1  # SCN-P1.8.6 硬阻断 L2 升级
+
+# ─── L1 最小集（v1.2 加严）───
+problem_hypothesis: AI 推送能否提升用户 30 天内持续活跃度与长期留存
+core_signal: 30 天留存率超过 30%
+events:
+  - name: user.active_at_day_0
+  - name: user.active_at_day_30
 
 # 上线后维护指南：同 push_open_rate.yaml
