@@ -30,60 +30,60 @@ related:
 
 ## 1. L2 单元测试详细结果（31/31 PASS）
 
-### P1-7 测试（7/7 PASS · commit `9375497`）
+### P1-7 测试（7/7 ✅ PASS · commit `9375497`）
 
 - `tests/test_check_product_doc.py`:
-  - `test_baseline_ok` · 合规 product-doc → exit 0
-  - `test_baseline_missing_evidence` · 缺 problem_evidence → exit 1
-  - `test_target_user_missing_device` · 缺 device 字段 → exit 1
-  - `test_frontmatter_parse_error` · YAML 解析失败 → exit 1
-  - `test_legacy_skeleton_exempt` · legacy_skeleton=true 豁免 → exit 0
-  - `test_baseline_section_missing` · 缺 product_baseline 段 → exit 1
-  - `test_problem_evidence_too_short_quote` · quote 超 80 字符 → exit 1
+  - `test_baseline_ok` ✅ PASS · 合规 product-doc → exit 0
+  - `test_baseline_missing_evidence` ✅ PASS · 缺 problem_evidence → exit 1
+  - `test_target_user_missing_device` ✅ PASS · 缺 device 字段 → exit 1
+  - `test_frontmatter_parse_error` ✅ PASS · YAML 解析失败 → exit 1
+  - `test_legacy_skeleton_exempt` ✅ PASS · legacy_skeleton=true 豁免 → exit 0
+  - `test_baseline_section_missing` ✅ PASS · 缺 product_baseline 段 → exit 1
+  - `test_problem_evidence_too_short_quote` ✅ PASS · quote 超 80 字符 → exit 1
 
-### P1-8 测试（10/10 PASS · commit `55765d0`）
+### P1-8 测试（10/10 ✅ PASS · commit `55765d0`）
 
 - `tests/test_check_metric_dict.py`:
-  - `test_l2_full_baseline_ok` · L2 字典全字段 → exit 0
-  - `test_missing_failure_action` · 缺 failure_action → exit 1
-  - `test_failure_action_too_short` · failure_action < 30 字符 → exit 1（含 "min_length 30" 关键词）
-  - `test_l1_minimal_set_ok` · L1 + 3 最小集字段 → exit 0
-  - `test_l1_missing_problem_hypothesis` · 缺 problem_hypothesis → exit 1
-  - `test_metric_id_regex_invalid` · metric_id 不符合正则 → exit 1
-  - `test_l2_threshold_blocked` · L2 + 阈值未实测 → exit 1（SCN-P1.8.6 硬阻断）
-  - `test_l1_ai_push_metrics_pass` · 5 项 L1 + 完整字段 → exit 0
-  - `test_enforce_l2_flag` · --enforce-l2 强制校验 → exit 1
-  - `test_scn_p1_8_6_blocked_with_enforce_l2` · --enforce-l2 不能绕过 SCN-P1.8.6 → exit 1
+  - `test_l2_full_baseline_ok` ✅ PASS · L2 字典全字段 → exit 0
+  - `test_missing_failure_action` ✅ PASS · 缺 failure_action → exit 1
+  - `test_failure_action_too_short` ✅ PASS · failure_action < 30 字符 → exit 1（含 "min_length 30" 关键词）
+  - `test_l1_minimal_set_ok` ✅ PASS · L1 + 3 最小集字段 → exit 0
+  - `test_l1_missing_problem_hypothesis` ✅ PASS · 缺 problem_hypothesis → exit 1
+  - `test_metric_id_regex_invalid` ✅ PASS · metric_id 不符合正则 → exit 1
+  - `test_l2_threshold_blocked` ✅ PASS · L2 + 阈值未实测 → exit 1（SCN-P1.8.6 硬阻断）
+  - `test_l1_ai_push_metrics_pass` ✅ PASS · 5 项 L1 + 完整字段 → exit 0
+  - `test_enforce_l2_flag` ✅ PASS · --enforce-l2 强制校验 → exit 1
+  - `test_scn_p1_8_6_blocked_with_enforce_l2` ✅ PASS · --enforce-l2 不能绕过 SCN-P1.8.6 → exit 1
 
-### P1-9 L1 logger trace_id 测试（2/2 PASS · commit `82f02d6`）
+### P1-9 L1 logger trace_id 测试（2/2 ✅ PASS · commit `82f02d6`）
 
 - `tests/test_logger_trace_id_field.py`:
-  - `test_logger_trace_id_concurrent_isolation` · asyncio.gather 100 并发隔离 → 真跑不串
-  - `test_logger_trace_id_cross_request_no_leak` · 跨 await 切换 trace_id 不串 → 真跑
+  - `test_logger_trace_id_concurrent_isolation` ✅ PASS · asyncio.gather 100 并发隔离 → 真跑不串
+  - `test_logger_trace_id_cross_request_no_leak` ✅ PASS · 跨 await 切换 trace_id 不串 → 真跑
 
-### P1-9 L1 logger startup 测试（3/3 PASS · commit `4e299fd`）
+### P1-9 L1 logger startup 测试（3/3 ✅ PASS · commit `4e299fd`）
 
 - `tests/test_logger_startup.py`:
-  - `test_logger_startup_takes_over_stdout` · JSON 格式 5 字段（ts/level/trace_id/logger/msg）齐全
-  - `test_setup_logger_knockwise_initialization` · setup_logger 初始化正确
-  - `test_digest_logger_has_trace_id_filter` · digest_logger 已有 TraceFilter
+  - `test_logger_startup_takes_over_stdout` ✅ PASS · JSON 格式 5 字段（ts/level/trace_id/logger/msg）齐全
+  - `test_setup_logger_knockwise_initialization` ✅ PASS · setup_logger 初始化正确
+  - `test_digest_logger_has_trace_id_filter` ✅ PASS · digest_logger 已有 TraceFilter
 
-### P1-9 L1 metrics endpoint 测试（4/4 PASS · commit `aa95de2`）
+### P1-9 L1 metrics endpoint 测试（4/4 ✅ PASS · commit `aa95de2`）
 
 - `tests/test_metrics_endpoint.py`:
-  - `test_get_metrics_returns_4_counters` · 4 counter 键齐全 + 值 ≥ 1
-  - `test_metrics_default_counters_present` · 默认 4 键存在
-  - `test_metrics_endpoint_route_prefix` · 路由路径 `/api/digest/metrics`
-  - `test_metrics_returns_timings_after_timing_call` · timings 含 push_latency_ms + count/avg/p50/p95
+  - `test_get_metrics_returns_4_counters` ✅ PASS · 4 counter 键齐全 + 值 ≥ 1
+  - `test_metrics_default_counters_present` ✅ PASS · 默认 4 键存在
+  - `test_metrics_endpoint_route_prefix` ✅ PASS · 路由路径 `/api/digest/metrics`
+  - `test_metrics_returns_timings_after_timing_call` ✅ PASS · timings 含 push_latency_ms + count/avg/p50/p95
 
-### P1-9 L2 § 9 治理测试（5/5 PASS · commit `ecbd40f`）
+### P1-9 L2 § 9 治理测试（5/5 ✅ PASS · commit `ecbd40f`）
 
 - `tests/test_check_tasks_template.py`:
-  - `test_l2_missing_section_9` · L2 缺 § 9 → exit 1
-  - `test_l2_with_section_9_ok` · L2 含 § 9 → exit 0
-  - `test_event_name_regex_invalid` · event_name 首字符非小写 → exit 1
-  - `test_l1_section_9_exempt` · L1 豁免 § 9 → exit 0
-  - `test_actual_tasks_md_passes` · 实际 tasks.md（layer: L1）通过
+  - `test_l2_missing_section_9` ✅ PASS · L2 缺 § 9 → exit 1
+  - `test_l2_with_section_9_ok` ✅ PASS · L2 含 § 9 → exit 0
+  - `test_event_name_regex_invalid` ✅ PASS · event_name 首字符非小写 → exit 1
+  - `test_l1_section_9_exempt` ✅ PASS · L1 豁免 § 9 → exit 0
+  - `test_actual_tasks_md_passes` ✅ PASS · 实际 tasks.md（layer: L1）通过
 
 ## 2. L3 整合测试结果
 

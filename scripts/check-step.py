@@ -266,7 +266,8 @@ def check_tasks(content):
     errors = []
 
     # 1. 每个任务 ≤ 1h（找 "估时" 字段）
-    tasks = re.findall(r'-\s*\[\s*\]\s*T\d+', content)
+    # v1.2 修正：同时匹配 `[ ]`（未完成）和 `[x]`（完成）· 允许完成态 tasks.md 也通过自检
+    tasks = re.findall(r'-\s*\[[ x]\]\s*T\d+', content)
     if len(tasks) < 1:
         errors.append('找不到任务项（应有 "- [ ] T1: ..." 格式）')
 
