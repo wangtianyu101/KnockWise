@@ -925,12 +925,27 @@ class DigestService:
         from models import DigestDaily, DigestDailyItem, Profile
         from services.digest_preference_service import DigestPreferenceService
 
+        # T-P0.1 · P0 stub 修复：push_daily 入口记录 start（用于 timing metric）
+        import time
+        _push_start = time.monotonic()
+
         # 1. 加载用户偏好（spec R3 第 5 维）
         pref_svc = DigestPreferenceService()
         user_prefs = await pref_svc.get_user_prefs(db=db, user_id=user_id)
 
         # 2. fetch 12 源
         fetch_results = await self.fetch_all_sources(db)
+
+        # T-P0.1 · P0 stub 修复：fetch 失败累计 inc（按 source 失败数累加）
+        try:
+            from utils.metrics import digest_metrics
+            for fr in fetch_results:
+                if fr.get("error"):
+                    digest_metrics.inc("fetch_failures")
+        except Exception as _metric_exc:
+            # 埋点失败不影响主流程
+            import logging
+            logging.getLogger(__name__).warning("digest_metrics fetch_failures inc failed: %s", _metric_exc)
 
         # 3. 合并所有 item · 自动分类 · 打分
         all_items_with_score: list[dict] = []
@@ -995,6 +1010,13 @@ class DigestService:
                 vibe = "今日 digest 暂缺 · 信源全部失败"
                 from logging import getLogger
                 getLogger(__name__).error("RSS_FAILURE · all sources failed")
+                # T-P0.1 · P0 stub 修复：全失败路径 inc push_failed
+                try:
+                    from utils.metrics import digest_metrics
+                    digest_metrics.inc("push_failed")
+                except Exception as _metric_exc:
+                    import logging
+                    logging.getLogger(__name__).warning("digest_metrics push_failed inc failed: %s", _metric_exc)
             elif not all_items_with_score:
                 vibe = "今日 AI 圈无新动态"
             else:
@@ -1087,6 +1109,9 @@ class DigestService:
                 task.add_done_callback(self._notification_done)
                 email_result = {"scheduled": True}
 
+        # T-P0.1 · P0 stub 修复：成功路径记录 metrics（push_total + push_latency_ms）
+        await self._record_push_metrics(success=True, start_time=_push_start)
+
         return {
             "daily_id": daily_id,
             "item_count": len(selected),
@@ -1094,6 +1119,26 @@ class DigestService:
             "error": None,
             "email": email_result,
         }
+
+    async def _record_push_metrics(self, success: bool, start_time: float):
+        """T-P0.1 · P0 stub 修复：push_daily 完成时记录 metrics（成功/失败/timing）。
+
+        由 push_daily 主流程在 return 前调用。
+        try/except 包住 · 不影响主流程。
+        """
+        try:
+            from utils.metrics import digest_metrics
+            if success:
+                digest_metrics.inc("push_total")
+            else:
+                digest_metrics.inc("push_failed")
+            # timing 记录 elapsed_ms
+            import time
+            elapsed_ms = (time.monotonic() - start_time) * 1000
+            digest_metrics.timing("push_latency_ms", elapsed_ms)
+        except Exception as _metric_exc:
+            import logging
+            logging.getLogger(__name__).warning("digest_metrics record failed: %s", _metric_exc)
 
     async def wait_for_notifications(self) -> None:
         """Drain currently scheduled notifications (used by shutdown/tests)."""
