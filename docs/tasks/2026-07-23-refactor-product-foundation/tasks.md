@@ -357,13 +357,13 @@ T1-T18 → T19（L5 staging 验证）
 | T8 | test_check_metric_dict.py::test_l1_minimal_set | L1 探索性标记最小集 | REQ-P1.8 | SCN-P1.8.5 | TC-10 | L2 | `55765d0` | PASS (10/10) | PASS | ACCEPTED |
 | T8 | test_check_metric_dict.py::test_metric_id_regex | metric_id 正则 | REQ-P1.8 | SCN-P1.8.4 | TC-4.5 | L2 | `55765d0` | PASS (10/10) | PASS | ACCEPTED |
 | T8 | test_check_metric_dict.py::test_l2_unverified_threshold_blocked | 5 项 AI 推送指标 L2 升级阻断 | REQ-P1.8 | SCN-P1.8.6 | TC-3.5 | L2 | `55765d0` | PASS (10/10) | PASS | ACCEPTED |
-| T9 | test_logger_trace_id_field.py::test_concurrent_isolation | logger trace_id 100 并发隔离（v1.1 修正）| REQ-P1.9-L1 | SCN-P1.9.1（v1.1）| TC-5 | L2+L3 | — | — | — | — |
-| T10 | test_logger_trace_id_field.py::test_concurrent_isolation | （同 T9，归属 T10 实施 commit · v1.1 修正）| REQ-P1.9-L1 | SCN-P1.9.1（v1.1）| TC-5 | L2+L3 | — | — | — | — |
-| T11 | test_logger_startup.py::test_knockwise_logger_structured | logger startup 接管 stdout | REQ-P1.9-L1 | SCN-P1.9.3 | TC-9 | L2 | — | — | — | — |
-| T12 | test_logger_startup.py::test_knockwise_logger_structured | （同 T11，归属 T12 实施 commit） | REQ-P1.9-L1 | SCN-P1.9.3 | TC-9 | L2 | — | — | — | — |
-| T13 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | metrics endpoint 4 counter（**v1.2**：键 = `push_total / push_failed / fetch_failures / rsshub_routes_broken` 与 `backend/utils/metrics.py:32-37` 一致）| REQ-P1.9-L1 | SCN-P1.9.4（v1.2）| TC-8 | L3 | — | — | — | — |
-| T14 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | （同 T13，归属 T14 实施 commit） | REQ-P1.9-L1 | SCN-P1.9.4 | TC-8 | L3 | — | — | — | — |
-| T14 | test_metrics_endpoint.py::test_metrics_endpoint_localhost_only | 仅本地访问 | REQ-P1.9-L1 | SCN-P1.9.7 | TC-8.5 | L3 | — | — | — | — |
+| T9 | test_logger_trace_id_field.py::test_concurrent_isolation | logger trace_id 100 并发隔离（v1.1 修正）| REQ-P1.9-L1 | SCN-P1.9.1（v1.1）| TC-5 | L2+L3 | `5850e5c` | PASS (2/2) | PASS | ACCEPTED |
+| T10 | test_logger_trace_id_field.py::test_concurrent_isolation | （同 T9，归属 T10 实施 commit · v1.1 修正）| REQ-P1.9-L1 | SCN-P1.9.1（v1.1）| TC-5 | L2+L3 | `82f02d6` | PASS (2/2) | PASS | ACCEPTED |
+| T11 | test_logger_startup.py::test_knockwise_logger_structured | logger startup 接管 stdout | REQ-P1.9-L1 | SCN-P1.9.3 | TC-9 | L2 | `062b0a6` | — | PASS | ACCEPTED |
+| T12 | test_logger_startup.py::test_knockwise_logger_structured | （同 T11，归属 T12 实施 commit） | REQ-P1.9-L1 | SCN-P1.9.3 | TC-9 | L2 | `4e299fd` | PASS (3/3) | PASS | ACCEPTED |
+| T13 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | metrics endpoint 4 counter（**v1.2**：键 = `push_total / push_failed / fetch_failures / rsshub_routes_broken` 与 `backend/utils/metrics.py:32-37` 一致）| REQ-P1.9-L1 | SCN-P1.9.4（v1.2）| TC-8 | L3 | `374b208` | — | PASS | ACCEPTED |
+| T14 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | （同 T13，归属 T14 实施 commit） | REQ-P1.9-L1 | SCN-P1.9.4 | TC-8 | L3 | `aa95de2` | PASS (4/4) | PASS | ACCEPTED |
+| T14 | test_metrics_endpoint.py::test_metrics_endpoint_localhost_only | 仅本地访问 | REQ-P1.9-L1 | SCN-P1.9.7 | TC-8.5 | L3 | `aa95de2` | PASS (4/4) | PASS | ACCEPTED |
 | T15 | — | 模板 § 9 段（无代码） | REQ-P1.9-task-§9 | — | — | — | — | — | — | — |
 | T16 | test_check_tasks_template.py::test_section9_missing | L2 任务缺 § 9 段 | REQ-P1.9-task-§9 | SCN-P1.9.9 | TC-7 | L2 | — | — | — | — |
 | T17 | test_check_tasks_template.py::test_section9_missing | （同 T16，归属 T17 实施 commit） | REQ-P1.9-task-§9 | SCN-P1.9.9 | TC-7 | L2 | — | — | — | — |
@@ -424,12 +424,12 @@ T1-T18 → T19（L5 staging 验证）
   - T6: ✅ 实施 commit `29a3f32` + v1.2 fix `4234404` + 第三轮 verifier `455b5d6` · verifier PASS · acceptance ACCEPTED
   - T7: ✅ 实施 commit `5851c95` + v1.2 偏差修正 `55765d0` · verifier PASS · acceptance ACCEPTED
   - T8: ✅ 实施 commit `4234404` + v1.2 偏差修正 `55765d0`（10/10 PASS）· verifier PASS · acceptance ACCEPTED
-  - T9: ✅ 实施 commit `5850e5c`（logger ContextVar 改动）· 等 verifier 反馈
-  - T10: ✅ 实施 commit `82f02d6`（100 并发测试 2/2 PASS）· 等 verifier 反馈
-  - T11: ✅ 实施 commit `062b0a6`（startup logger 接管）· 等 verifier 反馈
-  - T12: ✅ 实施 commit `4e299fd`（logger startup 测试 3/3 PASS）· 等 verifier 反馈
-  - T13: ✅ 实施 commit `374b208`（GET /api/digest/metrics endpoint）· 等 verifier 反馈
-  - T14: ✅ 实施 commit `aa95de2`（endpoint 测试 4/4 PASS）· 等 verifier 反馈
+  - T9: ✅ 实施 commit `5850e5c`（logger ContextVar 改动）· verifier PASS · acceptance ACCEPTED
+  - T10: ✅ 实施 commit `82f02d6`（100 并发测试 2/2 PASS）· verifier PASS · acceptance ACCEPTED
+  - T11: ✅ 实施 commit `062b0a6`（startup logger 接管）· verifier PASS · acceptance ACCEPTED
+  - T12: ✅ 实施 commit `4e299fd`（logger startup 测试 3/3 PASS）· verifier PASS · acceptance ACCEPTED
+  - T13: ✅ 实施 commit `374b208`（GET /api/digest/metrics endpoint）· verifier PASS · acceptance ACCEPTED
+  - T14: ✅ 实施 commit `aa95de2`（endpoint 测试 4/4 PASS）· verifier PASS · acceptance ACCEPTED
   - T15-T17: ⏳ 待实施（tasks § 9 接入层）
   - T18-T19: ⏳ 待实施
 ```
