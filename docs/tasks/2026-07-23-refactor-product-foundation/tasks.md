@@ -365,13 +365,13 @@ T1-T18 → T19（L5 staging 验证）
 | T13 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | metrics endpoint 4 counter（**v1.2**：键 = `push_total / push_failed / fetch_failures / rsshub_routes_broken` 与 `backend/utils/metrics.py:32-37` 一致）| REQ-P1.9-L1 | SCN-P1.9.4（v1.2）| TC-8 | L3 | `374b208` | — | PASS | ACCEPTED |
 | T14 | test_metrics_endpoint.py::test_get_metrics_returns_4_counters | （同 T13，归属 T14 实施 commit） | REQ-P1.9-L1 | SCN-P1.9.4 | TC-8 | L3 | `aa95de2` | PASS (4/4) | PASS | ACCEPTED |
 | T14 | test_metrics_endpoint.py::test_metrics_endpoint_localhost_only | 仅本地访问 | REQ-P1.9-L1 | SCN-P1.9.7 | TC-8.5 | L3 | `aa95de2` | PASS (4/4) | PASS | ACCEPTED |
-| T15 | — | 模板 § 9 段（无代码） | REQ-P1.9-task-§9 | — | — | — | — | — | — | — |
-| T16 | test_check_tasks_template.py::test_section9_missing | L2 任务缺 § 9 段 | REQ-P1.9-task-§9 | SCN-P1.9.9 | TC-7 | L2 | — | — | — | — |
-| T17 | test_check_tasks_template.py::test_section9_missing | （同 T16，归属 T17 实施 commit） | REQ-P1.9-task-§9 | SCN-P1.9.9 | TC-7 | L2 | — | — | — | — |
-| T17 | test_check_tasks_template.py::test_event_name_regex | event_name 正则 | REQ-P1.9-task-§9 | SCN-P1.9.10 | TC-7.5 | L2 | — | — | — | — |
-| T17 | test_check_tasks_template.py::test_l1_exempt | L1 任务 § 9 豁免 | REQ-P1.9-task-§9 | SCN-P1.9.11 | TC-7.6 | L2 | — | — | — | — |
-| T18 | — | pre-commit 注册（无新增测试） | ALL | — | — | — | — | — | — | — |
-| T19 | 端到端跑 TC-5/6/8/9 | L5 staging 验证 | ALL | SCN-P1.9.1/3/4/5 | TC-5/6/8/9 | L5 | — | — | — | — |
+| T15 | — | 模板 § 9 段（无代码） | REQ-P1.9-task-§9 | — | — | — | `df93fc1` | — | PASS | ACCEPTED |
+| T16 | test_check_tasks_template.py::test_section9_missing | L2 任务缺 § 9 段 | REQ-P1.9-task-§9 | SCN-P1.9.9 | TC-7 | L2 | `26acc07` | — | PASS | ACCEPTED |
+| T17 | test_check_tasks_template.py::test_section9_missing | （同 T16，归属 T17 实施 commit） | REQ-P1.9-task-§9 | SCN-P1.9.9 | TC-7 | L2 | `ecbd40f` | PASS (5/5) | PASS | ACCEPTED |
+| T17 | test_check_tasks_template.py::test_event_name_regex | event_name 正则 | REQ-P1.9-task-§9 | SCN-P1.9.10 | TC-7.5 | L2 | `ecbd40f` | PASS (5/5) | PASS | ACCEPTED |
+| T17 | test_check_tasks_template.py::test_l1_exempt | L1 任务 § 9 豁免 | REQ-P1.9-task-§9 | SCN-P1.9.11 | TC-7.6 | L2 | `ecbd40f` | PASS (5/5) | PASS | ACCEPTED |
+| T18 | — | pre-commit 注册（无新增测试） | ALL | — | — | — | `160132c` | — | PASS | ACCEPTED |
+| T19 | 端到端跑 TC-5/6/8/9 | L5 staging 验证 | ALL | SCN-P1.9.1/3/4/5 | TC-5/6/8/9 | L5 | `912896d` | — | PASS | ACCEPTED |
 
 **说明**：
 - "实施 commit / test / verifier / acceptance" 4 列在 3 步阶段为空（**3 步不写**）· 4 步实施 commit 后立即回写
@@ -416,7 +416,7 @@ T1-T18 → T19（L5 staging 验证）
 - P1-9 L2 接入层 + tasks § 9（T15-T17）：20+30+30 = 80 min ≈ 1.5h
 - 集成 + 治理回归（T18-T19）：15+30 = 45 min ≈ 0.75h
 - **总估时**: ~7.0h（19 任务 · 平均 22 min/任务）
-- **实际进度**（按 commit 单元）：
+- **实际进度**（按 commit 单元）：19/19 任务完成 · 30 commit · 5 阶段全 verifier PASS + acceptance ACCEPTED
   - T1: ✅ 实施 commit `5f2abdd` · verifier PASS · acceptance ACCEPTED（commit `21414ad`）
   - T2: ✅ 实施 commit `1a23cc4` · verifier PASS · acceptance ACCEPTED
   - T3: ✅ 实施 commit `09f5888` · verifier PASS · acceptance ACCEPTED
@@ -431,11 +431,11 @@ T1-T18 → T19（L5 staging 验证）
   - T12: ✅ 实施 commit `4e299fd`（logger startup 测试 3/3 PASS）· verifier PASS · acceptance ACCEPTED
   - T13: ✅ 实施 commit `374b208`（GET /api/digest/metrics endpoint）· verifier PASS · acceptance ACCEPTED
   - T14: ✅ 实施 commit `aa95de2`（endpoint 测试 4/4 PASS）· verifier PASS · acceptance ACCEPTED
-  - T15: ✅ 实施 commit `df93fc1`（tasks-template § 9 段）· 等 verifier 反馈
-  - T16: ✅ 实施 commit `26acc07`（check-step.py tasks § 9 校验）· 等 verifier 反馈
-  - T17: ✅ 实施 commit `ecbd40f`（§ 9 校验测试 5/5 PASS）· 等 verifier 反馈
-  - T18: ✅ 实施 commit `160132c`（pre-commit 注册 2 checker）· 等 verifier 反馈
-  - T19: ✅ 实施 commit `912896d`（verify.md + L5 staging 真跑）· 等 verifier 反馈
+  - T15: ✅ 实施 commit `df93fc1`（tasks-template § 9 段）· verifier PASS · acceptance ACCEPTED
+  - T16: ✅ 实施 commit `26acc07`（check-step.py tasks § 9 校验）· verifier PASS · acceptance ACCEPTED
+  - T17: ✅ 实施 commit `ecbd40f`（§ 9 校验测试 5/5 PASS）· verifier PASS · acceptance ACCEPTED
+  - T18: ✅ 实施 commit `160132c`（pre-commit 注册 2 checker）· verifier PASS · acceptance ACCEPTED
+  - T19: ✅ 实施 commit `912896d`（verify.md + L5 staging 真跑）· verifier PASS · acceptance ACCEPTED
 ```
 
 **约束**：所有任务 ≤ 1h AI 工作量（最大 45 min）· 全部 1 commit · 全部 ≥ 1 TC
