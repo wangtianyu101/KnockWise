@@ -164,6 +164,44 @@ T5 依赖 T4
 
 ---
 
+## 9. 埋点挂载点（涉及事件 / 指标时必填 · P1-9 L2 § 9 治理）
+
+> **用途**：把"产品功能任务"与"埋点事件 / 指标"绑定，避免审计 9 任务全无埋点（research § 2.3）。
+>
+> **触发条件**：L1 / L2 / L3 任务（产品功能任务）· L0 内部任务豁免
+>
+> **关联 Spec**：[`spec.md § 2.2 SCN-P1.9.9 ~ SCN-P1.9.11`](../tasks/) + [`spec.md § 4.3 EventHook schema`](../tasks/)
+>
+> **校验**：`scripts/check-step.py tasks <file>` · L2 任务缺 § 9 → exit 1
+
+### 9.1 事件挂载（event / trigger / data fields）
+
+| 任务 | event_name | trigger 位置（file:line） | data fields |
+|---|---|---|---|
+| T1 | interview.session_started | services/interview_service.py start() | session_id, user_id, round |
+| T6 | push.delivered | backend/services/digest_service.py push_daily() | user_id, push_id, content_type |
+| T7 | push.opened | frontend/components/AIRecommendationCard.tsx onClick | user_id, push_id, open_source |
+
+### 9.2 指标挂载（metric / counter）
+
+| 任务 | counter_name | inc 调用位置 | 关联 digest_metrics |
+|---|---|---|---|
+| T6 | push_total | backend/services/digest_service.py push_daily() success path | backend/utils/metrics.py:21-25 |
+| T7 | push_opened_total | frontend/components/AIRecommendationCard.tsx onClick handler | backend/utils/metrics.py:21-25 |
+| T6 | push_failed | backend/services/digest_service.py push_daily() failure path | backend/utils/metrics.py:21-25 |
+| T6 | fetch_failures | backend/services/rss_service.py fetch() exception handler | backend/utils/metrics.py:21-25 |
+
+### 9.3 测试门禁（counter 真增断言）
+
+- [ ] 单测断言 `digest_metrics.inc("push_total") == 1`（不只 mock `hasattr`）
+- [ ] L5 staging 启动服务真跑 + counter 增量真断言
+- [ ] tasks.md § 6.5 commit 后回写 + events 表格同步
+
+**事件命名规范**：`[domain].[action]` 小写 + 下划线 + 点分隔（regex `^[a-z][a-z0-9_.]{2,50}$`）
+**L1 豁免**：纯内部 / 一次性任务（如重构 / 文档）豁免 § 9
+
+---
+
 ## 📚 相关文档
 
 - [plan-template.md](plan-template.md) — 上游：方案文档
