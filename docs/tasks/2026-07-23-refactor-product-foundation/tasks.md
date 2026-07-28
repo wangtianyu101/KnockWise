@@ -157,7 +157,7 @@ related:
 #### T9: backend/utils/logger.py 加 TraceIdFilter + trace_id_var ContextVar（v1.1 修正）
 
 ```markdown
-- [ ] T9: backend/utils/logger.py 加 TraceIdFilter + trace_id_var ContextVar（v1.1 修正 · 实施前探查发现 trace_id.py 不存在 · 改写为扩展 logger.py）
+- [x] T9: backend/utils/logger.py 加 TraceIdFilter + trace_id_var ContextVar（v1.1 修正 · 实施前探查发现 trace_id.py 不存在 · 改写为扩展 logger.py）
   - **文件**: `backend/utils/logger.py`（扩展现有）
   - **测试**: TC-5
   - **依赖**: —
@@ -170,7 +170,7 @@ related:
 #### T10: 写 tests/test_logger_trace_id_field.py（v1.1 修正）
 
 ```markdown
-- [ ] T10: 写 tests/test_logger_trace_id_field.py 含 TC-5 100 并发隔离（asyncio.gather 真跑 · 不 mock · v1.1 修正：原 test_trace_id.py 改写）
+- [x] T10: 写 tests/test_logger_trace_id_field.py 含 TC-5 100 并发隔离（asyncio.gather 真跑 · 不 mock · v1.1 修正：原 test_trace_id.py 改写）
   - **文件**: `tests/test_logger_trace_id_field.py`（新建）
   - **测试**: TC-5
   - **依赖**: T9
@@ -183,7 +183,7 @@ related:
 #### T11: FastAPI startup 接管 knockwise.* logger
 
 ```markdown
-- [ ] T11: FastAPI startup 接管 knockwise.* logger（lifespan context 装 handler + formatter）
+- [x] T11: FastAPI startup 接管 knockwise.* logger（lifespan context 装 handler + formatter）
   - **文件**: `backend/main.py` + `backend/utils/logger.py`（可能新建）
   - **测试**: TC-9
   - **依赖**: T9
@@ -208,7 +208,7 @@ related:
 #### T13: 新建 GET /api/digest/metrics endpoint
 
 ```markdown
-- [ ] T13: 新建 GET /api/digest/metrics endpoint（仅 127.0.0.1 绑定 · 返回 4 counter）
+- [x] T13: 新建 GET /api/digest/metrics endpoint（仅 127.0.0.1 绑定 · 返回 4 counter）
   - **文件**: `backend/api/digest_metrics.py`（新建）+ `backend/main.py` 路由注册
   - **测试**: TC-8
   - **依赖**: T9
@@ -221,7 +221,7 @@ related:
 #### T14: 写 tests/test_metrics_endpoint.py
 
 ```markdown
-- [ ] T14: 写 tests/test_metrics_endpoint.py 含 TC-8 + 额外 1 个（SCN-P1.9.7 仅本地访问）
+- [x] T14: 写 tests/test_metrics_endpoint.py 含 TC-8 + 额外 1 个（SCN-P1.9.7 仅本地访问）
   - **文件**: `tests/test_metrics_endpoint.py`（新建）
   - **测试**: TC-8
   - **依赖**: T13
@@ -421,11 +421,17 @@ T1-T18 → T19（L5 staging 验证）
   - T3: ✅ 实施 commit `09f5888` · verifier PASS · acceptance ACCEPTED
   - T4: ✅ 实施 commit `9375497`（修订 checker）· verifier PASS · acceptance ACCEPTED
   - T5: ✅ 实施 commit `9375497`（测试 7/7 PASS）· verifier PASS · acceptance ACCEPTED
-  - T6: ✅ 实施 commit `29a3f32` + v1.2 fix `4234404` · verifier FAIL → 修中（v1.2 偏差 6 项）
-  - T7: ✅ 实施 commit `5851c95` · verifier FAIL → 修中
-  - T8: ✅ 实施 commit `4234404`（8/8 PASS）· verifier FAIL → 修中
-  - T9-T10: ⏳ 待实施（logger trace_id 字段 v1.1 修正）
-  - T11-T19: ⏳ 待实施
+  - T6: ✅ 实施 commit `29a3f32` + v1.2 fix `4234404` + 第三轮 verifier `455b5d6` · verifier PASS · acceptance ACCEPTED
+  - T7: ✅ 实施 commit `5851c95` + v1.2 偏差修正 `55765d0` · verifier PASS · acceptance ACCEPTED
+  - T8: ✅ 实施 commit `4234404` + v1.2 偏差修正 `55765d0`（10/10 PASS）· verifier PASS · acceptance ACCEPTED
+  - T9: ✅ 实施 commit `5850e5c`（logger ContextVar 改动）· 等 verifier 反馈
+  - T10: ✅ 实施 commit `82f02d6`（100 并发测试 2/2 PASS）· 等 verifier 反馈
+  - T11: ✅ 实施 commit `062b0a6`（startup logger 接管）· 等 verifier 反馈
+  - T12: ✅ 实施 commit `4e299fd`（logger startup 测试 3/3 PASS）· 等 verifier 反馈
+  - T13: ✅ 实施 commit `374b208`（GET /api/digest/metrics endpoint）· 等 verifier 反馈
+  - T14: ✅ 实施 commit `aa95de2`（endpoint 测试 4/4 PASS）· 等 verifier 反馈
+  - T15-T17: ⏳ 待实施（tasks § 9 接入层）
+  - T18-T19: ⏳ 待实施
 ```
 
 **约束**：所有任务 ≤ 1h AI 工作量（最大 45 min）· 全部 1 commit · 全部 ≥ 1 TC
