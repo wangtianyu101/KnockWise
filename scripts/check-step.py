@@ -317,12 +317,18 @@ def check_tasks(content):
             errors.append(f'§ 9 埋点挂载点缺失（layer={layer} 必填 · L1 豁免 · spec § 2.2 SCN-P1.9.9）')
 
         # event_name 正则校验 ^[a-z][a-z0-9_.]{2,50}$
-        # 用 [a-z][a-z0-9_]+\.[a-z][a-z0-9_.]* 精确匹配 domain.action 形式（含点）
-        # 排除 Traceability Matrix 任务号 (T17) 和测试名 (test_baseline_ok) 误判
+        # 用 [a-z][a-z0-9_]+\.[a-z][a-z0-9_.]* 提取符合 domain.action 形式的（小写开头）候选
+        # 然后再通过 re.match 严格校验（捕获所有不合规名称：数字开头 / 大写 / 含特殊字符）
         event_names = re.findall(r'\|\s*([a-z][a-z0-9_]+\.[a-z][a-z0-9_.]*)\s*\|', content)
         for event_name in event_names:
             if not re.match(r'^[a-z][a-z0-9_.]{2,50}$', event_name):
                 errors.append(f'event_name "{event_name}" 不符合正则 ^[a-z][a-z0-9_.]{{2,50}}$（spec § 2.2 SCN-P1.9.10）')
+
+        # 额外检测：首字符非小写的 event_name（数字 / 大写开头）
+        # 匹配 § 9 表格中可能的首字符非 a-z 的 event_name
+        bad_event_names = re.findall(r'\|\s*([0-9A-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_.]*)\s*\|', content)
+        for bad_event_name in bad_event_names:
+            errors.append(f'event_name "{bad_event_name}" 首字符非小写（spec § 2.2 SCN-P1.9.10 应 ^[a-z]...）')
 
     return errors
 
