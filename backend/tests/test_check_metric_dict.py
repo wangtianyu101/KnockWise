@@ -101,8 +101,9 @@ layer: L2
 """
     p = _write_metric_dict(tmp_path, yaml_content)
     result = _run_checker(p)
-    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstdout: {result.stdout}"
-    assert "failure_action" in result.stdout
+    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstderr: {result.stderr}"
+    # v1.2 偏差 1 修法：错误改写到 stderr
+    assert "failure_action" in result.stderr, f"expected 'failure_action' in stderr, got: {result.stderr}"
 
 
 # ─── TC-4: failure_action 字符数 < 30 报错（SCN-P1.8.3）──────
@@ -133,20 +134,50 @@ layer: L2
 """
     p = _write_metric_dict(tmp_path, yaml_content)
     result = _run_checker(p)
-    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstdout: {result.stdout}"
-    assert "字符数" in result.stdout or "30" in result.stdout
+    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstderr: {result.stderr}"
+    # v1.2 verifier FAIL 偏差 1 + 偏差 3 修法：错误改写到 stderr + 含 "min_length 30" 关键词 + 实际字符数
+    assert "min_length 30" in result.stderr, f"expected 'min_length 30' in stderr, got: {result.stderr}"
+    assert "17" in result.stderr, f"expected actual character count (17) in stderr, got: {result.stderr}"
 
 
 # ─── TC-10: L1 字典最小集豁免校验（SCN-P1.8.5）─────────────
 def test_l1_minimal_set_ok(tmp_path):
-    """L1 探索性最小集（仅 metric_id + layer）→ exit 0（跳过 8 必填严格校验）。"""
+    """L1 探索性最小集（含 problem_hypothesis + core_signal + events ≤3）→ exit 0。
+
+    v1.2 verifier FAIL 偏差 4 修法：spec § 4.2 L1 最小集必须含 3 字段：
+    - problem_hypothesis (1 句话问题假设 · ≥ 20 字)
+    - core_signal (1 核心成功信号 · ≥ 10 字)
+    - events (≤ 3 事件列表)
+    """
     yaml_content = """
 metric_id: dummy_l1_metric
 layer: L1
+problem_hypothesis: 用户对 AI 推送的打开率是否会因内容相关性提升而显著增长
+core_signal: 推送打开率超过 40%
+events:
+  - name: push.delivered
+  - name: push.opened
 """
     p = _write_metric_dict(tmp_path, yaml_content)
     result = _run_checker(p)
     assert result.returncode == 0, f"expected rc=0, got rc={result.returncode}\nstdout: {result.stdout}"
+
+
+# ─── TC-L1-minimal-missing: L1 缺 problem_hypothesis 字段报错 ─
+def test_l1_missing_problem_hypothesis(tmp_path):
+    """L1 字典缺 problem_hypothesis → exit 1 + stdout 含'problem_hypothesis'。"""
+    yaml_content = """
+metric_id: dummy_l1_metric
+layer: L1
+core_signal: 推送打开率超过 40%
+events:
+  - name: push.delivered
+"""
+    p = _write_metric_dict(tmp_path, yaml_content)
+    result = _run_checker(p)
+    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstderr: {result.stderr}"
+    # v1.2 偏差 1 修法：错误改写到 stderr
+    assert "problem_hypothesis" in result.stderr, f"expected 'problem_hypothesis' in stderr, got: {result.stderr}"
 
 
 # ─── TC-4.5: metric_id 不符合正则报错（SCN-P1.8.4）─────────
@@ -158,8 +189,9 @@ layer: L1
 """
     p = _write_metric_dict(tmp_path, yaml_content)
     result = _run_checker(p)
-    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstdout: {result.stdout}"
-    assert "metric_id" in result.stdout
+    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstderr: {result.stderr}"
+    # v1.2 偏差 1 修法：错误改写到 stderr
+    assert "metric_id" in result.stderr, f"expected 'metric_id' in stderr, got: {result.stderr}"
 
 
 # ─── TC-3.5: 5 项 AI 推送指标 L2 升级阻断（SCN-P1.8.6 · v1.2）──
@@ -193,9 +225,10 @@ layer: L2  # 试图升 L2 · 应被 SCN-P1.8.6 硬阻断
 """
     p = _write_metric_dict(tmp_path, yaml_content)
     result = _run_checker(p)
-    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstdout: {result.stdout}"
-    assert "SCN-P1.8.6" in result.stdout or "硬阻断" in result.stdout
-    assert "push_open_rate" in result.stdout
+    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstderr: {result.stderr}"
+    # v1.2 偏差 1 修法：错误改写到 stderr
+    assert "SCN-P1.8.6" in result.stderr or "硬阻断" in result.stderr, f"expected SCN-P1.8.6 in stderr, got: {result.stderr}"
+    assert "push_open_rate" in result.stderr
 
 
 # ─── TC-extra: L1 字典应通过（5 项 AI 推送 L1 标记验证）──────
@@ -227,10 +260,17 @@ instrumentation_site: T6 实施
 owner: claude
 observed_at: null
 layer: L1  # v1.2 决策 3 修正后正确标记
+problem_hypothesis: 用户对 AI 推送的打开率是否会因内容相关性提升而显著增长
+core_signal: 推送打开率超过 40%
+events:
+  - name: push.delivered
+  - name: push.opened
 """
     p = _write_metric_dict(tmp_path, yaml_content)
     result = _run_checker(p)
-    assert result.returncode == 0, f"expected rc=0, got rc={result.returncode}\nstdout: {result.stdout}"
+    assert result.returncode == 0, f"expected rc=0, got rc={result.returncode}\nstderr: {result.stderr}"
+    # PASS 消息在 stdout（v0 main_runner 行为不变）
+    assert "passed" in result.stdout.lower() or "✅" in result.stdout
 
 
 # ─── TC-enforce-l2: --enforce-l2 标志强制 L2 校验 ─────────────
@@ -239,7 +279,51 @@ def test_enforce_l2_flag(tmp_path):
     yaml_content = """
 metric_id: dummy_enforce_test
 layer: L1
+problem_hypothesis: 测试用问题假设，确保长度足够通过 L1 最小集校验
+core_signal: 测试信号
+events:
+  - name: test.event
 """
     p = _write_metric_dict(tmp_path, yaml_content)
     result = _run_checker(p, "--enforce-l2")
-    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstdout: {result.stdout}"
+    assert result.returncode == 1, f"expected rc=1, got rc={result.returncode}\nstderr: {result.stderr}"
+
+
+# ─── TC-extra: SCN-P1.8.6 硬阻断不可绕过（v1.2 偏差 5）──
+def test_scn_p1_8_6_blocked_with_enforce_l2(tmp_path):
+    """L1 AI 指标 + 补齐其他 L2 字段 + current_baseline=null + --enforce-l2 → 仍 exit 1。
+
+    v1.2 verifier FAIL 偏差 5 修法：--enforce-l2 不能绕过 SCN-P1.8.6 硬阻断。
+    即使补齐其他 8 必填字段，只要 current_baseline=null，SCN-P1.8.6 必须阻断。
+    """
+    yaml_content = """
+metric_id: push_open_rate
+metric_name: AI 推送打开率（L1 试图用 --enforce-l2 绕过 SCN-P1.8.6）
+formula: opened_count / delivered_count
+num_event:
+  name: push.opened
+  file: backend/services/digest_service.py
+  line: 1
+den_event:
+  name: push.delivered
+  file: backend/services/digest_service.py
+  line: 1
+dedup:
+  primary_key: user_id
+  window: 7d
+target:
+  value: 0.40
+  deadline: "2026-12-31"
+  source: 估算（产品未上线）
+failure_action:
+  - 上线 30 天后若打开率 < 20%，降级推送频率至每周 1 条
+  - 进一步降低个性化推荐强度，专注核心场景而非内容数量覆盖
+layer: L1  # 试图升 L2 但 current_baseline=null · SCN-P1.8.6 应阻断
+current_baseline: null
+observed_at: null
+"""
+    p = _write_metric_dict(tmp_path, yaml_content)
+    result = _run_checker(p, "--enforce-l2")
+    assert result.returncode == 1, f"expected rc=1 (SCN-P1.8.6 must block), got rc={result.returncode}\nstderr: {result.stderr}"
+    # v1.2 偏差 1 修法：错误改写到 stderr
+    assert "SCN-P1.8.6" in result.stderr, f"expected 'SCN-P1.8.6' in stderr, got: {result.stderr}"

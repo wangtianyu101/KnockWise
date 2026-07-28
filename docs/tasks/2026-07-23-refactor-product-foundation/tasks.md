@@ -416,11 +416,15 @@ T1-T18 → T19（L5 staging 验证）
 - 集成 + 治理回归（T18-T19）：15+30 = 45 min ≈ 0.75h
 - **总估时**: ~7.0h（19 任务 · 平均 22 min/任务）
 - **实际进度**（按 commit 单元）：
-  - T1: ✅ 实施 commit `5f2abdd` · 实际 1 min（模板最小 diff）· verifier/acceptance 待跑
-  - T2: ⏳ 待实施
-  - T3: ⏳ 待实施
-  - T4-T8: ⏳ 待实施
-  - T9-T10: ⏳ 待实施
+  - T1: ✅ 实施 commit `5f2abdd` · verifier PASS · acceptance ACCEPTED（commit `21414ad`）
+  - T2: ✅ 实施 commit `1a23cc4` · verifier PASS · acceptance ACCEPTED
+  - T3: ✅ 实施 commit `09f5888` · verifier PASS · acceptance ACCEPTED
+  - T4: ✅ 实施 commit `9375497`（修订 checker）· verifier PASS · acceptance ACCEPTED
+  - T5: ✅ 实施 commit `9375497`（测试 7/7 PASS）· verifier PASS · acceptance ACCEPTED
+  - T6: ✅ 实施 commit `29a3f32` + v1.2 fix `4234404` · verifier FAIL → 修中（v1.2 偏差 6 项）
+  - T7: ✅ 实施 commit `5851c95` · verifier FAIL → 修中
+  - T8: ✅ 实施 commit `4234404`（8/8 PASS）· verifier FAIL → 修中
+  - T9-T10: ⏳ 待实施（logger trace_id 字段 v1.1 修正）
   - T11-T19: ⏳ 待实施
 ```
 
