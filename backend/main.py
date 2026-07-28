@@ -149,6 +149,16 @@ app.include_router(digest_settings_router)   # /api/digest/settings GET/PATCH
 
 @app.on_event("startup")
 async def on_startup():
+    # T11 v1.1 · FastAPI startup 接管 knockwise.* logger（确保 TraceFilter 生效 + contextvars 隔离）
+    # 注：digest_logger 已在 utils/logger.py 模块导入时初始化（line 77）
+    # 这里显式调用确保 startup 阶段 logger 已配置 + 打印确认
+    try:
+        from utils.logger import setup_logger, digest_logger
+        setup_logger("knockwise")  # 确保 stdout 结构化 + TraceFilter 注入
+        logger.info("knockwise.* logger initialized with TraceFilter (contextvars isolation · T9 v1.1)")
+    except Exception as e:
+        logger.warning(f"knockwise.* logger setup skipped: {e}")
+
     try:
         from core.database import init_db
         await init_db()
