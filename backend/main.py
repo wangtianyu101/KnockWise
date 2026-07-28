@@ -127,6 +127,7 @@ from api.digest.bookmarks import router as digest_bookmarks_router
 from api.digest.behavior import router as digest_behavior_router
 from api.digest.sources import router as digest_sources_router
 from api.digest.settings import router as digest_settings_router
+from api.digest_metrics import router as digest_metrics_router  # T13 v1.2 4 counter 键
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(interview_router)
@@ -145,6 +146,7 @@ app.include_router(digest_bookmarks_router)  # /api/digest/bookmarks CRUD
 app.include_router(digest_behavior_router)   # /api/digest/{read,hide}
 app.include_router(digest_sources_router)    # /api/digest/sources CRUD
 app.include_router(digest_settings_router)   # /api/digest/settings GET/PATCH
+app.include_router(digest_metrics_router)    # /api/digest/metrics（仅本地 · T13 v1.2 4 counter 键 = push_total/push_failed/fetch_failures/rsshub_routes_broken）
 
 
 @app.on_event("startup")
