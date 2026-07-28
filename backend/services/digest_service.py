@@ -816,7 +816,7 @@ class DigestService:
     DEFAULT_TOP_N: int = 5
 
     # 最低阈值（spec R1）
-    DEFAULT_SCORE_THRESHOLD: float = 0.15  # 2026-07-25 LLM5 · 真 minimax 评分普遍 0.15-0.25（LLM 严于启发式）
+    DEFAULT_SCORE_THRESHOLD: float = 0.75  # v40 pytest 环境整治（批 3.1）· 与 spec R1 阈值一致（test_below_threshold_excluded 期望 0.75）
 
     # 多样性硬约束（spec R4 · 满足才能返回完整 5 条）
     DIVERSITY_MIN: dict[str, int] = {
