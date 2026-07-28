@@ -1,36 +1,42 @@
-"""Logger + Trace ID (T19: 2026-07-17 实施).
+"""Logger + Trace ID (T19: 2026-07-17 实施 · T9 v1.1 修正 2026-07-27).
 
-结构化日志 + trace_id 上下文
+结构化日志 + trace_id 上下文（contextvars 隔离 · 避免并发 race）
 
 ⚠️ **2026-07-22 audit（T31 路径核验）**：
 - `DigestMetrics` 类已从本文件搬出至 `utils/metrics.py`（拆分关注点）
 - logger.py 专做 logging + trace_id · metrics.py 专做指标采集
 - 无向后兼容 shim — 当前零调用方，搬出无破坏
+
+⚠️ **2026-07-27 T9 v1.1 调研偏差修正**：
+- 原 `global _trace_id: str | None = None` 全局变量在 asyncio 并发请求下会 race
+- 改用 `contextvars.ContextVar[str]` 实现跨请求隔离（spec § 4.4 v1.1 修订）
+- 保留 `get_trace_id()` / `set_trace_id()` 函数接口（向后兼容 · 内部用 ContextVar 实现）
+- TraceFilter.filter 内部仍调 `get_trace_id()` · 但 `get_trace_id()` 现在从 ContextVar 读
 """
 from __future__ import annotations
 
+import contextvars
 import json
 import logging
 import sys
-import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 
-# Trace ID 上下文 (简化)
-_trace_id: str | None = None
+# Trace ID 上下文（contextvars 隔离 · v1.1 修正）
+trace_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "trace_id", default=""
+)
 
 
 def get_trace_id() -> str:
-    """当前请求的 trace_id · 没设则生成。"""
-    global _trace_id
-    if not _trace_id:
-        _trace_id = str(uuid.uuid4())[:8]
-    return _trace_id
+    """当前请求/任务的 trace_id · 未设则返回空字符串（v1.1 改用 ContextVar）。"""
+    return trace_id_var.get()
 
 
 def set_trace_id(tid: str) -> None:
-    _trace_id = tid
+    """设置当前请求/任务的 trace_id（v1.1 改用 ContextVar）。"""
+    trace_id_var.set(tid)
 
 
 class TraceFilter(logging.Filter):
