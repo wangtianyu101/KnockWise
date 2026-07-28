@@ -3,6 +3,7 @@ title: Tasks · 产品基础分层 L0-L3
 date: 2026-07-27
 status: v1.2（基于 plan v1.2 · 4 项调研偏差修正）
 type: tasks
+layer: L1  # P1-9 L0-L3 分层 · 本任务是治理/重构任务（L1 探索性）豁免 § 9 埋点挂载点（spec § 2.2 SCN-P1.9.11）
 related:
   - [research.md](research.md) — 调研报告 v1
   - [spec.md](spec.md) — 业务契约 v1

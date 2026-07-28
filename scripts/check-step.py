@@ -303,6 +303,27 @@ def check_tasks(content):
     if not re.search(r'总估时|总耗时|总工时', content):
         errors.append('缺少"总估时"字段（事后验证偏差用）')
 
+    # 6. § 9 埋点挂载点（P1-9 L2 治理 · T16）
+    # 规则：L2/L3 任务必填 § 9 · L1 豁免 · L0 豁免
+    # 默认 layer = L2（最严格 · 没声明时按 L2 处理）
+    layer_match = re.search(r'^\s*layer:\s*([A-Za-z0-9]+)(?:\s*#.*)?\s*$', content, re.MULTILINE)
+    layer = layer_match.group(1) if layer_match else 'L2'
+
+    if layer in ('L2', 'L3'):
+        # L2/L3 必填 § 9 段（找 ^##\s*9 或 ^###\s*9\.1）
+        section_9_match = re.search(r'^##\s*9[\.、\s]', content, re.MULTILINE) or \
+                          re.search(r'^###\s*9\.1', content, re.MULTILINE)
+        if not section_9_match:
+            errors.append(f'§ 9 埋点挂载点缺失（layer={layer} 必填 · L1 豁免 · spec § 2.2 SCN-P1.9.9）')
+
+        # event_name 正则校验 ^[a-z][a-z0-9_.]{2,50}$
+        # 用 [a-z][a-z0-9_]+\.[a-z][a-z0-9_.]* 精确匹配 domain.action 形式（含点）
+        # 排除 Traceability Matrix 任务号 (T17) 和测试名 (test_baseline_ok) 误判
+        event_names = re.findall(r'\|\s*([a-z][a-z0-9_]+\.[a-z][a-z0-9_.]*)\s*\|', content)
+        for event_name in event_names:
+            if not re.match(r'^[a-z][a-z0-9_.]{2,50}$', event_name):
+                errors.append(f'event_name "{event_name}" 不符合正则 ^[a-z][a-z0-9_.]{{2,50}}$（spec § 2.2 SCN-P1.9.10）')
+
     return errors
 
 
