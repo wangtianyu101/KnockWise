@@ -22,6 +22,7 @@
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 > - ✅ **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A + TopNav 修复合并；✅ 已修复 commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写)；验证全过：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS。
 > - 🔴 **2026-07-28 P0 + P1 · AI Coding 流程控制面审计（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：步骤 0 已验收，确认 2 个 P0 + 8 个 P1；用户决策先修两个 P0，再按方案 B 做单一状态机控制面规格。P0 containment 🚧 实施中。
+> - 🔴 **2026-07-28 P0 · CI auto-fix 三项执行断链（债务 24）**（[`tasks/2026-07-28-p0-ci-autofix-execution-breaks/`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/research.md)）：用户确认只处理 prompt 中 3 个字面 `$(jq ...)`、`create-branch` 缺 step id、`git add -A` 过度 staging；步骤 0 与 `timebox` 安全边界已验收，步骤 4 TDD 实施中。
 
 ---
 
@@ -38,11 +39,12 @@
 > - **CI Playwright 关键旅程 Smoke（2026-07-23）**：[`docs/tasks/2026-07-23-new-feature-ci-playwright-smoke/decisions.md`](tasks/2026-07-23-new-feature-ci-playwright-smoke/decisions.md)（决策 1：真实 MySQL/FastAPI/Next 核心面试生命周期 · 观察 20 次后再晋升 required · `full-6`）
 > - **Required Checks / Branch Protection（2026-07-23）**：[`docs/tasks/2026-07-23-new-feature-required-checks/decisions.md`](tasks/2026-07-23-new-feature-required-checks/decisions.md)（决策 1：Repository ruleset + enforce admins + 启用前清理 + break-glass 契约 · `full-6`）
 > - **CI auto-fix v4 修复范围与文档漂移（2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-autofix-safety-drift/decisions.md`](tasks/2026-07-23-bug-ci-autofix-safety-drift/decisions.md)（决策 1：v3 + 7 项 P0 残留 + 4 处文档漂移同步；不实施代码 · `refactor-6`）
+> - **CI auto-fix 三项执行断链（2026-07-28）**：[`docs/tasks/2026-07-28-p0-ci-autofix-execution-breaks/decisions.md`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/decisions.md)（决策 D-001：只修 prompt 字面 jq / branch step id / 精确 staging；决策 D-002：`timebox` 最小安全修复已验收，步骤 4 实施中）
 > - **P1 测试基础架构 L1-L5 + 追溯 + Fixture（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-test-foundation/decisions.md`](tasks/2026-07-23-refactor-test-foundation/decisions.md)（决策 1：L1-L5 Mock 边界 + Traceability Matrix + E2E Fixture 三位一体 · `refactor-6`）
 > - **P1 测试治理与质量 xfail/AI 评估/a11y+性能（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-test-governance-quality/decisions.md`](tasks/2026-07-23-refactor-test-governance-quality/decisions.md)（决策 1：xfail 静态 metadata + AI 离线 contract + a11y/perf 报告型 · `refactor-6`）
 > - 🟡 **P1 产品基础分层 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-foundation/decisions.md`](tasks/2026-07-23-refactor-product-foundation/decisions.md)（决策 1：问题证据 baseline 字段 + 指标字典分层 + 埋点按层强制 · `refactor-6` · ✅ spec v1.2 + plan v1.2 + tasks v1.2 · 4 步实施中 T1-T3 ✅ · T4 修订中 · T5 待跑通 · 决策 2 v1.1 + 决策 3 v1.2 调研偏差修正）
 > - ✅ **P0 stub 修复 · digest_metrics 业务代码接入（2026-07-28）**：[`docs/tasks/2026-07-28-fix-p0-stub-metrics-integration/retro.md`](tasks/2026-07-28-fix-p0-stub-metrics-integration/retro.md)（fix-mini 0→4→6 完整 · D2 baseline 验证 · T-P0.1 push_daily 4 处接入 + T-P0.2 6 测试 6/6 PASS · 1 轮 verifier PASS · 3 commit · L5 staging counter 增量真增已验证）
-> - 🔴 **P0 · v40 启动前环境整治**（`backend/tests/` 预存在 31 pytest 失败 · `31 failed / 824 passed` · feature/v40-product-foundation 基线问题 · 独立 P0 议题 · conftest.py:229 reset_limiter 已 v1.2 优雅降级（消除 35 collection errors）· P0 stub 修复 ✅ 已解决 · 剩余 31 pytest 失败仍待 P0 修复）
+> - 🟡 **P0 · v40 启动前环境整治**（`backend/tests/` 预存在 34 pytest 失败 → 调研 v1.1 + 批 1+2.3+3+3.2+4.1+4.2+5 全完成 → **0 failed + 15 xfailed**（v40 pre-existing baseline 留待后续）· `866 passed` · feature/v40-product-foundation 基线问题 · conftest.py:229 reset_limiter 已 v1.2 优雅降级（消除 35 collection errors）· P0 stub 修复 ✅ 已解决 · 调研 + 4 批实施 ✅ 已完成（[`docs/tasks/2026-07-28-fix-v40-pytest-env/retro.md`](tasks/2026-07-28-fix-v40-pytest-env/retro.md) v1.1）· 测试通过率 96.2% → 98.3% · 剩余 15 xfailed 留待后续 session）
 > - **P1 验收与学习 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-verification-learning/decisions.md`](tasks/2026-07-23-refactor-product-verification-learning/decisions.md)（决策 1：轻量用户验收 + Outcome Review 7/14/30 + 旅程追踪按 L0-L3 触发 · `refactor-6`）
 > - **P2 治理清理 4 项合一（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)（决策 1：skill 更新 + 文档 checker + frontmatter 升级 + 长期 §6.11 退役规则 · `refactor-6`）
 > - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
@@ -877,6 +879,33 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 **关闭条件**：先完成两个 P0 的真实远端/供应链验证；随后按方案 B 走步骤 1→6。完整条件只在调研报告维护，本文不重复。
 
 **优先级**：P0 containment 立即；控制面 v2 为 P1
+
+---
+
+### 债务 24 — CI auto-fix prompt / branch output / staging 三项执行断链 🔴
+
+**状态**：🚧 步骤 0 已验收，步骤 4 TDD 实施中
+
+**权威决策主账**：[`docs/tasks/2026-07-28-p0-ci-autofix-execution-breaks/decisions.md`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/decisions.md)
+
+**调研证据**：[`research.md`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/research.md)
+
+**用户决策（2026-07-28）**：「是这三项，可以。」
+
+**步骤 0 验收（2026-07-28）**：「验收步骤 0，开始实施。」
+
+**已确认问题**：
+
+1. `with.prompt` 中三个 `$(jq ...)` 不经 shell，Claude 收到字面文本。
+2. 创建分支步骤无 `id: create-branch`，两个下游 output 引用求值为空。
+3. `patch.diff` 位于仓库根目录且未删除，随后 `git add -A` 会把它及无关 workspace 文件一起 stage。
+4. 现有 auto-fix E2E、安全 E2E 与 CI workflow 测试在三项缺陷存在时仍全 PASS，必须补真实行为 oracle。
+
+**安全边界**：当前 `key_string` 是 raw log 前 200 字符，本任务修通 prompt 时暂不传该字段；既有 v4 sanitizer 安全债仍由债务 17 管理。
+
+**关闭条件**：以本任务 research § 三为准；至少要求结构化 prompt、非空 branch output、精确 index、真实 subprocess/temp-git 回归、独立 verifier 和 L5 GitHub run。
+
+**优先级**：P0 timebox
 
 ---
 
