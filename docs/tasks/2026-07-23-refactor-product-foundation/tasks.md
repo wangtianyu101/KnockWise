@@ -239,7 +239,7 @@ related:
 #### T15: tasks-template.md 加 § 9 埋点挂载点段
 
 ```markdown
-- [ ] T15: tasks-template.md 加 § 9 埋点挂载点段（event / metric 挂载 + 测试门禁 · 见 spec §4.3 schema）
+- [x] T15: tasks-template.md 加 § 9 埋点挂载点段（event / metric 挂载 + 测试门禁 · 见 spec §4.3 schema）
   - **文件**: `docs/templates/tasks-template.md`（追加段）
   - **测试**: —
   - **依赖**: T1, T2, T3
@@ -251,7 +251,7 @@ related:
 #### T16: 扩展 scripts/check-step.py tasks 加 § 9 校验
 
 ```markdown
-- [ ] T16: 扩展 scripts/check-step.py tasks 加 § 9 校验（不新建独立 checker · 复用 v39 基础设施）
+- [x] T16: 扩展 scripts/check-step.py tasks 加 § 9 校验（不新建独立 checker · 复用 v39 基础设施）
   - **文件**: `scripts/check-step.py`（修改）
   - **测试**: TC-7
   - **依赖**: T15
@@ -264,7 +264,7 @@ related:
 #### T17: 写 tests/test_check_tasks_template.py
 
 ```markdown
-- [ ] T17: 写 tests/test_check_tasks_template.py 含 TC-7 + 额外 2 个（SCN-P1.9.10 event_name 正则 / SCN-P1.9.11 L1 豁免）
+- [x] T17: 写 tests/test_check_tasks_template.py 含 TC-7 + 额外 2 个（SCN-P1.9.10 event_name 正则 / SCN-P1.9.11 L1 豁免）
   - **文件**: `tests/test_check_tasks_template.py`（新建）
   - **测试**: TC-7
   - **依赖**: T16
@@ -281,7 +281,7 @@ related:
 #### T18: 在 .pre-commit-config.yaml 注册 2 个 checker
 
 ```markdown
-- [ ] T18: 在 .pre-commit-config.yaml 注册 2 个 checker（check-product-doc + check-metric-dict）
+- [x] T18: 在 .pre-commit-config.yaml 注册 2 个 checker（check-product-doc + check-metric-dict）
   - **文件**: `.pre-commit-config.yaml`（修改）
   - **测试**: —
   - **依赖**: T4, T7, T16
@@ -294,7 +294,7 @@ related:
 #### T19: L5 staging 端到端验证
 
 ```markdown
-- [ ] T19: L5 staging 端到端验证（启动服务 + 跑全套 + counter 真增 + 写 verify.md）
+- [x] T19: L5 staging 端到端验证（启动服务 + 跑全套 + counter 真增 + 写 verify.md）
   - **文件**: `docs/tasks/2026-07-23-refactor-product-foundation/verify.md`（新建）
   - **测试**: TC-5, TC-6, TC-8, TC-9（端到端）
   - **依赖**: T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18
@@ -431,8 +431,11 @@ T1-T18 → T19（L5 staging 验证）
   - T12: ✅ 实施 commit `4e299fd`（logger startup 测试 3/3 PASS）· verifier PASS · acceptance ACCEPTED
   - T13: ✅ 实施 commit `374b208`（GET /api/digest/metrics endpoint）· verifier PASS · acceptance ACCEPTED
   - T14: ✅ 实施 commit `aa95de2`（endpoint 测试 4/4 PASS）· verifier PASS · acceptance ACCEPTED
-  - T15-T17: ⏳ 待实施（tasks § 9 接入层）
-  - T18-T19: ⏳ 待实施
+  - T15: ✅ 实施 commit `df93fc1`（tasks-template § 9 段）· 等 verifier 反馈
+  - T16: ✅ 实施 commit `26acc07`（check-step.py tasks § 9 校验）· 等 verifier 反馈
+  - T17: ✅ 实施 commit `ecbd40f`（§ 9 校验测试 5/5 PASS）· 等 verifier 反馈
+  - T18: ✅ 实施 commit `160132c`（pre-commit 注册 2 checker）· 等 verifier 反馈
+  - T19: ✅ 实施 commit `912896d`（verify.md + L5 staging 真跑）· 等 verifier 反馈
 ```
 
 **约束**：所有任务 ≤ 1h AI 工作量（最大 45 min）· 全部 1 commit · 全部 ≥ 1 TC
