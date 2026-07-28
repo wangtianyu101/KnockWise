@@ -195,7 +195,7 @@ related:
 #### T12: 写 tests/test_logger_startup.py
 
 ```markdown
-- [ ] T12: 写 tests/test_logger_startup.py 含 TC-9（验证 stdout 结构化输出 + trace_id 字段）
+- [x] T12: 写 tests/test_logger_startup.py 含 TC-9（验证 stdout 结构化输出 + trace_id 字段）
   - **文件**: `tests/test_logger_startup.py`（新建）
   - **测试**: TC-9
   - **依赖**: T11
