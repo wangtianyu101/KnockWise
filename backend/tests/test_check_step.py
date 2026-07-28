@@ -149,6 +149,10 @@ class TestCheckTasksBoldTolerance:
     def test_plain_format_passes(self):
         """纯文本格式（无 bold）通过。"""
         content = """
+---
+type: tasks
+layer: L1
+---
 ## 2. 任务清单
 
 ### V2.1
@@ -174,6 +178,10 @@ class TestCheckTasksBoldTolerance:
     def test_bold_format_passes(self):
         """markdown bold 格式（**字段**）通过 — 这是 retro §3 改进项 #1 修复的关键场景。"""
         content = """
+---
+type: tasks
+layer: L1
+---
 ## 2. 任务清单
 
 ### V2.1
@@ -200,6 +208,10 @@ class TestCheckTasksBoldTolerance:
     def test_mixed_format_passes(self):
         """bold + plain 混合格式也通过。"""
         content = """
+---
+type: tasks
+layer: L1
+---
 ## 2. 任务清单
 
 ### V2.1
