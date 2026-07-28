@@ -216,6 +216,62 @@ if [ -n "$task_dirs" ]; then
   fi
 fi
 
+# ─── 4.55 product-doc frontmatter 校验（P1-7 治理 · T18）────────
+product_doc_files=$(echo "$staged_files" | grep -E "^(docs/templates/product-doc-template\.md|docs/tasks/.+/product-doc\.md|docs/issues\.md)$" || true)
+if [ -n "$product_doc_files" ]; then
+  if [ ! -f "scripts/check-product-doc.py" ]; then
+    echo ""
+    echo "❌ 检测到 product-doc 改动,但 scripts/check-product-doc.py 不存在"
+    echo "   治理 checker 缺失，fail closed，禁止 commit"
+    exit 1
+  else
+    echo ""
+    echo "📋 product-doc 改动 → 跑 product_baseline frontmatter 校验..."
+    for file in $product_doc_files; do
+      echo "   → $file"
+      set +e
+      check_out=$(python3 scripts/check-product-doc.py "$file" 2>&1)
+      check_rc=$?
+      set -e
+      printf '%s\n' "$check_out" | tail -5
+      if [ "$check_rc" -ne 0 ]; then
+        echo ""
+        echo "❌ product-doc frontmatter 校验失败,禁止 commit"
+        exit 1
+      fi
+    done
+    echo "✅ product-doc frontmatter 校验通过"
+  fi
+fi
+
+# ─── 4.56 metric dict 校验（P1-8 治理 · T18）────────────────────
+metric_dict_files=$(echo "$staged_files" | grep -E "^docs/metrics/.+\.yaml$" || true)
+if [ -n "$metric_dict_files" ]; then
+  if [ ! -f "scripts/check_metric_dict.py" ]; then
+    echo ""
+    echo "❌ 检测到 docs/metrics/ 改动,但 scripts/check_metric_dict.py 不存在"
+    echo "   治理 checker 缺失，fail closed，禁止 commit"
+    exit 1
+  else
+    echo ""
+    echo "📋 metric dict 改动 → 跑 8 必填 + L0-L3 分层校验..."
+    for file in $metric_dict_files; do
+      echo "   → $file"
+      set +e
+      check_out=$(python3 scripts/check_metric_dict.py "$file" 2>&1)
+      check_rc=$?
+      set -e
+      printf '%s\n' "$check_out" | tail -5
+      if [ "$check_rc" -ne 0 ]; then
+        echo ""
+        echo "❌ metric dict 校验失败,禁止 commit"
+        exit 1
+      fi
+    done
+    echo "✅ metric dict 校验通过"
+  fi
+fi
+
 # ─── 4.6 任务状态语义校验 (P0-5) ─────────────────────────────
 state_files=$(echo "$staged_files" | grep -E "^docs/tasks/.+/(tasks|verify)\.md$" || true)
 if [ -n "$state_files" ]; then
