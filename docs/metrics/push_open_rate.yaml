@@ -1,6 +1,6 @@
----
 # AI 推送打开率（push_open_rate · L1 探索性）
 # 决策 1 / L1 探索性标记：阈值 40% 未实测验证 · SCN-P1.8.6 硬阻断 L2 升级
+# ⚠️ v1.2 修正：移除 `---` 分隔（PyYAML safe_load 误判 multi-document）· deadline 加引号强制 str
 metric_id: push_open_rate
 metric_name: AI 推送打开率
 formula: opened_count / delivered_count
@@ -17,17 +17,17 @@ dedup:
   window: 7d
 target:
   value: 0.40
-  deadline: 2026-12-31
+  deadline: "2026-12-31"  # v1.2 加引号 · 强制 str · 不被 YAML 解析为 date
   source: 估算（产品未上线 · 阈值未实测）
 failure_action:
   - 上线 30 天后若打开率 < 20%（target 50%），降级推送频率至每周 1 条
-  - 进一步降低个性化推荐强度，关注核心场景而非内容数量
+  - 进一步降低个性化推荐强度，专注核心场景而非内容数量覆盖
 current_baseline: null  # L1 探索性 · 未实测
 instrumentation_site: docs/metrics/push_open_rate.yaml（待 T6 + T11 + T12 实施后接入 digest_metrics）
 owner: claude
 observed_at: null  # L1 探索性 · 未观测
 layer: L1  # SCN-P1.8.6 硬阻断 L2 升级 · 阈值未验证前不固化
----
+
 # 上线后维护指南：
 # 1. 跑 python3 scripts/check_metric_dict.py docs/metrics/push_open_rate.yaml · 应 exit 0（layer: L1 豁免 8 必填严格校验）
 # 2. 跑 python3 scripts/check_metric_dict.py docs/metrics/push_open_rate.yaml --enforce-l2 · 应 exit 1（阈值未实测 · SCN-P1.8.6 硬阻断）

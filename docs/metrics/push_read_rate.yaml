@@ -1,6 +1,6 @@
----
 # AI 推送读完率（push_read_rate · L1 探索性）
 # 决策 1 / L1 探索性标记：阈值 60% 未实测验证 · SCN-P1.8.6 硬阻断 L2 升级
+# ⚠️ v1.2 修正：移除 `---` 分隔 + deadline 加引号
 metric_id: push_read_rate
 metric_name: AI 推送读完率
 formula: read_to_end_count / opened_count
@@ -17,15 +17,15 @@ dedup:
   window: 7d
 target:
   value: 0.60
-  deadline: 2026-12-31
+  deadline: "2026-12-31"
   source: 估算（产品未上线 · 阈值未实测）
 failure_action:
-  - 上线 30 天后若读完率 < 30%（target 50%），重写推送摘要生成策略（A/B 测试）
-  - 调研用户阅读时长分布，定位 drop-off 点
+  - 上线 30 天后若读完率 < 30%（target 50%），重写推送摘要生成策略并做 A/B 测试
+  - 调研用户阅读时长分布，定位 drop-off 点并优化内容结构
 current_baseline: null  # L1 探索性 · 未实测
 instrumentation_site: docs/metrics/push_read_rate.yaml（待 frontend 埋点接入）
 owner: claude
 observed_at: null  # L1 探索性 · 未观测
 layer: L1  # SCN-P1.8.6 硬阻断 L2 升级
----
+
 # 上线后维护指南：同 push_open_rate.yaml
