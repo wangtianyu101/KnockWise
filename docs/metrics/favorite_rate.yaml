@@ -1,0 +1,31 @@
+---
+# AI 推送收藏率（favorite_rate · L1 探索性）
+# 决策 1 / L1 探索性标记：阈值 10% 未实测验证 · SCN-P1.8.6 硬阻断 L2 升级
+metric_id: favorite_rate
+metric_name: AI 推送收藏率
+formula: favorited_count / delivered_count
+num_event:
+  name: push.favorited
+  file: frontend/components/AIRecommendationCard.tsx
+  line: 1  # 待 T6 实施后定位（暂占位）
+den_event:
+  name: push.delivered
+  file: backend/services/digest_service.py
+  line: 1  # 待 T6 实施后定位（暂占位）
+dedup:
+  primary_key: user_id
+  window: 30d
+target:
+  value: 0.10
+  deadline: 2026-12-31
+  source: 估算（产品未上线 · 阈值未实测）
+failure_action:
+  - 上线 30 天后若收藏率 < 5%（target 50%），调研收藏 UX 路径障碍
+  - 加 A/B 测试：收藏入口位置 + 推荐理由文案
+current_baseline: null  # L1 探索性 · 未实测
+instrumentation_site: docs/metrics/favorite_rate.yaml（待 frontend 埋点接入）
+owner: claude
+observed_at: null  # L1 探索性 · 未观测
+layer: L1  # SCN-P1.8.6 硬阻断 L2 升级
+---
+# 上线后维护指南：同 push_open_rate.yaml

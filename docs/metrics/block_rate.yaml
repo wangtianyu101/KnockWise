@@ -1,0 +1,31 @@
+---
+# AI 推送屏蔽率（block_rate · L1 探索性）
+# 决策 1 / L1 探索性标记：阈值 5% 未实测验证 · SCN-P1.8.6 硬阻断 L2 升级
+metric_id: block_rate
+metric_name: AI 推送屏蔽率
+formula: blocked_count / delivered_count
+num_event:
+  name: push.blocked
+  file: backend/services/digest_service.py
+  line: 1  # 待 T6 实施后定位（暂占位）
+den_event:
+  name: push.delivered
+  file: backend/services/digest_service.py
+  line: 1  # 待 T6 实施后定位（暂占位）
+dedup:
+  primary_key: user_id
+  window: 30d
+target:
+  value: 0.05
+  deadline: 2026-12-31
+  source: 估算（产品未上线 · 阈值未实测）
+failure_action:
+  - 上线 30 天后若屏蔽率 > 10%（target 反向），立即降级推送频率
+  - 排查屏蔽原因（内容质量 / 时机 / 频次）· 加冷却期
+current_baseline: null  # L1 探索性 · 未实测
+instrumentation_site: docs/metrics/block_rate.yaml（待 T6 + T11 接入）
+owner: claude
+observed_at: null  # L1 探索性 · 未观测
+layer: L1  # SCN-P1.8.6 硬阻断 L2 升级
+---
+# 上线后维护指南：同 push_open_rate.yaml
