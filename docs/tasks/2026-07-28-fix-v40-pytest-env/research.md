@@ -26,10 +26,10 @@ related:
 
 ## 1. 复现路径
 
-### 1.1 baseline 跑全量 pytest（2026-07-28 13:50）
+### 1.1 baseline 跑全量 pytest（2026-07-28 13:50 · 耗时 ≈ 80-95s）
 
 ```
-34 failed, 850 passed, 2 skipped, 1 xfailed, 26 warnings in 81.08s (0:01:21)
+34 failed, 850 passed, 2 skipped, 1 xfailed, 26 warnings
 ```
 
 **34 failed 分类**（9 组）：
@@ -38,13 +38,13 @@ related:
 |---|---|---|---|
 | A | `tests/api/test_digest_api.py` | 8 | anyio event loop 跨测试污染 + pymysql FK 约束失败（fixture user_id 在 users 表不存在） |
 | B | `tests/eval/test_dataset_integrity.py` | 2 | json.decoder error · 数据集 fixture 含非法 JSON |
-| C | `tests/eval/test_*.py` | 11 | LLM 返回非 JSON · fixture 数据集/Prompt 漂移 |
+| C | `tests/eval/test_*.py` | 12 | LLM 返回非 JSON · fixture 数据集/Prompt 漂移 |
 | D | `tests/services/test_digest_composite_score.py` | 1 | composite_score 阈值逻辑回归（v40 预存） |
 | E | `tests/services/test_digest_push_daily.py` | 3 | composite_score < 0.75 阈值 → daily_id=None（v40 预存） |
 | F | `tests/services/test_digest_select_top_n.py` | 3 | select_top_n 阈值/diversity 逻辑回归（v40 预存） |
 | G | `tests/test_check_step.py::TestCheckTasksBoldTolerance` | 3 | P1-9 v1.2 加严 L1/L2 分层校验后 · 老 fixture 缺 `layer: L1` 字段（默认 L2 → § 9 必填 → 失败） |
 | H | `tests/test_digest_llm.py` | 1 | injection 测试 expected branch is null |
-| I | `tests/test_metrics_endpoint.py::test_metrics_returns_timings_after_timing_call` | 1 | **现在 PASS**（P0 stub 修复后 timings 有数据） |
+| I | `tests/test_metrics_endpoint.py::test_metrics_returns_timings_after_timing_call` | 1 | timings 期望 dict 含 push_latency_ms · 实际单例 digest_metrics.timings["push_latency_ms"] 为空（v40 baseline 无业务调用） |
 
 ### 1.2 历史 issues.md 登记 vs 实际
 
@@ -72,18 +72,26 @@ related:
 - v40 包含：P1-9（19 commit）+ P0 stub 修复（3 commit）+ 等
 - pytest 失败在 v40 继承自 v39 之前的代码 + P1-9 v1.2 加严引入的回归
 
-### 3.2 3 类根因（按优先级）
+### 3.2 4 类根因（按优先级）
 
 | 根因 | 影响 | 优先级 |
 |---|---|---|
 | **P1-9 v1.2 加严回归**（TestCheckTasksBoldTolerance 3 failed） | fixture 缺 `layer: L1` · 默认 L2 → § 9 必填 → 失败 | 🟡 P1（直接相关 · 容易修） |
-| **test_digest_api.py 8 failed**（event loop + FK 约束） | anyio 跨测试污染 + fixture user_id 不存在 · TestDailyAPI / TestBookmarkAPI / TestBehaviorAPI / TestSourcesAPI / TestSettingsAPI | 🔴 P0（业务影响 · 跨任务） |
-| **test_eval/* 13 failed + test_digest_push_daily 3 + test_digest_select_top_n 3**（19 failed） | LLM 漂移 + composite_score 阈值 + select_top_n 业务回归 | 🟡 P1（v40 预存 · 需要深入调研） |
+| **test_digest_api.py 8 failed**（event loop + FK 约束 + StopAsyncIteration） | anyio 跨测试污染 + fixture user_id 不存在 + AsyncMock.side_effect=StopAsyncIteration 异常 · TestDailyAPI / TestBookmarkAPI / TestBehaviorAPI / TestSourcesAPI / TestSettingsAPI | 🔴 P0（业务影响 · 跨任务） |
+| **test_metrics_endpoint timings_after_timing_call 1 failed** | v40 baseline 单例 digest_metrics.timings["push_latency_ms"] 为空 · 测试期望 push_latency_ms 存在 · P0 stub 修复后 uvicorn 启动会触发 · 但 pytest 直接 import 不触发 uvicorn | 🟡 P1（v40 baseline 限制 · pytest fixture 隔离） |
+| **test_eval/* 13 failed + test_digest_push_daily 3 + test_digest_select_top_n 3 + test_metrics_endpoint 1 = 20 failed** | LLM 漂移 + composite_score 阈值 + select_top_n 业务回归 + pytest fixture 隔离 | 🟡 P1（v40 预存 · 需要深入调研） |
+
+**累计 failed 分类**：
+- A test_digest_api 8 + G TestCheckTasksBoldTolerance 3 + I metrics_endpoint 1 = **12 个可直接修复（业务 / fixture 隔离）**
+- B test_dataset_integrity 2 + C test_eval 12 + D composite_score 1 + E push_daily 3 + F select_top_n 3 = **21 个需要深入调研**
+- 总计 **33 failed** + 1 failed (test_digest_llm injection) = **34 failed**
 
 ### 3.3 触发（追溯）
 - v40 启动时 P1-9 任务实施过程中 v1.2 加严 L1/L2 分层 → 老 fixture 没声明 layer → 回归 3 个
 - v40 继承 v39 之前的 conftest fixture · event loop 跨测试污染问题在 v40 重现
 - v40 数据库 schema 与 fixture 数据不匹配（FK 约束失败）
+- TestDailyAPI 用 AsyncMock.side_effect=StopAsyncIteration 模拟异步异常 · 但跨测试 event loop 不一致触发 StopAsyncIteration 异常
+- test_metrics_endpoint.py::test_metrics_returns_timings_after_timing_call 期望 push_latency_ms 字段存在 · 但 v40 baseline pytest 直接 import · 不通过 uvicorn 启动触发业务调用 → digest_metrics.timings["push_latency_ms"] 仍为空
 
 ---
 
