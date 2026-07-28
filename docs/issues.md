@@ -21,6 +21,7 @@
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 > - ✅ **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A + TopNav 修复合并；✅ 已修复 commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写)；验证全过：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS。
+> - 🔴 **2026-07-28 P0 + P1 · AI Coding 流程控制面审计（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：步骤 0 已验收，确认 2 个 P0 + 8 个 P1；用户决策先修两个 P0，再按方案 B 做单一状态机控制面规格。P0 containment 🚧 实施中。
 
 ---
 
@@ -40,7 +41,8 @@
 > - **P1 测试基础架构 L1-L5 + 追溯 + Fixture（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-test-foundation/decisions.md`](tasks/2026-07-23-refactor-test-foundation/decisions.md)（决策 1：L1-L5 Mock 边界 + Traceability Matrix + E2E Fixture 三位一体 · `refactor-6`）
 > - **P1 测试治理与质量 xfail/AI 评估/a11y+性能（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-test-governance-quality/decisions.md`](tasks/2026-07-23-refactor-test-governance-quality/decisions.md)（决策 1：xfail 静态 metadata + AI 离线 contract + a11y/perf 报告型 · `refactor-6`）
 > - 🟡 **P1 产品基础分层 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-foundation/decisions.md`](tasks/2026-07-23-refactor-product-foundation/decisions.md)（决策 1：问题证据 baseline 字段 + 指标字典分层 + 埋点按层强制 · `refactor-6` · ✅ spec v1.2 + plan v1.2 + tasks v1.2 · 4 步实施中 T1-T3 ✅ · T4 修订中 · T5 待跑通 · 决策 2 v1.1 + 决策 3 v1.2 调研偏差修正）
-> - 🔴 **P0 · v40 启动前环境整治**（`backend/tests/` 预存在 31 pytest 失败 · `31 failed / 824 passed` · feature/v40-product-foundation 基线问题 · 独立 P0 议题 · conftest.py:229 reset_limiter 已 v1.2 优雅降级（消除 35 collection errors）· 剩余 31 failed 仍待 P0 修复）
+> - ✅ **P0 stub 修复 · digest_metrics 业务代码接入（2026-07-28）**：[`docs/tasks/2026-07-28-fix-p0-stub-metrics-integration/retro.md`](tasks/2026-07-28-fix-p0-stub-metrics-integration/retro.md)（fix-mini 0→4→6 完整 · D2 baseline 验证 · T-P0.1 push_daily 4 处接入 + T-P0.2 6 测试 6/6 PASS · 1 轮 verifier PASS · 3 commit · L5 staging counter 增量真增已验证）
+> - 🔴 **P0 · v40 启动前环境整治**（`backend/tests/` 预存在 31 pytest 失败 · `31 failed / 824 passed` · feature/v40-product-foundation 基线问题 · 独立 P0 议题 · conftest.py:229 reset_limiter 已 v1.2 优雅降级（消除 35 collection errors）· P0 stub 修复 ✅ 已解决 · 剩余 31 pytest 失败仍待 P0 修复）
 > - **P1 验收与学习 L0-L3（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-product-verification-learning/decisions.md`](tasks/2026-07-23-refactor-product-verification-learning/decisions.md)（决策 1：轻量用户验收 + Outcome Review 7/14/30 + 旅程追踪按 L0-L3 触发 · `refactor-6`）
 > - **P2 治理清理 4 项合一（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)（决策 1：skill 更新 + 文档 checker + frontmatter 升级 + 长期 §6.11 退役规则 · `refactor-6`）
 > - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
@@ -853,6 +855,28 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 - 改成 lazy 加载：第一次 `/api/interviews/transcribe` 时再加载
 
 **优先级**：低
+
+---
+
+### 债务 23 — AI Coding 流程控制面存在可绕过 Gate 与供应链假绿 🔴
+
+**状态**：🚧 P0 containment 实施中；方案 B 规格待 P0 完成后编写
+
+**权威决策主账**：[`docs/tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md)
+
+**调研证据**：[`research.md`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)
+
+**用户决策（2026-07-28）**：「验收步骤 0，先修两个 P0，再按方案 B 做规格。」
+
+**已确认问题**：
+
+1. P0 F-01：本地 Gate 可通过 `PRE_COMMIT_SKIP=1` 绕过，远端 ruleset 为 disabled，红 CI 不能形成最终合并裁决。
+2. P0 F-02：Action checker 只验证 40 位 SHA 形状，至少两个目标仓库不存在当前引用，安全测试仍误报 PASS。
+3. P1 F-03～F-10：状态机分裂、commit hash 循环、状态语义冲突、verifier 独立性不可证、路径不闭合、DOD 文本形状校验、多主账扇出、本地 Agent 能力契约缺失。
+
+**关闭条件**：先完成两个 P0 的真实远端/供应链验证；随后按方案 B 走步骤 1→6。完整条件只在调研报告维护，本文不重复。
+
+**优先级**：P0 containment 立即；控制面 v2 为 P1
 
 ---
 
