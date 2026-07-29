@@ -57,7 +57,11 @@ def dispatch_mock(agent: str, case: dict) -> str:
             return '{"matched_branch_index": -1, "matched_branch_name": "injection_attempt", "confidence": 0.0, "followup": ""}'
         return mock_followup_match_response(idx)
     elif agent == "followup_text":
-        return mock_followup_text_response()
+        case_input = case.get("input", {})
+        return mock_followup_text_response(
+            branch_index=case_input.get("matched_branch_index", 0),
+            topic=case_input.get("topic", ""),
+        )
     elif agent == "qa_service":
         tags = case.get("tags", [])
         if "prompt_injection" in tags:

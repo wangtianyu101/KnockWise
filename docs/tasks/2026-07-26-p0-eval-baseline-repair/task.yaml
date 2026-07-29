@@ -1,0 +1,20 @@
+schema: task/v1
+task_id: 2026-07-26-p0-eval-baseline-repair
+mode: timebox
+current_step: 0
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: pending
+metadata:
+  created: 2026-07-26
+  author: Codex
+  related:
+    - research.md
+    - decisions.md
+    - tasks.md
+    - test-cases.md

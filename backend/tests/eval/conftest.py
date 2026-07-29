@@ -75,9 +75,16 @@ MOCK_LLM_RESPONSES: dict[str, str] = {
     # followup_match 模板
     "followup_match_0": '{"matched_branch_index": 0, "matched_branch_name": "branch_0", "confidence": 0.95, "followup": "你能详细说说吗?"}',
     "followup_match_1": '{"matched_branch_index": 1, "matched_branch_name": "branch_1", "confidence": 0.85, "followup": "这个怎么实现?"}',
+    "followup_match_2": '{"matched_branch_index": 2, "matched_branch_name": "branch_2", "confidence": 0.80, "followup": "我先从基础概念引导你。"}',
+    "followup_match_3": '{"matched_branch_index": 3, "matched_branch_name": "branch_3", "confidence": 0.80, "followup": "我来纠正一下回答方向。"}',
+    "followup_match_4": '{"matched_branch_index": 4, "matched_branch_name": "branch_4", "confidence": 0.90, "followup": "我们先跳过并继续下一题。"}',
 
-    # followup_text 模板 (纯文本)
-    "followup_text_happy": "好的, 请继续回答下一个问题。",
+    # followup_text 模板 (按匹配分支生成)
+    "followup_text_0": "请详细说明 {topic} 的具体实现。",
+    "followup_text_1": "请说明 {topic} 是怎么实现的。",
+    "followup_text_2": "我先从基础概念引导你理解 {topic}。",
+    "followup_text_3": "我来纠正一下 {topic} 的回答方向。",
+    "followup_text_4": "我们先跳过 {topic}，继续下一题。",
 
     # qa_service 模板
     "qa_chat": "这是一个很好的问题。",
@@ -85,7 +92,10 @@ MOCK_LLM_RESPONSES: dict[str, str] = {
 
     # digest_llm 模板 (严格 JSON)
     "digest_enrich": '{"summary": "文章核心: AI Agent 框架新进展", "category": "ai", "quality_score": 0.85, "tags": ["Agent", "Framework"]}',
-    "digest_fallback": "原始文章摘要, 无 LLM 增强",
+    "digest_fallback": (
+        '{"summary": "原始文章摘要，未采用模型增强", '
+        '"category": "fallback", "quality_score": 0.0, "tags": []}'
+    ),
 }
 
 
@@ -102,8 +112,8 @@ def mock_followup_match_response(branch_index: int = 0) -> str:
     return MOCK_LLM_RESPONSES[f"followup_match_{branch_index}"]
 
 
-def mock_followup_text_response() -> str:
-    return MOCK_LLM_RESPONSES["followup_text_happy"]
+def mock_followup_text_response(branch_index: int = 0, topic: str = "") -> str:
+    return MOCK_LLM_RESPONSES[f"followup_text_{branch_index}"].format(topic=topic)
 
 
 def mock_qa_service_response(success: bool = True) -> str:
