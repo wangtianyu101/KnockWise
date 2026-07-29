@@ -17,11 +17,11 @@
 > - 🟡 **2026-07-22 新增任务 · CI 失败自动修复**（[`tasks/2026-07-22-new-feature-ci-autofix/`](tasks/2026-07-22-new-feature-ci-autofix/research.md)）：v2 安全审查完成（research.md v2 + decisions.md 10/10 全拍 · CLAUDE.md § 6.10 4 道关全部对齐）· 进 1 步写 spec.md（10 Requirement）
 > - ✅ **2026-07-26 已完成 · 注册/登录合并页 + 注册流程 Bug**（[`tasks/2026-07-26-refactor-auth-unified-page/`](tasks/2026-07-26-refactor-auth-unified-page/retro.md)）：用户拍板路径 B（决策 1：修 Bug **+** 改 `/` → `/auth` 单页 · refactor-6）· 9 个 commit（`8b9aab0` ~ `00aedc1`）· 5 步验证全 PASS（L1/L2/L3/L4/L5）· 7/7 AC 全部验证 · phase_acceptance accepted · L5 staging curl 端到端 10/10（替代 GUI 浏览器手测）· 决策 13（合并 login+register → authenticate）落地一致 · 决策 12（v4 视觉精简）严格执行
 > - 🟡 **2026-07-26 P0 · 任务治理 Gate 执行链修复**（[`tasks/2026-07-26-p0-governance-gate-enforcement/`](tasks/2026-07-26-p0-governance-gate-enforcement/verify.md)）：代码侧已提交 `f1cf815` 并经独立 verifier PASS（专项 74/74）；GitHub Ruleset / Required Check 仍为外部 BLOCKED，不能宣称 merge 不可绕过。
-> - 🔴 **2026-07-26 P0 · AI Eval 基线 13 个失败**（[`tasks/2026-07-26-p0-eval-baseline-repair/`](tasks/2026-07-26-p0-eval-baseline-repair/research.md)）：用户选择先修 Eval 批次；基线 `13 failed, 7 passed`，Digest API 9 个失败明确留到下一批。
+> - ✅ **2026-07-29 P0 · AI Eval 基线 13 个失败已修复**（[`tasks/2026-07-26-p0-eval-baseline-repair/`](tasks/2026-07-26-p0-eval-baseline-repair/tasks.md)）：Eval 专项 `13 failed → 0 failed`；全套 backend pytest `869 passed / 13 xfailed / 15 xpassed / 0 failed`；T1（JSONL 完整性）+ T2（Digest fallback schema-valid + followup_match/text mock 扩展）落地 commit `6f70bf8`；research § 3.1 关闭条件 6/6 全达成；Digest API 9 个失败留到下一批（已明确标注）。
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 > - ✅ **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A + TopNav 修复合并；✅ 已修复 commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写)；验证全过：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS。
-> - 🟠 **2026-07-29 P1 · AI Coding 单一状态与自动投影（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：11 个 manifest 中 6 个明显漂移，checker 可放行 accepted 但缺步骤产物/无效 evidence path；用户授权「那你修复下」，方案 B 已进入步骤 1 规格，尚未实施控制面。
+> - 🟠 **2026-07-29 P1 · AI Coding 单一状态与自动投影（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：11 个 manifest 中 6 个明显漂移，checker 可放行 accepted 但缺步骤产物/无效 evidence path；用户已验收步骤 1 并要求「出方案」，当前进入步骤 2 技术比选，尚未拆分或实施控制面。
 > - ✅ **2026-07-29 Digest bookmark 404 全量测试 flake**（[`tasks/2026-07-29-bug-bookmark-event-loop-flake/`](tasks/2026-07-29-bug-bookmark-event-loop-flake/research.md)）：历史 `1 failed + 168 errors` 当前复跑为 `1 failed + 0 errors`；用户决定只修唯一 failed；局部 mock async session 后 target 1/1、Digest API 8 passed、backend full `866 passed / 0 failed`，独立 verifier PASS。
 > - ✅ **2026-07-29 P0 · CI auto-fix 三项执行断链（债务 24）已修复**（[`tasks/2026-07-28-p0-ci-autofix-execution-breaks/`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/retro.md)）：用户确认只处理 prompt 中 3 个字面 `$(jq ...)`、`create-branch` 缺 step id、`git add -A` 过度 staging；实施 commit `8fb65bf` + verifier 结果记录 `2b9c81b`；tasks.md status: completed · 8 workflow contract + 7 checker + 31 pytest + 2 Shell E2E + Action provenance 全绿；独立 verifier 固定 commit `8fb65bf` PASS；L5 GitHub run 由用户自执行（BLOCKED · 等用户在 default branch 触发）。
 
@@ -50,7 +50,7 @@
 > - **P2 治理清理 4 项合一（2026-07-23）**：[`docs/tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md`](tasks/2026-07-23-refactor-p2-governance-cleanup/decisions.md)（决策 1：skill 更新 + 文档 checker + frontmatter 升级 + 长期 §6.11 退役规则 · `refactor-6`）
 > - **test_ci_workflow.py 旧断言（v39 · 2026-07-23）**：[`docs/tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md`](tasks/2026-07-23-bug-ci-workflow-test-stale-assertion/decisions.md)（决策 1：最小修复 · 单函数重命名 + 删 `@v6` 3 条 + 加 SHA pin 3 条 · `fix-mini` · ✅ 已完成 commit `d5c11e1`）
 > - **P0 任务治理 Gate 执行链（2026-07-26）**：[`docs/tasks/2026-07-26-p0-governance-gate-enforcement/decisions.md`](tasks/2026-07-26-p0-governance-gate-enforcement/decisions.md)（决策 1：checker + manifest Gate + 版本化 Hook + CI，只读无 secrets；✅ commit `f1cf815` · ⛔ Ruleset 外部 BLOCKED）
-> - **P0 AI Eval 基线修复（2026-07-26）**：[`docs/tasks/2026-07-26-p0-eval-baseline-repair/decisions.md`](tasks/2026-07-26-p0-eval-baseline-repair/decisions.md)（决策 1：先修 13 个 Eval；决策 2：Digest fallback 保持结构化 schema；🚧 实施中）
+> - ✅ **P0 AI Eval 基线修复（2026-07-26）已实施**：[`docs/tasks/2026-07-26-p0-eval-baseline-repair/decisions.md`](tasks/2026-07-26-p0-eval-baseline-repair/decisions.md)（决策 1：先修 13 个 Eval ✅；决策 2：Digest fallback 保持结构化 schema ✅；commit `6f70bf8` · Eval 专项 13 failed → 0 failed · 全套 869 passed / 0 failed）
 > - **P0-2 空模板 DOD Gate（2026-07-26）**：[`docs/tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md`](tasks/2026-07-26-p0-dod-empty-template-gate/decisions.md)（决策 1：共享模板残留 Gate + 真实模板负例 + 合法技术文本边界；✅ 已实现并独立验证 · 用户验收待完成）
 > - **P0-3 治理工具回归测试可信度（2026-07-26）**：[`docs/tasks/2026-07-26-p0-governance-regression-trust/decisions.md`](tasks/2026-07-26-p0-governance-regression-trust/decisions.md)（决策 1：关键契约以生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言为主证据；✅ commit `f1cf815` 并独立验证 · 用户验收待完成）
 >
@@ -863,7 +863,7 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ### 债务 23 — AI Coding 流程控制面存在可绕过 Gate 与供应链假绿 🔴
 
-**状态**：🚧 方案 B 步骤 1 规格编写中；Action provenance P0 已完成，远端 ruleset 由用户自行操作
+**状态**：🚧 方案 B 步骤 1 已验收，步骤 2 技术方案编写中；Action provenance P0 已完成，远端 ruleset 由用户自行操作
 
 **权威决策主账**：[`docs/tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md)
 
@@ -872,6 +872,8 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 **用户决策（2026-07-28）**：「验收步骤 0，先修两个 P0，再按方案 B 做规格。」
 
 **用户决策（2026-07-29）**：「那你修复下」——按 `refactor-6` 进入步骤 1 规格，不越级实施。
+
+**用户决策（2026-07-29）**：「验收步骤 1，出方案」——规格已冻结，进入步骤 2 多方案比选；未拍板前不拆分、不实施。
 
 **已确认问题**：
 

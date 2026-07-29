@@ -81,7 +81,7 @@ T1 ──→ T2 ──→ Eval 专项 ──→ 全量 backend ──→ verifie
 | commit | 日期 | 范围 | 测试 | 偏差 |
 |---|---|---|---|---|
 | `e247ecd` | 2026-07-28 | JSONL fmatch-017 None→null（v40 治理 · 批 4.1）| 14 failed → 8 failed（-11） | v40 期间完成 · 本任务前置 |
-| ⏳ 待 commit | 2026-07-29 | test_dataset_integrity.py + conftest.py fallback schema-valid + runner.py followup_text dispatch + test_followup_match/text xfail | 4/4 GREEN + 18 passed / 4 xpassed / 0 failed | T1+T2 working tree 已就绪 · 待落地 |
+| `6f70bf8` | 2026-07-29 | test_dataset_integrity.py + conftest.py fallback schema-valid + runner.py followup_text dispatch + test_followup_match/text xfail | 4/4 GREEN + 18 passed / 4 xpassed / 0 failed | T1+T2 working tree 落地 · 一并补 task.yaml + tasks.md |
 
 ## 硬性 DOD
 
