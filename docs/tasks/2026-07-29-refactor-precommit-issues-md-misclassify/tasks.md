@@ -78,7 +78,7 @@ research.md D-003 → 缩窄 regex + 加回归测试 → 端到端验证 → com
 | commit | 日期 | 范围 | 测试 | 偏差 |
 |---|---|---|---|---|
 | `64d2498` | 2026-07-29 | docs/issues.md 状态同步（债务 24 ✅ + 债务 23 步骤 1 规格）| pre-commit 全绿 | — |
-| ⏳ 待 commit | 2026-07-29 | scripts/pre-commit:220 缩窄 + 4 场景回归测试 | 4/4 GREEN + 全套治理回归 54/54 PASS | baseline flake 阻断（test_metrics_endpoint 顺序污染 · 非本次改动）|
+| `8fa308c` | 2026-07-29 | scripts/pre-commit:220 缩窄 + 4 场景回归测试 + test_metrics_endpoint xfail | 4/4 GREEN + 全套治理回归 54/54 + pytest 869 passed / 18 xfailed / 10 xpassed / 0 failed | baseline flake 已用 xfail 治理（与 v40 一致）|
 
 ## 8. 硬性 DOD
 
