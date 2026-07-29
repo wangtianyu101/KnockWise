@@ -14,7 +14,7 @@ type: tasks
 
 ## 实施状态
 
-- [x] T1: ✅ 已实施 — 待 commit
+- [x] T1: ✅ 已实施 — commit `e26a80d`
   - 依赖: 无
   - 测试: TC-01, TC-02, TC-03
   - implementation: ✅ implemented（局部 mock async session）
@@ -33,4 +33,4 @@ type: tasks
 
 | 任务 | 测试 | 场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T1 | bookmark delete 404 | missing bookmark | BUG-01 | SCN-01 | TC-01/02/03 | L1 | pending commit | PASS（866 passed / 0 failed） | PASS | PENDING（待用户验收） |
+| T1 | bookmark delete 404 | missing bookmark | BUG-01 | SCN-01 | TC-01/02/03 | L1 | `e26a80d` | PASS（866 passed / 0 failed） | PASS | PENDING（待用户验收） |
