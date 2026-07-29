@@ -56,6 +56,14 @@ sys.exit(0 if len(v) == 0 else 1)
 "
 ' || FAILED=$((FAILED+1))
 
+# S11.5: Online owner/repo+SHA provenance must be part of the blocking CI gate.
+# Unit tests exercise the production CLI against a local HTTP server; CI uses
+# the read-only GITHUB_TOKEN against the official GitHub API.
+run_security_check "S11.5" "Action provenance wired into governance CI" '
+  grep -q "python scripts/ci/check_action_sha.py --verify-remote" .github/workflows/ci.yml && \
+  grep -q "GITHUB_TOKEN:" .github/workflows/ci.yml
+' || FAILED=$((FAILED+1))
+
 # S12: Environment approval required (R10 关 4)
 # Verified by checking workflow has `environment: auto-fix-approval`
 run_security_check "S12" "Environment approval (R10)" '

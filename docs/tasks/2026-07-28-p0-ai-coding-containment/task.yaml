@@ -1,0 +1,22 @@
+schema: task/v1
+task_id: 2026-07-28-p0-ai-coding-containment
+mode: timebox
+current_step: 0
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: pending
+metadata:
+  created: 2026-07-28
+  author: Codex
+  user_authorization: "验收步骤 0，先修两个 P0，再按方案 B 做规格。"
+  related:
+    - research.md
+    - decisions.md
+    - tasks.md
+    - test-cases.md
+    - ../2026-07-28-refactor-ai-coding-workflow-audit/research.md
