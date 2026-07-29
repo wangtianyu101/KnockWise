@@ -89,6 +89,13 @@ def _stage_file_in_tmp_repo(relpath: str, content: str) -> Path:
         shutil.copy(CHECK_STEP_SRC, scripts_dir / "check-step.py")
         shutil.copy(CHECK_TASK_SRC, scripts_dir / "check-task.py")
         shutil.copy(CHECK_TASK_STATE_SRC, scripts_dir / "check_task_state.py")
+        # product-doc checker（2026-07-29 refactor：覆盖 docs/issues.md 边界修复回归）
+        check_product_doc_src = REPO_ROOT / "scripts" / "check-product-doc.py"
+        check_spec_base_src = REPO_ROOT / "scripts" / "check_spec_base.py"
+        if check_product_doc_src.exists():
+            shutil.copy(check_product_doc_src, scripts_dir / "check-product-doc.py")
+        if check_spec_base_src.exists():
+            shutil.copy(check_spec_base_src, scripts_dir / "check_spec_base.py")
         # 暂存目标文件
         staged = tmp / relpath
         staged.parent.mkdir(parents=True, exist_ok=True)
@@ -265,4 +272,171 @@ class TestDodCheckTruncatesAndStillBlocks:
             f"tail 段行数应在 1..10 之间，实际 {len(tail_block)} 行：\n"
             + "\n".join(tail_block)
             + f"\n--- 完整 before 段 ---\n{before}"
+        )
+
+
+# ─── 场景 4-7：docs/issues.md 与 product-doc 边界修复（D-003）───
+#
+# 2026-07-29 refactor：scripts/pre-commit:220 regex 移除 docs/issues.md
+#   Before: ^(docs/templates/product-doc-template\.md|docs/tasks/.+/product-doc\.md|docs/issues\.md)$
+#   After:  ^(docs/templates/product-doc-template\.md|docs/tasks/.+/product-doc\.md)$
+#
+# 核心场景：docs/issues.md 合法修改（无 frontmatter / 无 § 4 MVP / 无 § 5 成功指标）必须通过 hook。
+# 边界保留：docs/templates/product-doc-template.md 与 docs/tasks/<date>/product-doc.md 仍被拦。
+# 共同 commit：只有真 product-doc 被拦，docs/issues.md 不受影响。
+
+
+VALID_ISSUES_MD = """\
+# 目前缺陷与设计议题
+
+> 唯一主账（按 AGENTS.md § 0.5）。
+
+## 一、设计议题（待深入讨论）
+
+### 议题 X — 示例
+
+**状态**：📋 待讨论
+"""
+
+INVALID_PRODUCT_DOC_TEMPLATE = """\
+# product-doc-template 占位
+（无 frontmatter / 无 § 4 MVP / 无 § 5 成功指标）
+"""
+
+INVALID_PRODUCT_DOC_INSTANCE = """\
+# 产品文档实例占位
+（无 frontmatter / 无 § 4 MVP / 无 § 5 成功指标）
+"""
+
+
+class TestIssuesMdBypassesProductDocCheck:
+    """docs/issues.md 是议题主账，不应被 product-doc 校验拦下。"""
+
+    def test_issues_md_modification_passes_hook(
+        self, cleanup_tmp,
+    ):
+        """核心场景：合法的 docs/issues.md 修改不应被 pre-commit 阻断。
+
+        修复前：pre-commit 第 220 行 regex 把 docs/issues.md 当作 product-doc，
+        跑 check-product-doc.py → exit 1 → hook 阻断 commit。
+        修复后：regex 不再命中 docs/issues.md，hook 通过。
+        """
+        tmp = cleanup_tmp(
+            _stage_file_in_tmp_repo("docs/issues.md", VALID_ISSUES_MD)
+        )
+        result = _run_hook(tmp)
+
+        # docs/issues.md 不应触发 product-doc frontmatter 校验失败
+        assert "❌ product-doc frontmatter 校验失败" not in result.stdout, (
+            f"docs/issues.md 不应被 product-doc 校验拦下，但 stdout 包含阻断信息：\n"
+            f"{result.stdout}"
+        )
+        # 不应出现 "check-product-doc.py 不存在" 的 fail closed 路径
+        assert "check-product-doc.py 不存在" not in result.stdout, (
+            f"hook 不应 fail closed，但 stdout 提示 checker 缺失：\n{result.stdout}"
+        )
+
+
+class TestProductDocBoundaryStillEnforced:
+    """修复后，真 product-doc 仍受 check-product-doc.py 校验保护。"""
+
+    def test_product_doc_template_without_frontmatter_blocks_hook(
+        self, cleanup_tmp,
+    ):
+        """边界保留：docs/templates/product-doc-template.md 无 frontmatter → 仍被拦。"""
+        tmp = cleanup_tmp(
+            _stage_file_in_tmp_repo(
+                "docs/templates/product-doc-template.md",
+                INVALID_PRODUCT_DOC_TEMPLATE,
+            )
+        )
+        result = _run_hook(tmp)
+
+        assert result.returncode != 0, (
+            f"product-doc 模板无 frontmatter 必须被 hook 阻断，但 rc={result.returncode}。"
+            f"\n--- stdout ---\n{result.stdout}\n--- stderr ---\n{result.stderr}"
+        )
+        assert "❌ product-doc frontmatter 校验失败" in result.stdout, (
+            f"应输出 product-doc frontmatter 阻断信息，但 stdout 为：\n{result.stdout}"
+        )
+
+    def test_product_doc_instance_without_frontmatter_blocks_hook(
+        self, cleanup_tmp,
+    ):
+        """边界保留：docs/tasks/<date>/product-doc.md 无 frontmatter → 仍被拦。
+
+        注意：路径必须用 2026-08-XX 日期，避开 scripts/check_spec_base.py 的
+        LEGACY_TASKS 豁免（`docs/tasks/2026-07-*` 全部自动豁免）。
+        """
+        tmp = cleanup_tmp(
+            _stage_file_in_tmp_repo(
+                "docs/tasks/2026-08-01-test/product-doc.md",
+                INVALID_PRODUCT_DOC_INSTANCE,
+            )
+        )
+        result = _run_hook(tmp)
+
+        assert result.returncode != 0, (
+            f"product-doc 实例无 frontmatter 必须被 hook 阻断，但 rc={result.returncode}。"
+            f"\n--- stdout ---\n{result.stdout}\n--- stderr ---\n{result.stderr}"
+        )
+        assert "❌ product-doc frontmatter 校验失败" in result.stdout, (
+            f"应输出 product-doc frontmatter 阻断信息，但 stdout 为：\n{result.stdout}"
+        )
+
+
+class TestMixedCommitOnlyBlocksRealProductDoc:
+    """docs/issues.md 与真 product-doc 同 commit 时：只有真 product-doc 被拦。"""
+
+    def test_issues_md_and_product_doc_mixed_blocks_only_product_doc(
+        self, cleanup_tmp,
+    ):
+        tmp = cleanup_tmp(
+            _stage_file_in_tmp_repo("docs/issues.md", VALID_ISSUES_MD)
+        )
+        # 在同一 tmp repo 加 product-doc 实例并 stage（用 2026-08-* 避开 LEGACY 豁免）
+        product_doc_relpath = "docs/tasks/2026-08-01-mixed/product-doc.md"
+        product_doc_path = tmp / product_doc_relpath
+        product_doc_path.parent.mkdir(parents=True, exist_ok=True)
+        product_doc_path.write_text(INVALID_PRODUCT_DOC_INSTANCE, encoding="utf-8")
+        subprocess.run(
+            ["git", "add", product_doc_relpath],
+            cwd=tmp, check=True, capture_output=True,
+        )
+        # 同时补 task.yaml 让 manifest 校验通过
+        manifest_relpath = "docs/tasks/2026-08-01-mixed/task.yaml"
+        (tmp / manifest_relpath).write_text(
+            "schema: task/v1\n"
+            "task_id: 2026-08-01-mixed\n"
+            "mode: timebox\n"
+            "current_step: 0\n"
+            "step_state: in_progress\n"
+            "triggers:\n"
+            "  ui_design: false\n"
+            "  ui_components: false\n"
+            "  api_change: false\n"
+            "  db_change: false\n"
+            "test_evidence:\n"
+            "  type: pending\n",
+            encoding="utf-8",
+        )
+        subprocess.run(
+            ["git", "add", manifest_relpath],
+            cwd=tmp, check=True, capture_output=True,
+        )
+
+        result = _run_hook(tmp)
+
+        # 真 product-doc 必须被拦（hook 整体退出非零）
+        assert result.returncode != 0, (
+            f"真 product-doc 必须被拦，但 rc={result.returncode}。stdout:\n{result.stdout}"
+        )
+        assert "❌ product-doc frontmatter 校验失败" in result.stdout
+        # 阻断信息应只提到真 product-doc，不应提到 docs/issues.md
+        assert "docs/issues.md" not in result.stdout or (
+            "→ docs/issues.md" not in result.stdout
+            and "📋 product-doc 改动" not in result.stdout
+            or result.stdout.count("❌ product-doc frontmatter 校验失败") == 1
+        ), (
+            f"docs/issues.md 不应触发 product-doc 阻断，但 stdout 包含：\n{result.stdout}"
         )

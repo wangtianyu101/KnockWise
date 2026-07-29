@@ -217,7 +217,9 @@ if [ -n "$task_dirs" ]; then
 fi
 
 # ─── 4.55 product-doc frontmatter 校验（P1-7 治理 · T18）────────
-product_doc_files=$(echo "$staged_files" | grep -E "^(docs/templates/product-doc-template\.md|docs/tasks/.+/product-doc\.md|docs/issues\.md)$" || true)
+# 注：docs/issues.md 是议题主账（AGENTS.md § 0.5 + § 6.9 + issue-closure-template），
+#     不是 product-doc，不走本校验（2026-07-29 缩窄 regex · D-003）
+product_doc_files=$(echo "$staged_files" | grep -E "^(docs/templates/product-doc-template\.md|docs/tasks/.+/product-doc\.md)$" || true)
 if [ -n "$product_doc_files" ]; then
   if [ ! -f "scripts/check-product-doc.py" ]; then
     echo ""

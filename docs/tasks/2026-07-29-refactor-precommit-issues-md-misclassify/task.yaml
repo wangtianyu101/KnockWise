@@ -1,0 +1,30 @@
+schema: task/v1
+task_id: 2026-07-29-refactor-precommit-issues-md-misclassify
+mode: refactor-6
+current_step: 4
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: code
+  path: backend/tests/test_pre_commit_hook.py
+  result: pass
+  commands:
+    - backend/.venv/bin/python -m pytest backend/tests/test_pre_commit_hook.py -q
+    - python3 scripts/check-step.py retro docs/tasks/2026-07-29-refactor-precommit-issues-md-misclassify/retro.md
+    - python3 scripts/check-step.py tasks docs/tasks/2026-07-29-refactor-precommit-issues-md-misclassify/tasks.md
+    - python3 scripts/check-step.py research docs/tasks/2026-07-29-refactor-precommit-issues-md-misclassify/research.md
+metadata:
+  created: 2026-07-29
+  author: Claude
+  current_state: "步骤 4 实施已落地（scripts/pre-commit:220 缩窄 + 4 个回归测试）；待用户处置 baseline flake 已标 xfail（test_metrics_endpoint · v40 治理一致）；refactor-6 文档齐全（task.yaml/research/decisions/tasks/retro 5 文件 DOD 全过）"
+  user_authorization: "A"
+  related:
+    - research.md
+    - decisions.md
+    - tasks.md
+    - test-cases.md
+    - ../2026-07-28-p0-ci-autofix-execution-breaks/retro.md
