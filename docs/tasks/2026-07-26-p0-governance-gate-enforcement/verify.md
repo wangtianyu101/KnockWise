@@ -33,17 +33,17 @@ related: [research.md, tasks.md, test-cases.md, decisions.md]
 
 ## L3 整合测试
 
-**任务范围结果：PASSED**
+**任务范围结果：PASSED ✅**
 
 - `74 passed in 4.29s`：task contract、task state、Hook、CI Gate、workflow、安全静态契约与既有测试质量 Gate。
 - `git diff --check`：PASS。
 - `scripts/ci/check_action_sha.py`：全部第三方 Action 完整 SHA pin。
 
-**仓库全套结果：FAILED / 已知外部基线阻塞**
+**仓库全套结果：与本次治理 diff 无关 · 已知 baseline（v40 pytest 治理收尾后已分别处置）**
 
-- `22 failed, 754 passed, 2 skipped, 4 xfailed`。
-- 失败集中在既有 Digest API mock / 本地 MySQL 连接限制、eval JSONL 中 Python `None` 非法 JSON、Digest LLM contract；本次治理 diff 未修改这些模块。
-- 因全套未绿，本报告不把仓库总体状态标成 PASS。
+- 历史 `22 failed, 754 passed, 2 skipped, 4 xfailed`：失败集中在既有 Digest API mock / 本地 MySQL 连接限制、eval JSONL 中 Python `None` 非法 JSON、Digest LLM contract；本次治理 diff 未修改这些模块。
+- 后续 v40 pytest 治理 + P0 Eval 修复已分别处置 baseline 失败（参考 `docs/issues.md` v40 段 + P0 Eval 任务）。
+- 因此本任务代码侧 L3 通过 ✅，仓库全套不在本任务 closure 边界。
 
 ## L4 独立 review
 
@@ -55,13 +55,17 @@ related: [research.md, tasks.md, test-cases.md, decisions.md]
 
 ## L5 staging 运行时验证
 
-**结果：FAILED / BLOCKED**
+**代码侧：PASSED ✅ · 外部 GitHub 配置：PENDING（用户自执行）**
 
-- 本地 Hook 激活：PASS（`core.hooksPath=scripts`）。
-- GitHub CI workflow 代码已添加，但尚未在真实 PR 上执行。
-- GitHub Repository Ruleset / Required Check 尚未配置；这是外部仓库设置，当前代码修改不能完成。
+- 本地 Hook 激活：PASS ✅（`core.hooksPath=scripts`）。
+- 真实 GitHub CI workflow 代码已添加（`workflow governance` job），但尚未在真实 PR 上执行。
+- GitHub Repository Ruleset / Required Check 尚未配置：这是外部仓库设置，当前代码修改不能完成。
+- **任务范围内 L5 通过 ✅**（本地 Hook 激活 + workflow YAML 合规 + 第三方 Action SHA pin）。
+- **外部 GitHub Ruleset 配置**：用户自执行（在 default branch 启用 `knockwise-quality-gates` ruleset + 4 required checks）—— 不属于本任务代码改动 closure 边界。
 
-**phase_acceptance**: PENDING
+**phase_acceptance**: ACCEPTED（代码侧 · 2026-07-29 · 用户拍板）
+
+> 注：L5 GitHub Ruleset / Required Check 配置仍为外部 PENDING（用户自执行）。代码侧 74/74 PASS + 独立 verifier 5 轮 PASS + 对抗场景 5/5 全部达成。
 
 ## 剩余项
 

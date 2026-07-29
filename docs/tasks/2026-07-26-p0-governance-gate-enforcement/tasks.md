@@ -3,9 +3,11 @@ title: P0 任务治理 Gate · 实施任务
 type: tasks
 step: 4
 date: 2026-07-26
-status: implementation_complete_acceptance_pending
+status: completed
 tags: [p0, governance, hook, ci]
 related: [research.md, decisions.md, test-cases.md, verify.md]
+acceptance: ACCEPTED (2026-07-29 · 代码侧 · 用户拍板)
+acceptance_external: PENDING (GitHub Ruleset / Required Check · 用户自执行)
 ---
 
 # P0 任务治理 Gate · 实施任务
@@ -106,7 +108,7 @@ T1 ──→ T2
 - [x] 依赖关系为 DAG
 - [x] 总估时与实际偏差 ≤ 30%
 - [x] 独立 verifier PASS
-- [ ] 用户 acceptance
+- [x] 用户 acceptance（代码侧 · 2026-07-29 · GitHub Ruleset 仍 PENDING 外部 BLOCKED · 用户自执行）
 
 ## 8. Commit 历史
 
