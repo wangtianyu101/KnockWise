@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -156,13 +156,22 @@ class TestBookmarkAPI:
         )
         assert response.status_code == 409
 
-    def test_delete_bookmark_404_when_missing(self, fake_user):
+    def test_delete_bookmark_404_when_missing(self, fake_user, monkeypatch):
         """DELETE /api/digest/bookmarks/{missing} · 删除不存在的 bookmark 返回 404"""
-        from api.digest.bookmarks import router as bookmarks_router
+        from api.digest import bookmarks as bookmarks_api
 
-        client = make_client(bookmarks_router, fake_user)
+        db = AsyncMock()
+        db.scalar.return_value = None
+        session_context = MagicMock()
+        session_context.__aenter__ = AsyncMock(return_value=db)
+        session_context.__aexit__ = AsyncMock(return_value=None)
+        monkeypatch.setattr(bookmarks_api, "async_session", lambda: session_context)
+
+        client = make_client(bookmarks_api.router, fake_user)
         response = client.delete("/api/digest/bookmarks/nonexistent-id")
+
         assert response.status_code == 404
+        db.scalar.assert_awaited_once()
 
 
 # ── Behavior ──────────────────────────────────────────────

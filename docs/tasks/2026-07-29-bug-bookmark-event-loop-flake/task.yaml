@@ -1,0 +1,28 @@
+schema: task/v1
+task_id: 2026-07-29-bug-bookmark-event-loop-flake
+mode: fix-mini
+current_step: 4
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: code
+  path: backend/tests/api/test_digest_api.py
+  result: pass
+  commands:
+    - backend/.venv/bin/python -m pytest backend/tests/api/test_digest_api.py::TestBookmarkAPI::test_delete_bookmark_404_when_missing -q
+    - backend/.venv/bin/python -m pytest backend/tests/api/test_digest_api.py -q
+    - backend/.venv/bin/python -m pytest backend/tests --tb=short -q
+metadata:
+  created: 2026-07-29
+  author: Claude
+  current_state: "步骤 4 已实施；backend full 866 passed / 0 failed；独立 verifier PASS"
+  user_authorization: "把这一个failed修了把"
+  related:
+    - research.md
+    - decisions.md
+    - tasks.md
+    - test-cases.md
