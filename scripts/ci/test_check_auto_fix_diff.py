@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from check_auto_fix_diff import (  # noqa: E402
     check,
+    FORBIDDEN_STAGED_FILES,
     SERVICE_PATH_PREFIX,
     NO_TEST_MARKER,
 )
@@ -32,12 +33,10 @@ def test_service_file_change_needs_review():
     """TC-A1: backend/services/*.py change → needs_review=true."""
     repo = _setup_git_repo()
     try:
-        # Commit 2: add service file (mkdir first)
+        # Stage the proposed patch without committing it.
         (repo / "backend/services").mkdir(parents=True)
         (repo / "backend/services/foo.py").write_text("# foo service")
         subprocess.run(["git", "add", "."], cwd=repo, capture_output=True, check=True)
-        subprocess.run(["git", "commit", "-m", "add service"], cwd=repo, capture_output=True, check=True)
-        # Now check from this repo
         result = subprocess.run(
             [sys.executable, "-c",
              f"import sys; sys.path.insert(0, '{Path(__file__).parent}'); "
@@ -57,7 +56,6 @@ def test_test_file_only_no_review():
         (repo / "tests").mkdir()
         (repo / "tests/test_foo.py").write_text("# test")
         subprocess.run(["git", "add", "."], cwd=repo, capture_output=True, check=True)
-        subprocess.run(["git", "commit", "-m", "add test"], cwd=repo, capture_output=True, check=True)
         result = subprocess.run(
             [sys.executable, "-c",
              f"import sys; sys.path.insert(0, '{Path(__file__).parent}'); "
@@ -73,7 +71,7 @@ def test_empty_diff_no_review():
     """TC-A3: empty diff → no review + warning."""
     repo = _setup_git_repo()
     try:
-        # No second commit, diff is empty
+        # No staged patch.
         result = subprocess.run(
             [sys.executable, "-c",
              f"import sys; sys.path.insert(0, '{Path(__file__).parent}'); "
@@ -114,7 +112,6 @@ def test_service_plus_test_still_needs_review():
         (repo / "backend/services/foo.py").write_text("# service")
         (repo / "tests/test_foo.py").write_text("# test")
         subprocess.run(["git", "add", "."], cwd=repo, capture_output=True, check=True)
-        subprocess.run(["git", "commit", "-m", "both"], cwd=repo, capture_output=True, check=True)
         result = subprocess.run(
             [sys.executable, "-c",
              f"import sys; sys.path.insert(0, '{Path(__file__).parent}'); "
@@ -130,6 +127,30 @@ def test_service_path_prefix_correct():
     """TC-A6: SERVICE_PATH_PREFIX matches backend/services/."""
     assert SERVICE_PATH_PREFIX == "backend/services/"
     assert NO_TEST_MARKER == "[NO-TEST-NEEDED]"
+    assert FORBIDDEN_STAGED_FILES == {"patch.diff"}
+
+
+def test_patch_transport_file_rejected_when_staged():
+    """TC-A7: patch.diff is transport data and must never enter the commit."""
+    repo = _setup_git_repo()
+    try:
+        (repo / "patch.diff").write_text("transport")
+        subprocess.run(
+            ["git", "add", "patch.diff"],
+            cwd=repo,
+            capture_output=True,
+            check=True,
+        )
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).parent / "check_auto_fix_diff.py")],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 1
+        assert "transport files must not be staged" in result.stdout
+    finally:
+        subprocess.run(["rm", "-rf", str(repo)], capture_output=True)
 
 
 if __name__ == "__main__":
@@ -140,6 +161,7 @@ if __name__ == "__main__":
         test_no_test_needed_marker_rejected,
         test_service_plus_test_still_needs_review,
         test_service_path_prefix_correct,
+        test_patch_transport_file_rejected_when_staged,
     ]
     failed = 0
     for t in tests:

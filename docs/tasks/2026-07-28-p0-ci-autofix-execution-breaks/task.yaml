@@ -1,0 +1,31 @@
+schema: task/v1
+task_id: 2026-07-28-p0-ci-autofix-execution-breaks
+mode: timebox
+current_step: 0
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: code
+  path: backend/tests/test_auto_fix_workflow.py
+  result: pass
+  commands:
+    - backend/.venv/bin/python -m pytest backend/tests/test_auto_fix_workflow.py -q
+    - python3 scripts/ci/test_check_auto_fix_diff.py
+    - bash scripts/ci/test_auto_fix_e2e.sh
+    - bash scripts/ci/test_security_e2e.sh
+metadata:
+  created: 2026-07-28
+  author: Codex
+  current_state: "步骤 0 已验收；步骤 4 实现与本地回归已通过，待 commit 级独立 verifier"
+  user_authorization: "Claude prompt 里的 $(jq ...) 不会执行；create-branch 缺少 step id，后续分支输出为空；git add -A 可能把 patch.diff 一并提交。是这三项，可以。"
+  related:
+    - research.md
+    - decisions.md
+    - tasks.md
+    - test-cases.md
+    - ../2026-07-23-bug-ci-autofix-safety-drift/research.md
+    - ../2026-07-28-p0-ai-coding-containment/research.md

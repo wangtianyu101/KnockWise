@@ -80,7 +80,7 @@ run_scenario "S6" "Service file needs_review" '
   (cd "$TMP" && git init -q && git config user.email t@t.com && git config user.name t && \
     echo init > README.md && git add . && git commit -qm init && \
     mkdir -p backend/services && echo svc > backend/services/foo.py && \
-    git add . && git commit -qm "add service") && \
+    git add backend/services/foo.py) && \
   (cd "$TMP" && python3 "$PROJECT_ROOT/scripts/ci/check_auto_fix_diff.py" 2>&1 | grep -q "needs_review=true")
   rm -rf "$TMP"
 ' || FAILED=$((FAILED+1))
