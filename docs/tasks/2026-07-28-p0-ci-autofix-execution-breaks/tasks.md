@@ -76,3 +76,5 @@ step id → branch output  +→ git apply --index → cached diff policy → tes
 | commit | 日期 | 范围 | 测试 | 偏差 |
 |---|---|---|---|---|
 | `8fb65bf` | 2026-07-29 | T1 | 866 full pytest + 8 workflow + 7 checker + Shell E2E PASS | 估时 1h；实际跨并发 gate 收敛约 2h |
+
+> 步骤 6 retro.md 文档收尾由本次 working tree 的 commit（详见 git log）一并完成。
