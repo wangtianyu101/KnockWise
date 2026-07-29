@@ -82,6 +82,7 @@ T1 ──→ T2 ──→ Eval 专项 ──→ 全量 backend ──→ verifie
 |---|---|---|---|---|
 | `e247ecd` | 2026-07-28 | JSONL fmatch-017 None→null（v40 治理 · 批 4.1）| 14 failed → 8 failed（-11） | v40 期间完成 · 本任务前置 |
 | `6f70bf8` | 2026-07-29 | test_dataset_integrity.py + conftest.py fallback schema-valid + runner.py followup_text dispatch + test_followup_match/text xfail | 4/4 GREEN + 18 passed / 4 xpassed / 0 failed | T1+T2 working tree 落地 · 一并补 task.yaml + tasks.md |
+| `25b8fc2` | 2026-07-29 | retro.md v1.0 + tasks.md § 7 commit 行回写 + issues.md 状态同步 + task 目录文档收尾 | retro DOD 通过 + tasks DOD 通过 + task-state 通过 | 步骤 6 单阶段 retro · P0 Eval 已可关闭 |
 
 ## 硬性 DOD
 
