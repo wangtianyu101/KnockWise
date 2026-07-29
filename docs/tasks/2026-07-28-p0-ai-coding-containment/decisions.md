@@ -61,8 +61,8 @@ related: [research.md, tasks.md, ../../issues.md]
 | 决策 | 落地点 | 状态 | 证据 |
 |---|---|---|---|
 | D-001 | 父 `research.md` / `decisions.md` / `docs/issues.md` | ✅ 已落地 | 2026-07-28 同步 |
-| D-002 | Action provenance | 🚧 实施中 | tasks T1 |
-| D-002 | active ruleset | 🚧 实施中 | tasks T2 |
+| D-002 | Action provenance | ✅ 已落地 | commit `c2965e6` + 独立 verifier PASS |
+| D-002 | active ruleset | ⏸ 用户操作 | Codex 不操控远端；tasks T2 保留待回读 |
 
 - **位置**：`docs/tasks/2026-07-28-p0-ai-coding-containment/decisions.md`
 - **创建日期**：2026-07-28

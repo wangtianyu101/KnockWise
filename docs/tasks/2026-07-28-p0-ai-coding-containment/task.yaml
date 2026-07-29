@@ -9,10 +9,12 @@ triggers:
   api_change: false
   db_change: false
 test_evidence:
-  type: pending
+  type: standalone
+  path: scripts/ci/test_check_action_sha.py
 metadata:
   created: 2026-07-28
   author: Codex
+  current_state: "T1 已完成并由独立 verifier PASS；T2 远端 ruleset 由用户自行操作"
   user_authorization: "验收步骤 0，先修两个 P0，再按方案 B 做规格。"
   related:
     - research.md

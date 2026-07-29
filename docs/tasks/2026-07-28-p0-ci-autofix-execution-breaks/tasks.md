@@ -4,7 +4,7 @@ type: tasks
 step: 4
 layer: L0
 date: 2026-07-28
-status: in-progress
+status: completed
 tags: [p0, github-actions, agent, tdd]
 related: [research.md, decisions.md, test-cases.md]
 ---
@@ -17,12 +17,12 @@ related: [research.md, decisions.md, test-cases.md]
 
 ### T1: 修复 prompt、branch output 与精确 staging
 
-- [ ] T1: 三项失败回归先红，再完成最小安全修复
+- [x] T1: commit `8fb65bf` · 三项失败回归先红，再完成最小安全修复
   - **文件**: `.github/workflows/auto-fix-ci.yml`, `scripts/ci/check_auto_fix_diff.py`
   - **测试**: `backend/tests/test_auto_fix_workflow.py`, `scripts/ci/test_check_auto_fix_diff.py`, `scripts/ci/test_auto_fix_e2e.sh`, `scripts/ci/test_security_e2e.sh`
   - **依赖**: 步骤 0 `research.md` 的 prompt 安全边界；当前工作区 P0 provenance 改动必须保留
   - **估时**: 1 h
-  - **对应 commit**: PENDING
+  - **对应 commit**: `8fb65bf`
   - **产出**: 一个 implementation commit + 独立 verifier
 
 ## 2. 依赖图
@@ -37,7 +37,7 @@ step id → branch output  +→ git apply --index → cached diff policy → tes
 
 | 任务 | 自动化测试 | 测试场景 | REQ | SCN | TC | Level | implementation | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T1 | workflow contract + temp Git subprocess + Shell E2E | prompt / branch output / 精确 staging | REQ-AF-01～03 | SCN-AF-01～03 | TC-001～TC-010 | L1/L3/L5 | READY | GREEN | PENDING | ACCEPTED |
+| T1 | workflow contract + temp Git subprocess + Shell E2E | prompt / branch output / 精确 staging | REQ-AF-01～03 | SCN-AF-01～03 | TC-001～TC-010 | L1/L3/L5 | `8fb65bf` | GREEN | PASS | ACCEPTED |
 
 ## 4. 实施顺序
 
@@ -56,8 +56,8 @@ step id → branch output  +→ git apply --index → cached diff policy → tes
 | 三项先红后绿 | PASS（初始 7 FAIL；修复后 8 PASS） |
 | 真实 subprocess / Git index 证据 | PASS |
 | 原治理与安全回归全绿 | PASS（31 pytest + 7 checker + 2 Shell E2E） |
-| implementation commit 白名单无并行文件 | PENDING |
-| 独立 verifier PASS | PENDING |
+| implementation commit 白名单无并行文件 | PASS（`8fb65bf`，10 个任务白名单文件） |
+| 独立 verifier PASS | PASS（固定 commit `8fb65bf`，无偏差） |
 | 用户已验收步骤 0 | PASS |
 
 **总估时**：1h。
@@ -69,9 +69,10 @@ step id → branch output  +→ git apply --index → cached diff policy → tes
 | baseline | 三项静态复现 + 现有测试 | FAIL（生产断链；现有测试假绿） | 新增真实行为 oracle |
 | RED | 新增 workflow 行为测试 | FAIL（7 failed） | 精确命中 prompt / step id / staging / cached diff |
 | GREEN | 定向 + 扩展回归 | PASS | 补充 commit 后复用 pre-commit `needs_review` output |
+| verifier | 固定 commit `8fb65bf` 独立快照 | PASS | 8 workflow + 7 checker + 8 Shell E2E + 安全四关全绿 |
 
 ## 7. Commit 历史
 
 | commit | 日期 | 范围 | 测试 | 偏差 |
 |---|---|---|---|---|
-| PENDING | 2026-07-28 | T1 | PENDING | PENDING |
+| `8fb65bf` | 2026-07-29 | T1 | 866 full pytest + 8 workflow + 7 checker + Shell E2E PASS | 估时 1h；实际跨并发 gate 收敛约 2h |

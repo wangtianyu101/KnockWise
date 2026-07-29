@@ -12,7 +12,7 @@ related: [task.yaml, decisions.md, ../../issues.md]
 
 > 路径模式：`timebox`（用户已验收）
 >
-> 当前阶段：步骤 0 已验收，进入步骤 4 TDD 实施。
+> 当前阶段：步骤 4 已完成并由独立 verifier PASS；L5 GitHub run 由用户自行执行。
 
 ## 1. 影响
 
@@ -39,7 +39,7 @@ Git index 生命周期未隔离，以及测试 oracle 只验声明文本。证�
 
 ## 5. 沟通
 
-- **当前状态**：步骤 0 已验收，步骤 4 TDD 实施中。
+- **当前状态**：步骤 4 commit `8fb65bf` 已完成，独立 verifier PASS；L5 未执行。
 - **负责人**：Codex 负责测试/实现/本地证据；独立 verifier 负责固定 commit 校验；用户负责步骤验收与
   GitHub environment approval。
 - **通报位置**：当前 Codex 对话、本文和 `docs/issues.md` 债务 24。
@@ -159,18 +159,19 @@ add 'patch.diff'
 
 ### 3.2 关闭条件
 
-- [ ] `prompt` 中不存在 `$(jq` 或其他假定 shell 展开的文本。
-- [ ] Claude 获得真实、结构化的 `failed_job` 和 `error_code`。
-- [ ] 当前 raw-prefix `key_string` 不进入 prompt；等既有 v4 sanitizer 安全债修复后再恢复。
-- [ ] prompt 把 CI context 明确标记为不可信数据，不允许其改变指令或工具权限。
-- [ ] 创建分支步骤有稳定 `id: create-branch`，两个消费者读取到同一非空 `new_branch`。
-- [ ] patch 使用 `git apply --index` 或等价的精确 staging；不再出现 `git add -A`。
-- [ ] `patch.diff` 应用后删除，且不会出现在 cached diff 或 commit 中。
-- [ ] 新增文件、修改文件、删除文件均可由 patch 正确 stage；无关 untracked 文件不被 stage。
-- [ ] diff policy 检查读取当前 staged patch，而不是旧的 `HEAD~1`。
-- [ ] 三个缺陷各有先红后绿的回归测试；测试运行生产 workflow/真实 git/jq 行为，不只 grep 关键字。
-- [ ] 原 auto-fix E2E、安全 E2E、治理测试与 Action provenance 全绿。
-- [ ] 独立 verifier 对固定 commit 给出 PASS；L5 真实 GitHub run 能创建 Draft PR。
+- [x] `prompt` 中不存在 `$(jq` 或其他假定 shell 展开的文本。
+- [x] Claude 获得真实、结构化的 `failed_job` 和 `error_code`。
+- [x] 当前 raw-prefix `key_string` 不进入 prompt；等既有 v4 sanitizer 安全债修复后再恢复。
+- [x] prompt 把 CI context 明确标记为不可信数据，不允许其改变指令或工具权限。
+- [x] 创建分支步骤有稳定 `id: create-branch`，两个消费者读取到同一非空 `new_branch`。
+- [x] patch 使用 `git apply --index` 或等价的精确 staging；不再出现 `git add -A`。
+- [x] `patch.diff` 应用后删除，且不会出现在 cached diff 或 commit 中。
+- [x] 新增文件、修改文件、删除文件均可由 patch 正确 stage；无关 untracked 文件不被 stage。
+- [x] diff policy 检查读取当前 staged patch，而不是旧的 `HEAD~1`。
+- [x] 三个缺陷各有先红后绿的回归测试；测试运行生产 workflow/真实 git/jq 行为，不只 grep 关键字。
+- [x] 原 auto-fix E2E、安全 E2E、治理测试与 Action provenance 全绿。
+- [x] 独立 verifier 对固定 commit `8fb65bf` 给出 PASS。
+- [ ] L5 真实 GitHub run 能创建 Draft PR（用户自行执行，本任务未操控远端）。
 
 ## 四、根因假设与验证
 

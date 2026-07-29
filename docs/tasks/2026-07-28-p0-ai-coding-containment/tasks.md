@@ -17,12 +17,12 @@ related: [research.md, decisions.md, test-cases.md]
 
 ### T1: Action provenance fail-closed
 
-- [ ] T1: 替换无效 Action ref，并让 governance 在线验证 repo + SHA
+- [x] T1: commit `c2965e6` · 替换无效 Action ref，并让 governance 在线验证 repo + SHA
   - **文件**: `.github/workflows/auto-fix-ci.yml`, `.github/workflows/ci.yml`, `scripts/ci/check_action_sha.py`
   - **测试**: `scripts/ci/test_check_action_sha.py`, `scripts/ci/test_security_e2e.sh`
   - **依赖**: —
   - **估时**: 45 min
-  - **产出**: 独立 implementation commit
+  - **产出**: implementation commit `c2965e6` + 独立 verifier PASS
 
 ### T2: 远端 required ruleset
 
@@ -43,7 +43,7 @@ T1 Action provenance ──→ T2 active ruleset
 
 | 任务 | 自动化测试 | 测试场景 | REQ | SCN | TC | Level | implementation | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T1 | `test_check_action_sha.py` | 伪 40 位 SHA / 404 / 网络失败均被拒绝 | REQ-P0-1 | SCN-P0-1 | TC-P0-1 | L1/L3 | READY | GREEN | PENDING | ACCEPTED |
+| T1 | `test_check_action_sha.py` | 伪 40 位 SHA / 404 / 网络失败均被拒绝 | REQ-P0-1 | SCN-P0-1 | TC-P0-1 | L1/L3 | `c2965e6` | GREEN | PASS | ACCEPTED |
 | T2 | GitHub API readback | ruleset active + 四 required checks + no bypass | REQ-P0-2 | SCN-P0-2 | TC-P0-2 | L5 | EXTERNAL | PENDING | PENDING | ACCEPTED |
 
 ## 4. 实施顺序
@@ -61,7 +61,7 @@ T1 Action provenance ──→ T2 active ruleset
 | 每个任务 ≤ 1h | PASS（T1 约 45 min） |
 | 每个任务有自动化或远端事实证据 | T1 PASS；T2 PENDING |
 | T1 代码 commit 配套单测 | PASS（11 checker + security E2E） |
-| T1 独立 verifier PASS | PENDING |
+| T1 独立 verifier PASS | PASS（固定 commit `c2965e6`，无偏差） |
 | T2 远端 API 回读 PASS | PENDING |
 | 用户已授权 P0 实施与后续顺序 | PASS |
 
@@ -73,9 +73,10 @@ T1 Action provenance ──→ T2 active ruleset
 |---|---|---|---|
 | baseline | 当前 checker + 伪造 SHA | FAIL（oracle 假绿） | 待 T1 修复 |
 | T1 GREEN | provenance 单元 + workflow contract + security E2E + 官方 API smoke | PASS | 40 位格式检查升级为 owner/repo+SHA 在线证据 |
+| T1 verifier | 固定 commit `c2965e6` 独立快照 | PASS | 11/11 + Security E2E + 15 Action 在线 provenance 全绿 |
 
 ## 7. Commit 历史
 
 | commit | 日期 | 范围 | 测试 | 偏差 |
 |---|---|---|---|---|
-| PENDING | 2026-07-28 | T1 | PENDING | PENDING |
+| `c2965e6` | 2026-07-29 | T1 | 11/11 + Security E2E + remote provenance PASS | 估时 45 min；实际约 60 min，额外处理全量 backend 范围外 flake |

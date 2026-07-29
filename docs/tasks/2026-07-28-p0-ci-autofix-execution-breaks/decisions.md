@@ -3,7 +3,7 @@ title: CI auto-fix 三项执行断链 · 决策主账
 type: meta
 step: 0
 date: 2026-07-28
-status: approved_implementation_in_progress
+status: implemented
 tags: [decisions, p0, github-actions, agent]
 related: [research.md, task.yaml, ../../issues.md]
 ---
@@ -64,7 +64,7 @@ related: [research.md, task.yaml, ../../issues.md]
 | 决策 | 落地点 | 状态 | 证据 |
 |---|---|---|---|
 | D-001 | research § 一/三/八、issues 债务 24 | ✅ 已同步 | 2026-07-28 |
-| D-002 | research § 六/七/八 | ✅ 已验收，实施中 | 2026-07-28 用户确认 |
+| D-002 | research § 六/七/八 + workflow/index 实现 | ✅ 已实施并验证 | commit `8fb65bf` + 独立 verifier PASS |
 
 - **位置**：`docs/tasks/2026-07-28-p0-ci-autofix-execution-breaks/decisions.md`
 - **创建日期**：2026-07-28
@@ -74,4 +74,4 @@ related: [research.md, task.yaml, ../../issues.md]
 - **暂缓数**：0
 - **取消数**：0
 - **路径模式**：`timebox`
-- **当前阶段**：步骤 4 TDD 实施中
+- **当前阶段**：步骤 4 已完成；L5 由用户自行执行

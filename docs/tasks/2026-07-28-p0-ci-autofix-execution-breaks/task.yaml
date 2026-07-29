@@ -20,7 +20,7 @@ test_evidence:
 metadata:
   created: 2026-07-28
   author: Codex
-  current_state: "步骤 0 已验收；步骤 4 实现与本地回归已通过，待 commit 级独立 verifier"
+  current_state: "步骤 4 commit 8fb65bf 已完成并由独立 verifier PASS；L5 GitHub run 由用户自行执行"
   user_authorization: "Claude prompt 里的 $(jq ...) 不会执行；create-branch 缺少 step id，后续分支输出为空；git add -A 可能把 patch.diff 一并提交。是这三项，可以。"
   related:
     - research.md
