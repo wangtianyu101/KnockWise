@@ -1,0 +1,32 @@
+---
+schema: task/v1
+task_id: 2026-07-28-refactor-ai-coding-workflow-audit
+mode: refactor-6
+current_step: 4
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: tasks-inline
+  path: docs/tasks/2026-07-28-refactor-ai-coding-workflow-audit/tasks.md
+metadata:
+  created: 2026-07-28
+  author: Codex
+  phase: control_plane_v2_implementation
+  current_state: "步骤 3 已验收；步骤 4 已获授权并开始按 T1-T20 实施"
+  step_0_acceptance: "2026-07-28 user accepted"
+  step_1_acceptance: "2026-07-29 验收步骤 1，出方案"
+  step_2_acceptance: "2026-07-30 按推荐全部拍板，验收步骤 2"
+  step_3_authorization: "2026-07-30 拆任务"
+  step_3_acceptance: "2026-07-30 验收步骤 3，开始实施"
+  selected_solution: "B: protected workflow-state branch + immutable event files + CAS"
+  user_authorization: "2026-07-30 验收步骤 3，开始实施"
+  related:
+    - research.md
+    - decisions.md
+    - spec.md
+    - plan.md
+    - tasks.md

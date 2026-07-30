@@ -21,7 +21,7 @@
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 > - ✅ **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A + TopNav 修复合并；✅ 已修复 commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写)；验证全过：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS。
-> - 🟠 **2026-07-29 P1 · AI Coding 单一状态与自动投影（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：11 个 manifest 中 6 个明显漂移，checker 可放行 accepted 但缺步骤产物/无效 evidence path；用户已验收步骤 1 并要求「出方案」，当前进入步骤 2 技术比选，尚未拆分或实施控制面。
+> - 🟠 **2026-07-30 P1 · AI Coding 单一状态与自动投影（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：11 个 manifest 中 6 个明显漂移，checker 可放行 accepted 但缺步骤产物/无效 evidence path；用户已「验收步骤 3，开始实施」；当前进入步骤 4，按 4 批 20 个原子任务实施。
 > - ✅ **2026-07-29 Digest bookmark 404 全量测试 flake**（[`tasks/2026-07-29-bug-bookmark-event-loop-flake/`](tasks/2026-07-29-bug-bookmark-event-loop-flake/research.md)）：历史 `1 failed + 168 errors` 当前复跑为 `1 failed + 0 errors`；用户决定只修唯一 failed；局部 mock async session 后 target 1/1、Digest API 8 passed、backend full `866 passed / 0 failed`，独立 verifier PASS。
 > - ✅ **2026-07-29 P0 · CI auto-fix 三项执行断链（债务 24）已修复**（[`tasks/2026-07-28-p0-ci-autofix-execution-breaks/`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/retro.md)）：用户确认只处理 prompt 中 3 个字面 `$(jq ...)`、`create-branch` 缺 step id、`git add -A` 过度 staging；实施 commit `8fb65bf` + verifier 结果记录 `2b9c81b`；tasks.md status: completed · 8 workflow contract + 7 checker + 31 pytest + 2 Shell E2E + Action provenance 全绿；独立 verifier 固定 commit `8fb65bf` PASS；L5 GitHub run 由用户自执行（BLOCKED · 等用户在 default branch 触发）。
 
@@ -863,7 +863,7 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ### 债务 23 — AI Coding 流程控制面存在可绕过 Gate 与供应链假绿 🔴
 
-**状态**：🚧 方案 B 步骤 1 已验收，步骤 2 技术方案编写中；Action provenance P0 已完成，远端 ruleset 由用户自行操作
+**状态**：🚧 方案 B 步骤 3 已验收；步骤 4 已获授权，当前按 4 批 20 个原子任务实施。Action provenance P0 已完成，远端 ruleset 由用户自行操作
 
 **权威决策主账**：[`docs/tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md)
 
@@ -874,6 +874,12 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 **用户决策（2026-07-29）**：「那你修复下」——按 `refactor-6` 进入步骤 1 规格，不越级实施。
 
 **用户决策（2026-07-29）**：「验收步骤 1，出方案」——规格已冻结，进入步骤 2 多方案比选；未拍板前不拆分、不实施。
+
+**用户决策（2026-07-30）**：「按推荐全部拍板，验收步骤 2」——选择独立受保护 `workflow-state` branch + 每事件一文件 + CAS；Actor 信任、投影位置、迁移范围及 Shadow→Enforce 节奏全部按 [`plan.md` § 10](tasks/2026-07-28-refactor-ai-coding-workflow-audit/plan.md#10-需要用户拍板的决策) 落地；进入步骤 3，等待「拆任务」指令。
+
+**用户决策（2026-07-30）**：「拆任务」——已授权步骤 3；[`tasks.md`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/tasks.md) 已按 Core、Git Store/CLI、Trust/Gates、Migration/Shadow 四批拆成 20 个原子任务，当前等待步骤 3 验收，未进入实现。
+
+**用户决策（2026-07-30）**：「验收步骤 3，开始实施」——任务粒度、依赖和实施顺序已验收；进入步骤 4，逐任务执行 TDD、回写、commit 与独立 verifier。
 
 **已确认问题**：
 
