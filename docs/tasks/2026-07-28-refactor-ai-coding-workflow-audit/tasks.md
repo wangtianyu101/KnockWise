@@ -52,15 +52,18 @@ phase_acceptance: PENDING
   - **实际**: 18 min；RED=模块不存在、pytest collection error；GREEN=30/30 passed；
     test-quality 0 violations；commit `fa1a0fc`；独立 verifier PASS（偏差 0）
 
-### T2: 实现 canonical JSON 与 hash chain
+### T2: ✅ 已实现 · canonical JSON 与 hash chain
 
-- [ ] T2: 实现稳定序列化、event hash、previous hash 校验和历史不可变检测
+- [x] T2: 实现稳定序列化、event hash、previous hash 校验和历史不可变检测
   - **文件**: `scripts/workflow_state/canonical.py`
   - **测试**: `backend/tests/test_workflow_state_canonical.py`
   - **Spec**: REQ-001；SCN-002；TC-002
   - **依赖**: T1
   - **估时**: 45 min
   - **产出**: 1 commit，建议 `feat(workflow-state): T2 add canonical hash chain`
+  - **实际**: 20 min；RED=canonical 模块不存在，并补抓空历史首次创建缺陷；
+    GREEN=14/14 target、44/44 Core passed；test-quality 0 violations；
+    commit 待本次提交生成，verifier 尚未运行
 
 ### T3: 实现状态 reducer 与失效语义
 
@@ -273,7 +276,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | 任务 | 自动化测试 | 主要场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
 | T1 | `test_workflow_state_models.py` | 未知 schema 拒绝 | REQ-010 | SCN-017 | TC-017 | L1 | `fa1a0fc` | PASS | PASS | PENDING |
-| T2 | `test_workflow_state_canonical.py` | 历史覆盖拒绝 | REQ-001 | SCN-002 | TC-002 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
+| T2 | `test_workflow_state_canonical.py` | 历史覆盖拒绝 | REQ-001 | SCN-002 | TC-002 | L1 | STAGED | PASS | NOT_RUN | PENDING |
 | T3 | `test_workflow_state_reducer.py` | 状态正交与 evidence 失效 | REQ-002/006 | SCN-003/009/010 | TC-003/009/010 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T5 | `test_workflow_state_projector.py` | 重建、幂等、drift | REQ-008 | SCN-001/012/013 | TC-001/012/013 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -366,4 +369,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | Task | commit | 实际耗时 | test | verifier | acceptance | 偏差 |
 |---|---|---:|---|---|---|---|
 | `T1` | `fa1a0fc` | 18 min | PASS 30/30 | PASS | PENDING | 比估时少 27 min；独立 verifier 偏差 0 |
-| `T2～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
+| `T2` | STAGED | 20 min | PASS 14/14 | NOT_RUN | PENDING | 比估时少 25 min；补覆盖首次创建边界 |
+| `T3～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
