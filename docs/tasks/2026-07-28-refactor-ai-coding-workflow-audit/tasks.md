@@ -50,7 +50,7 @@ phase_acceptance: PENDING
   - **估时**: 45 min
   - **产出**: 1 commit，建议 `feat(workflow-state): T1 add event and projection models`
   - **实际**: 18 min；RED=模块不存在、pytest collection error；GREEN=30/30 passed；
-    test-quality 0 violations；commit 待本次提交生成，verifier 尚未运行
+    test-quality 0 violations；commit `fa1a0fc`；独立 verifier PASS（偏差 0）
 
 ### T2: 实现 canonical JSON 与 hash chain
 
@@ -272,7 +272,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 
 | 任务 | 自动化测试 | 主要场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T1 | `test_workflow_state_models.py` | 未知 schema 拒绝 | REQ-010 | SCN-017 | TC-017 | L1 | STAGED | PASS | NOT_RUN | PENDING |
+| T1 | `test_workflow_state_models.py` | 未知 schema 拒绝 | REQ-010 | SCN-017 | TC-017 | L1 | `fa1a0fc` | PASS | PASS | PENDING |
 | T2 | `test_workflow_state_canonical.py` | 历史覆盖拒绝 | REQ-001 | SCN-002 | TC-002 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T3 | `test_workflow_state_reducer.py` | 状态正交与 evidence 失效 | REQ-002/006 | SCN-003/009/010 | TC-003/009/010 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -365,5 +365,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 
 | Task | commit | 实际耗时 | test | verifier | acceptance | 偏差 |
 |---|---|---:|---|---|---|---|
-| `T1` | STAGED | 18 min | PASS 30/30 | NOT_RUN | PENDING | 比估时少 27 min；复用已验收 Pydantic 契约 |
+| `T1` | `fa1a0fc` | 18 min | PASS 30/30 | PASS | PENDING | 比估时少 27 min；独立 verifier 偏差 0 |
 | `T2～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
