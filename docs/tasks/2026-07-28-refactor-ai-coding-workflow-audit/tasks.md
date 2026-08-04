@@ -63,7 +63,7 @@ phase_acceptance: PENDING
   - **产出**: 1 commit，建议 `feat(workflow-state): T2 add canonical hash chain`
   - **实际**: 20 min；RED=canonical 模块不存在，并补抓空历史首次创建缺陷；
     GREEN=14/14 target、44/44 Core passed；test-quality 0 violations；
-    commit 待本次提交生成，verifier 尚未运行
+    commit `dca321e`；独立 verifier PASS（5/5 行为探针，偏差 0）
 
 ### T3: 实现状态 reducer 与失效语义
 
@@ -276,7 +276,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | 任务 | 自动化测试 | 主要场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
 | T1 | `test_workflow_state_models.py` | 未知 schema 拒绝 | REQ-010 | SCN-017 | TC-017 | L1 | `fa1a0fc` | PASS | PASS | PENDING |
-| T2 | `test_workflow_state_canonical.py` | 历史覆盖拒绝 | REQ-001 | SCN-002 | TC-002 | L1 | STAGED | PASS | NOT_RUN | PENDING |
+| T2 | `test_workflow_state_canonical.py` | 历史覆盖拒绝 | REQ-001 | SCN-002 | TC-002 | L1 | `dca321e` | PASS | PASS | PENDING |
 | T3 | `test_workflow_state_reducer.py` | 状态正交与 evidence 失效 | REQ-002/006 | SCN-003/009/010 | TC-003/009/010 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T5 | `test_workflow_state_projector.py` | 重建、幂等、drift | REQ-008 | SCN-001/012/013 | TC-001/012/013 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -369,5 +369,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | Task | commit | 实际耗时 | test | verifier | acceptance | 偏差 |
 |---|---|---:|---|---|---|---|
 | `T1` | `fa1a0fc` | 18 min | PASS 30/30 | PASS | PENDING | 比估时少 27 min；独立 verifier 偏差 0 |
-| `T2` | STAGED | 20 min | PASS 14/14 | NOT_RUN | PENDING | 比估时少 25 min；补覆盖首次创建边界 |
+| `T2` | `dca321e` | 20 min | PASS 14/14 | PASS | PENDING | 比估时少 25 min；独立 verifier 5/5 探针 |
 | `T3～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
