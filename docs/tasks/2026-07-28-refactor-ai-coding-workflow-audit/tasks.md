@@ -86,7 +86,8 @@ phase_acceptance: PENDING
   - **产出**: 1 commit，建议 `feat(workflow-state): T4 enforce actor policy`
   - **实际**: 15 min；RED=actors 模块不存在；GREEN=79/79 target、
     123/123 Core passed；70 个权限矩阵单元全覆盖；test-quality 0 violations；
-    Python 3.9 语法解析通过；commit 待本次提交生成，verifier 尚未运行
+    Python 3.9 语法解析通过；commit `2b282b4`；独立安全 verifier
+    PASS（8/8 对抗探针，偏差 0）
 
 ### T5: 实现决定性 projector 与 drift 检测
 
@@ -281,7 +282,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | T1 | `test_workflow_state_models.py` | 未知 schema 拒绝 | REQ-010 | SCN-017 | TC-017 | L1 | `fa1a0fc` | PASS | PASS | PENDING |
 | T2 | `test_workflow_state_canonical.py` | 历史覆盖拒绝 | REQ-001 | SCN-002 | TC-002 | L1 | `dca321e` | PASS | PASS | PENDING |
 | T3 | `test_workflow_state_reducer.py` | 状态正交与 evidence 失效 | REQ-002/006 | SCN-003/009/010 | TC-003/009/010 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
-| T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | STAGED | PASS | NOT_RUN | PENDING |
+| T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | `2b282b4` | PASS | PASS | PENDING |
 | T5 | `test_workflow_state_projector.py` | 重建、幂等、drift | REQ-008 | SCN-001/012/013 | TC-001/012/013 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T6 | `test_workflow_state_git_store.py` | state branch 可用性 | REQ-001/010 | SCN-001/016 | TC-001/016 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T7 | `test_workflow_state_git_store_cas.py` | 原子追加与 CAS | REQ-001/009 | SCN-002/015 | TC-002/015 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -373,5 +374,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 |---|---|---:|---|---|---|---|
 | `T1` | `fa1a0fc` | 18 min | PASS 30/30 | PASS | PENDING | 比估时少 27 min；独立 verifier 偏差 0 |
 | `T2` | `dca321e` | 20 min | PASS 14/14 | PASS | PENDING | 比估时少 25 min；独立 verifier 5/5 探针 |
-| `T4` | STAGED | 15 min | PASS 79/79 | NOT_RUN | PENDING | 比估时少 30 min；70 格权限矩阵全覆盖 |
+| `T4` | `2b282b4` | 15 min | PASS 79/79 | PASS | PENDING | 比估时少 30 min；独立 verifier 8/8 探针 |
 | `T3、T5～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
