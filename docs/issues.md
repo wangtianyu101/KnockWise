@@ -22,6 +22,7 @@
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 > - ✅ **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A + TopNav 修复合并；✅ 已修复 commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写)；验证全过：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS。
 > - 🟠 **2026-07-30 P1 · AI Coding 单一状态与自动投影（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：11 个 manifest 中 6 个明显漂移，checker 可放行 accepted 但缺步骤产物/无效 evidence path；用户已「验收步骤 3，开始实施」；当前进入步骤 4，按 4 批 20 个原子任务实施。
+> - 🔴 **2026-07-30 P0 · test-quality 全量扫描器在 xfail decorator 上崩溃**：`python3 scripts/check_test_quality.py backend/tests` rc=1；`Violation` 定义字段为 `line/test_name`，但 `_xfail_decorator_violations` 传入不存在的 `lineno` 且遗漏 `test_name`，触发 `TypeError`。由控制面 T3 独立 verifier 发现并由 Writer 复现；文件级 T3 扫描仍 0 violations，本问题未夹带修复。
 > - ✅ **2026-07-29 Digest bookmark 404 全量测试 flake**（[`tasks/2026-07-29-bug-bookmark-event-loop-flake/`](tasks/2026-07-29-bug-bookmark-event-loop-flake/research.md)）：历史 `1 failed + 168 errors` 当前复跑为 `1 failed + 0 errors`；用户决定只修唯一 failed；局部 mock async session 后 target 1/1、Digest API 8 passed、backend full `866 passed / 0 failed`，独立 verifier PASS。
 > - ✅ **2026-07-29 P0 · CI auto-fix 三项执行断链（债务 24）已修复**（[`tasks/2026-07-28-p0-ci-autofix-execution-breaks/`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/retro.md)）：用户确认只处理 prompt 中 3 个字面 `$(jq ...)`、`create-branch` 缺 step id、`git add -A` 过度 staging；实施 commit `8fb65bf` + verifier 结果记录 `2b9c81b`；tasks.md status: completed · 8 workflow contract + 7 checker + 31 pytest + 2 Shell E2E + Action provenance 全绿；独立 verifier 固定 commit `8fb65bf` PASS；L5 GitHub run 由用户自执行（BLOCKED · 等用户在 default branch 触发）。
 
@@ -273,6 +274,33 @@
 ---
 
 ## 二、已发现 bug（待修复）
+
+### 🆕 P0 · test-quality 全量扫描器处理 xfail decorator 时自身崩溃 · 2026-07-30
+
+**位置**：`scripts/check_test_quality.py:27-33,128-144`
+
+**复现**：
+
+```bash
+python3 scripts/check_test_quality.py backend/tests
+# TypeError: __init__() got an unexpected keyword argument 'lineno'
+# rc=1
+```
+
+**根因**：`Violation` 数据类字段为 `code/message/line/test_name`，但
+`_xfail_decorator_violations()` 构造时使用 `lineno=`，并未提供必填 `test_name`。
+
+**影响**：全量 Harness Gate 在扫描到 xfail decorator 时不是输出结构化 violation，
+而是异常退出；虽然 fail closed，不会制造绿灯，但会阻断可信的全量测试质量报告。
+单文件 `test_workflow_state_reducer.py` 扫描正常，因此不影响控制面 T3 的 PASS。
+
+**来源**：`docs/tasks/2026-07-28-refactor-ai-coding-workflow-audit/` T3 独立 verifier；
+Writer 于 2026-07-30 原命令复现。
+
+**状态**：🔴 已登记，未修复；不得夹带到已完成的 T3 commit。后续若纳入 T19，
+仍需按 Bug 回归测试与独立 verifier 要求实施。
+
+---
 
 ### 🆕 Bug · Hydration mismatch 全局 _app.tsx + TopNav 时间边界 · 2026-07-27 → ✅ 2026-07-27 已修复
 

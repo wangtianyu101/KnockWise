@@ -77,7 +77,9 @@ phase_acceptance: PENDING
   - **实际**: 30 min；RED=reducer 模块不存在，并补抓 6 个缺 subject/时序缺陷；
     GREEN=17/17 target、140/140 Core passed；test-quality 0 violations；
     mutation 反转新 commit 的 test reset 后目标测试 1/1 RED，恢复后 17/17 GREEN；
-    commit 待本次提交生成，verifier 尚未运行
+    commit `b1802e6`；独立 verifier PASS（12 个关键路径探针，偏差 0）
+  - **旁路发现**: 全量 test-quality scanner 的既有 `lineno` 参数崩溃已登记
+    `docs/issues.md`；不混入 T3 修复
 
 ### T4: ✅ 已实现 · Actor 权限矩阵
 
@@ -285,7 +287,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 |---|---|---|---|---|---|---|---|---|---|---|
 | T1 | `test_workflow_state_models.py` | 未知 schema 拒绝 | REQ-010 | SCN-017 | TC-017 | L1 | `fa1a0fc` | PASS | PASS | PENDING |
 | T2 | `test_workflow_state_canonical.py` | 历史覆盖拒绝 | REQ-001 | SCN-002 | TC-002 | L1 | `dca321e` | PASS | PASS | PENDING |
-| T3 | `test_workflow_state_reducer.py` | 状态正交与 evidence 失效 | REQ-002/006 | SCN-003/009/010 | TC-003/009/010 | L1 | STAGED | PASS | NOT_RUN | PENDING |
+| T3 | `test_workflow_state_reducer.py` | 状态正交与 evidence 失效 | REQ-002/006 | SCN-003/009/010 | TC-003/009/010 | L1 | `b1802e6` | PASS | PASS | PENDING |
 | T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | `2b282b4` | PASS | PASS | PENDING |
 | T5 | `test_workflow_state_projector.py` | 重建、幂等、drift | REQ-008 | SCN-001/012/013 | TC-001/012/013 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T6 | `test_workflow_state_git_store.py` | state branch 可用性 | REQ-001/010 | SCN-001/016 | TC-001/016 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -378,6 +380,6 @@ T5 + T9 ─→ T16 ─┐                                  │
 |---|---|---:|---|---|---|---|
 | `T1` | `fa1a0fc` | 18 min | PASS 30/30 | PASS | PENDING | 比估时少 27 min；独立 verifier 偏差 0 |
 | `T2` | `dca321e` | 20 min | PASS 14/14 | PASS | PENDING | 比估时少 25 min；独立 verifier 5/5 探针 |
-| `T3` | STAGED | 30 min | PASS 17/17 | NOT_RUN | PENDING | 比估时少 30 min；mutation oracle 已证实 |
+| `T3` | `b1802e6` | 30 min | PASS 17/17 | PASS | PENDING | 比估时少 30 min；12 路径 PASS |
 | `T4` | `2b282b4` | 15 min | PASS 79/79 | PASS | PENDING | 比估时少 30 min；独立 verifier 8/8 探针 |
 | `T5～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
