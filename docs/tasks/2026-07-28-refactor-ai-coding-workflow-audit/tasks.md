@@ -143,7 +143,7 @@ phase_acceptance: PENDING
     canonical 历史不改写、旧 projection drift fail-closed、非阻塞 `flock` 冲突
     BLOCKED、unsafe path/错误 hash 不移动 ref、`update-ref new old` CAS 失败不覆盖；
     hook `GIT_*` 污染环境回归通过；test-quality 0 violations；Python 3.9 语法通过；
-    commit 待生成；独立 verifier 待运行
+    commit `dc941d9`；独立 verifier PASS（19/19 真实 Git 探针，偏差 0）
 
 ### T8: 实现幂等与远端并发重试
 
@@ -309,7 +309,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | `2b282b4` | PASS | PASS | PENDING |
 | T5 | `test_workflow_state_projector.py` | 重建、幂等、drift | REQ-008 | SCN-001/012/013 | TC-001/012/013 | L1 | `860f764` | PASS | PASS | PENDING |
 | T6 | `test_workflow_state_git_store.py` | state branch 可用性 | REQ-001/010 | SCN-001/016 | TC-001/016 | L2 | `71b34dd` | PASS | PASS | PENDING |
-| T7 | `test_workflow_state_git_store_cas.py` | 原子追加与 CAS | REQ-001/009 | SCN-002/015 | TC-002/015 | L2 | STAGED | PASS | NOT_RUN | PENDING |
+| T7 | `test_workflow_state_git_store_cas.py` | 原子追加与 CAS | REQ-001/009 | SCN-002/015 | TC-002/015 | L2 | `dc941d9` | PASS | PASS | PENDING |
 | T8 | `test_workflow_state_concurrency.py` | 幂等与并发重试 | REQ-009/010 | SCN-014/015/016 | TC-014/015/016 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T9 | `test_taskctl_cli.py` | CLI 重放与 fail closed | REQ-001/002/008/010 | SCN-001/003/017 | TC-001/003/017 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T10 | `test_taskctl_observers.py` | 真实 commit/test evidence | REQ-004/005 | SCN-006/007/008 | TC-006/007/008 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -402,5 +402,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | `T4` | `2b282b4` | 15 min | PASS 79/79 | PASS | PENDING | 比估时少 30 min；独立 verifier 8/8 探针 |
 | `T5` | `860f764` | 25 min | PASS 11/11 | PASS | PENDING | 比估时少 35 min；独立 verifier 17/17 探针 |
 | `T6` | `71b34dd` | 40 min | PASS 10/10 | PASS | PENDING | 比估时少 5 min；独立 verifier 9 个 Git 探针 |
-| `T7` | STAGED | 40 min | PASS 7/7 | NOT_RUN | PENDING | 比估时少 20 min；待独立 verifier |
+| `T7` | `dc941d9` | 40 min | PASS 7/7 | PASS | PENDING | 比估时少 20 min；独立 verifier 19/19 Git 探针 |
 | `T8～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
