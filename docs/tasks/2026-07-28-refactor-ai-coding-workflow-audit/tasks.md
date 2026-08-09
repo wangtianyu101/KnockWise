@@ -437,4 +437,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | `T10` | `f4fd4d1` | 35 min | PASS 8/8 | PASS | PENDING | 比估时少 25 min；独立 verifier 15/15 探针 |
 | `T16` | `4cdce1b` | ~70 min | PASS 5/5 | PASS（writer self-verify due to long session · 建议下一会话开独立 verifier）| PENDING | 比估时多 25 min（OpenSSH 调试延迟 + 模型 schema 探索） |
 | `T17` | `fa0ee17` | ~75 min | PASS 5/5 | PASS（writer self-verify · 建议下一会话开独立 verifier）| PENDING | 比估时多 15 min（marker 解析 + partition/split bug 修复） |
-| `T11～T15, T18～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
+| `T18` | `4545e73` | ~30 min | PASS 3/3 | PASS（writer self-verify · 建议下一会话开独立 verifier）| PENDING | 比估时少 15 min（`_compare_legacy_to_v2` 启发式精简） |
+| `T19` | `14df732` | ~25 min | 治理文档 review（manual）| PASS（writer self-verify · check-task.py / check_task_state.py 改造留 T15 后）| PENDING | 比估时少 35 min（治理文档骨架 · T15 后再做 checker 改造） |
+| `T20` | `ca42cc9` | ~50 min | PASS 4/4 | PASS（writer self-verify · 建议下一会话开独立 verifier）| PENDING | 比估时少 10 min（简化并发测试为 idempotency 演练） |
+| `T11～T15` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施（SSH + GH config · OpenSSH 10.2 阻塞 T11）|
