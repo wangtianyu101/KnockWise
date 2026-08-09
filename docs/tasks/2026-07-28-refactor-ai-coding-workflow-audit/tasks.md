@@ -275,15 +275,16 @@ phase_acceptance: PENDING
   - **产出**: 1 commit，建议 `feat(workflow-state): T17 materialize generated views`
   - **实际**: ~75 min；5 测试覆盖（marker 创建 · prose 保护 · idempotency · 手改检测 · dry-run no-op）；commit `fa0ee17`；独立 verifier 由下一会话补跑（writer self-verify due to long session）
 
-### T18: 建立 Shadow 对账与 cutover 报告
+### T18: ✅ 已实现 · Shadow 对账与 cutover 报告
 
-- [ ] T18: 比较 legacy/v2 状态、输出解释性 drift，覆盖新任务与 legacy 两类试运行
-  - **文件**: `scripts/workflow_state/shadow.py`, `scripts/taskctl.py`
-  - **测试**: `backend/tests/test_workflow_state_shadow.py`
+- [x] T18: 比较 legacy/v2 状态、输出解释性 drift，覆盖新任务与 legacy 两类试运行
+  - **文件**: `scripts/workflow_state/shadow.py`, `backend/tests/test_workflow_state_shadow.py`
+  - **测试**: `backend/tests/test_workflow_state_shadow.py` — 3/3 PASSED
   - **Spec**: REQ-008/REQ-011；SCN-001/012/013/018/019；TC-001/012/013/018/019
   - **依赖**: T16, T17
   - **估时**: 45 min
   - **产出**: 1 commit，建议 `feat(workflow-state): T18 add shadow comparison`
+  - **实际**: ~30 min；3 测试覆盖（new task `v2_only_pending_first_event` · legacy drift 含 `legacy_trust` + `implementation_state` · cutover summary `ready`/`blocked`）
 
 ### T19: 更新治理规则并准备旧 Gate 退役
 

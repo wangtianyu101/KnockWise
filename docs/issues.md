@@ -25,6 +25,7 @@
 > - 🔴 **2026-07-30 P0 · test-quality 全量扫描器在 xfail decorator 上崩溃**：`python3 scripts/check_test_quality.py backend/tests` rc=1；`Violation` 定义字段为 `line/test_name`，但 `_xfail_decorator_violations` 传入不存在的 `lineno` 且遗漏 `test_name`，触发 `TypeError`。由控制面 T3 独立 verifier 发现并由 Writer 复现；文件级 T3 扫描仍 0 violations，本问题未夹带修复。
 > - ✅ **2026-07-29 Digest bookmark 404 全量测试 flake**（[`tasks/2026-07-29-bug-bookmark-event-loop-flake/`](tasks/2026-07-29-bug-bookmark-event-loop-flake/research.md)）：历史 `1 failed + 168 errors` 当前复跑为 `1 failed + 0 errors`；用户决定只修唯一 failed；局部 mock async session 后 target 1/1、Digest API 8 passed、backend full `866 passed / 0 failed`，独立 verifier PASS。
 > - ✅ **2026-07-29 P0 · CI auto-fix 三项执行断链（债务 24）已修复**（[`tasks/2026-07-28-p0-ci-autofix-execution-breaks/`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/retro.md)）：用户确认只处理 prompt 中 3 个字面 `$(jq ...)`、`create-branch` 缺 step id、`git add -A` 过度 staging；实施 commit `8fb65bf` + verifier 结果记录 `2b9c81b`；tasks.md status: completed · 8 workflow contract + 7 checker + 31 pytest + 2 Shell E2E + Action provenance 全绿；独立 verifier 固定 commit `8fb65bf` PASS；L5 GitHub run 由用户自执行（BLOCKED · 等用户在 default branch 触发）。
+> - 🟡 **2026-08-09 P1 · 开发规范政策单一真源（债务 25）**（[`tasks/2026-08-09-refactor-development-standards-reuse/`](tasks/2026-08-09-refactor-development-standards-reuse/spec.md)）：整体规范审计确认 `AGENTS.md`、模板、Checker 与 Hook 提示存在直接语义冲突；用户决定只修 R-01，步骤 0 已验收，当前步骤 1 规格待验收。权威决策见 [`decisions.md` D-001](tasks/2026-08-09-refactor-development-standards-reuse/decisions.md)。
 
 ---
 
@@ -961,6 +962,29 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 **关闭条件**：13/14 已关闭（research § 三.3.2）；最后 1 项 L5 GitHub run 由用户自执行（BLOCKED · 等用户在 default branch 触发）。
 
 **优先级**：✅ 已关闭（保留在议题主账作历史归档用）
+
+---
+
+### 债务 25 — 开发规范强制政策没有单一机器真源 🟡 P1
+
+**状态**：🚧 `refactor-6` 步骤 0 已验收；用户决定只修 R-01，步骤 1 `spec.md` 已起草并等待验收。
+
+**权威决策主账**：[`docs/tasks/2026-08-09-refactor-development-standards-reuse/decisions.md`](tasks/2026-08-09-refactor-development-standards-reuse/decisions.md)（D-001）
+
+**调研与规格**：[`research.md`](tasks/2026-08-09-refactor-development-standards-reuse/research.md) · [`spec.md`](tasks/2026-08-09-refactor-development-standards-reuse/spec.md)
+
+**用户决策（2026-08-09）**：「我觉的那你可以把1 修复下」——只修 R-01；复用债务 13 状态语义和债务 23 状态控制面，不夹带 R-02～R-12。
+
+**已确认问题**：
+
+1. `AGENTS.md` § 6.5 要求写 `- [x] ... ✅ DONE`，但 `check_task_state.py` 明确禁止裸 `✅ DONE`。
+2. `scripts/pre-commit` 一处错误提示要求写入被另一处语义 Gate 禁止的格式。
+3. 同一政策靠人工复制到 AGENTS、DOD、模板、Checker、Hook 和 CI，没有权威 policy definition 与 consumer coverage。
+4. 只修文案不能阻止下一次漂移；需要单一政策定义、adapter 一致性校验、consumer 注册和生命周期契约。
+
+**关闭条件**：以本任务 [`research.md` § 6](tasks/2026-08-09-refactor-development-standards-reuse/research.md) 为准；必须证明政策唯一、直接冲突消失、强制 consumer 已接线、adapter 漂移可阻断，并且不形成第二套运行状态真源。
+
+**优先级**：P1；先完成步骤 1-3 双 Gate，再按 TDD 实施。
 
 ---
 
