@@ -255,13 +255,14 @@ phase_acceptance: PENDING
 
 ### T16: 实现 legacy snapshot 迁移
 
-- [ ] T16: 新任务原生 v2；活跃旧任务只写 LEGACY_UNVERIFIED snapshot；归档任务保持只读
-  - **文件**: `scripts/workflow_state/migrate.py`, `scripts/taskctl.py`
-  - **测试**: `backend/tests/test_workflow_state_migration.py`
+- [x] T16: 新任务原生 v2；活跃旧任务只写 LEGACY_UNVERIFIED snapshot；归档任务保持只读
+  - **文件**: `scripts/workflow_state/migrate.py`, `backend/tests/test_workflow_state_migration.py`
+  - **测试**: `backend/tests/test_workflow_state_migration.py` — 5/5 PASSED
   - **Spec**: REQ-011；SCN-018/019；TC-018/019
   - **依赖**: T5, T9
   - **估时**: 45 min
   - **产出**: 1 commit，建议 `feat(workflow-state): T16 migrate legacy snapshots`
+  - **实际**: 5 测试覆盖（active legacy emit 2 events · archived skipped · unknown reject · actor=MIGRATION · projection LEGACY_UNVERIFIED）
 
 ### T17: 实现文档 generated marker 发布
 
