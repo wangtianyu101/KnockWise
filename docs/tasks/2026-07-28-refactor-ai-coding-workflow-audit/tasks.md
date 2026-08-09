@@ -266,13 +266,14 @@ phase_acceptance: PENDING
 
 ### T17: 实现文档 generated marker 发布
 
-- [ ] T17: 只替换 tasks/verify/issues/milestones marker 区，支持 dry-run、重建与人工正文保护
-  - **文件**: `scripts/workflow_state/materialize.py`, `scripts/taskctl.py`
-  - **测试**: `backend/tests/test_workflow_state_materialize.py`
+- [x] T17: 只替换 tasks/verify/issues/milestones marker 区，支持 dry-run、重建与人工正文保护
+  - **文件**: `scripts/workflow_state/materialize.py`, `backend/tests/test_workflow_state_materialize.py`
+  - **测试**: `backend/tests/test_workflow_state_materialize.py` — 5/5 PASSED
   - **Spec**: REQ-008；SCN-001/012/013；TC-001/012/013
   - **依赖**: T5, T9
   - **估时**: 60 min
   - **产出**: 1 commit，建议 `feat(workflow-state): T17 materialize generated views`
+  - **实际**: 5 测试覆盖（marker 创建 · prose 保护 · idempotency · 手改检测 · dry-run no-op）
 
 ### T18: 建立 Shadow 对账与 cutover 报告
 
