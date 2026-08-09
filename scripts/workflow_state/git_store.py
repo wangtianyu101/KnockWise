@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import fcntl
+import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -10,12 +13,23 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Dict, Iterator, Mapping, Optional, Sequence
+from typing import Dict, Iterator, List, Mapping, Optional, Sequence
+
+from .canonical import canonical_json, validate_event_chain
+from .models import TaskEvent, TaskProjection
+from .projector import (
+    PROJECTION_FILENAMES,
+    ProjectionDriftError,
+    render_projection_files,
+    validate_projection_files,
+)
+from .reducer import reduce_events
 
 
 STATE_REF = "refs/heads/workflow-state"
 FORMAT_CONTENT = b"workflow-state/v1\n"
 _ZERO_OID = "0" * 40
+_SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _GIT_LOCAL_ENV_KEYS = {
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
     "GIT_COMMON_DIR",
@@ -48,6 +62,14 @@ class StateStoreError(RuntimeError):
 class StateSnapshot:
     commit: str
     files: Mapping[str, bytes]
+
+
+@dataclass(frozen=True)
+class AppendResult:
+    old_commit: str
+    new_commit: str
+    event_path: str
+    projection: TaskProjection
 
 
 class GitStateStore:
@@ -200,18 +222,25 @@ class GitStateStore:
         return StateSnapshot(commit=commit, files=MappingProxyType(files))
 
     @contextmanager
-    def temporary_worktree(self) -> Iterator[Path]:
+    def temporary_worktree(self, commit: Optional[str] = None) -> Iterator[Path]:
         """Yield a detached state checkout and remove it on every exit path."""
 
         self._ensure_repository()
-        commit = self._ref_commit()
-        self._validate_format(commit)
+        selected_commit = commit or self._ref_commit()
+        self._validate_format(selected_commit)
         temp_root = Path(tempfile.mkdtemp(prefix="taskctl-worktree-"))
         worktree = temp_root / "checkout"
         added = False
         try:
             result = self._run(
-                ["worktree", "add", "--detach", "--quiet", str(worktree), commit]
+                [
+                    "worktree",
+                    "add",
+                    "--detach",
+                    "--quiet",
+                    str(worktree),
+                    selected_commit,
+                ]
             )
             if result.returncode != 0:
                 raise StateStoreError(
@@ -224,3 +253,210 @@ class GitStateStore:
             if added:
                 self._run(["worktree", "remove", "--force", str(worktree)])
             shutil.rmtree(temp_root, ignore_errors=True)
+
+    def _lock_path(self) -> Path:
+        result = self._run(["rev-parse", "--git-common-dir"])
+        if result.returncode != 0:
+            raise StateStoreError("lock_unavailable", "could not locate Git common dir")
+        common_dir = Path(result.stdout.decode("utf-8").strip())
+        if not common_dir.is_absolute():
+            common_dir = self.repository / common_dir
+        return common_dir.resolve() / "taskctl.lock"
+
+    @contextmanager
+    def _state_lock(self) -> Iterator[None]:
+        try:
+            lock_file = self._lock_path().open("a+b")
+        except OSError as error:
+            raise StateStoreError(
+                "lock_unavailable",
+                "could not open taskctl state lock",
+            ) from error
+        with lock_file:
+            try:
+                fcntl.flock(
+                    lock_file.fileno(),
+                    fcntl.LOCK_EX | fcntl.LOCK_NB,
+                )
+            except BlockingIOError as error:
+                raise StateStoreError(
+                    "lock_unavailable",
+                    "another local taskctl writer holds the state lock",
+                ) from error
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+    @staticmethod
+    def _safe_identifier(value: str, field: str) -> None:
+        if _SAFE_IDENTIFIER.fullmatch(value) is None:
+            raise StateStoreError(
+                "unsafe_path_identifier",
+                f"{field} is not safe for a state-tree path",
+            )
+
+    @staticmethod
+    def _event_path(event: TaskEvent) -> str:
+        return (
+            f"tasks/{event.task_id}/events/"
+            f"{event.sequence:06d}-{event.event_id}.json"
+        )
+
+    def _existing_events(
+        self,
+        snapshot: StateSnapshot,
+        task_id: str,
+    ) -> List[TaskEvent]:
+        prefix = f"tasks/{task_id}/events/"
+        candidates = sorted(
+            path
+            for path in snapshot.files
+            if path.startswith(prefix) and path.endswith(".json")
+        )
+        events = []
+        for path in candidates:
+            try:
+                raw = json.loads(snapshot.files[path])
+                event = TaskEvent.model_validate(raw)
+            except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as error:
+                raise StateStoreError(
+                    "event_history_invalid",
+                    f"could not validate persisted event {path}",
+                ) from error
+            expected_path = self._event_path(event)
+            if path != expected_path:
+                raise StateStoreError(
+                    "event_filename_mismatch",
+                    f"persisted event path {path!r} should be {expected_path!r}",
+                )
+            events.append(event)
+        if events:
+            try:
+                validate_event_chain(events)
+            except ValueError as error:
+                raise StateStoreError(
+                    "event_history_invalid",
+                    "persisted event chain failed validation",
+                ) from error
+        return events
+
+    def _validate_existing_projection(
+        self,
+        snapshot: StateSnapshot,
+        task_id: str,
+        events: Sequence[TaskEvent],
+    ) -> None:
+        prefix = f"tasks/{task_id}/projection/"
+        actual = {
+            path[len(prefix) :]: content
+            for path, content in snapshot.files.items()
+            if path.startswith(prefix)
+        }
+        if not events:
+            if actual:
+                raise StateStoreError(
+                    "projection_drift",
+                    "projection exists without an event history",
+                )
+            return
+        expected_projection = reduce_events(events)
+        try:
+            validate_projection_files(expected_projection, actual)
+        except ProjectionDriftError as error:
+            raise StateStoreError(
+                "projection_drift",
+                f"persisted projection failed validation: {error.code}",
+            ) from error
+
+    def _compare_and_swap(self, old_commit: str, new_commit: str) -> bool:
+        result = self._run(
+            ["update-ref", STATE_REF, new_commit, old_commit],
+        )
+        return result.returncode == 0
+
+    def append_event(self, event: TaskEvent) -> AppendResult:
+        """Atomically append one validated event and its derived projection.
+
+        Actor authentication belongs to the trusted adapter boundary. This
+        storage method validates structure/history but never treats the
+        event's self-declared actor as authentication.
+        """
+
+        validated = (
+            event
+            if isinstance(event, TaskEvent)
+            else TaskEvent.model_validate(event)
+        )
+        self._safe_identifier(validated.task_id, "task_id")
+        self._safe_identifier(validated.event_id, "event_id")
+        with self._state_lock():
+            snapshot = self.load_snapshot()
+            existing = self._existing_events(snapshot, validated.task_id)
+            self._validate_existing_projection(
+                snapshot,
+                validated.task_id,
+                existing,
+            )
+            candidate = [*existing, validated]
+            projection = reduce_events(candidate)
+            event_path = self._event_path(validated)
+            task_root = f"tasks/{validated.task_id}"
+
+            with self.temporary_worktree(snapshot.commit) as worktree:
+                target = worktree / event_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(canonical_json(validated) + b"\n")
+                projection_root = worktree / task_root / "projection"
+                projection_root.mkdir(parents=True, exist_ok=True)
+                for filename, content in render_projection_files(projection).items():
+                    (projection_root / filename).write_bytes(content)
+
+                add_result = self._run(
+                    ["-C", str(worktree), "add", "--", task_root],
+                )
+                if add_result.returncode != 0:
+                    raise StateStoreError(
+                        "state_commit_failed",
+                        "could not stage event and projection",
+                    )
+                commit_result = self._run(
+                    [
+                        "-C",
+                        str(worktree),
+                        "commit",
+                        "--quiet",
+                        "-m",
+                        (
+                            f"workflow-state: {validated.task_id} "
+                            f"event {validated.sequence}"
+                        ),
+                    ],
+                    env=self._commit_identity_environment(),
+                )
+                if commit_result.returncode != 0:
+                    raise StateStoreError(
+                        "state_commit_failed",
+                        "could not commit event and projection",
+                    )
+                new_result = self._run(
+                    ["-C", str(worktree), "rev-parse", "HEAD"],
+                )
+                if new_result.returncode != 0:
+                    raise StateStoreError(
+                        "state_commit_failed",
+                        "could not resolve new state commit",
+                    )
+                new_commit = new_result.stdout.decode("ascii").strip()
+                if not self._compare_and_swap(snapshot.commit, new_commit):
+                    raise StateStoreError(
+                        "concurrent_update",
+                        "state ref changed before local compare-and-swap",
+                    )
+
+            return AppendResult(
+                old_commit=snapshot.commit,
+                new_commit=new_commit,
+                event_path=event_path,
+                projection=projection,
+            )
