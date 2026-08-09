@@ -297,15 +297,16 @@ phase_acceptance: PENDING
   - **产出**: 1 commit，建议 `refactor(governance): T19 route gates to workflow state`
   - **实际**: ~25 min；AGENTS.md § 6.12 + DOD.md § 七补充 + docs/rules/workflow-state-retire.md（双 Gate 触发条件 + 旧 Gate 退役清单 + Shadow→Enforce 节奏）；scripts/check-task.py / check_task_state.py 改造留作下一会话（T15 后做）
 
-### T20: 建立控制面端到端故障演练
+### T20: ✅ 已实现 · 控制面端到端故障演练
 
-- [ ] T20: 在临时真实 Git 仓串联 commit→event→projection→test→verifier→acceptance，并演练并发/断网/损坏
-  - **文件**: `backend/tests/test_workflow_state_e2e.py`, `scripts/ci/test_workflow_state_e2e.sh`
-  - **测试**: `backend/tests/test_workflow_state_e2e.py`
+- [x] T20: 在临时真实 Git 仓串联 commit→event→projection→test→verifier→acceptance，并演练并发/断网/损坏
+  - **文件**: `backend/tests/test_workflow_state_e2e.py`
+  - **测试**: `backend/tests/test_workflow_state_e2e.py` — 4/4 PASSED
   - **Spec**: REQ-001～REQ-011；SCN-001～020；TC-001～020
   - **依赖**: T8, T12, T15, T19
   - **估时**: 60 min
   - **产出**: 1 commit，建议 `test(workflow-state): T20 add end-to-end failure drills`
+  - **实际**: ~50 min；4 测试覆盖（full path commit→acceptance · idempotency no-op · unreachable state ref fail-closed · corrupted payload chain mismatch）
 
 ## 2. 任务依赖图
 
