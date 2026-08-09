@@ -179,15 +179,23 @@ phase_acceptance: PENDING
     violations；Python 3.9 语法解析通过；commit `9f28bc2`；独立 verifier 首轮因
     三项证据未执行判 FAIL，二轮补齐后 PASS（8/8 额外探针，代码偏差 0）
 
-### T10: 建立 commit 与 test 观察器
+### T10: ✅ 已实现 · commit 与 test 观察器
 
-- [ ] T10: 实现 observe-commit/run-test，验证 Git object，直接执行 argv 并记录 rc/counts/digest
-  - **文件**: `scripts/workflow_state/observers.py`, `scripts/taskctl.py`
+- [x] T10: 实现 observe-commit/run-test，验证 Git object，直接执行 argv 并记录 rc/counts/digest
+  - **文件**: `scripts/workflow_state/observers.py`, `scripts/workflow_state/cli.py`, `scripts/taskctl.py`
   - **测试**: `backend/tests/test_taskctl_observers.py`
   - **Spec**: REQ-004/REQ-005；SCN-006/007/008；TC-006/007/008
   - **依赖**: T7, T9
   - **估时**: 60 min
   - **产出**: 1 commit，建议 `feat(taskctl): T10 observe commits and tests`
+  - **实际**: 35 min；RED=7/7 因 observe-commit/run-test 命令不存在失败；GREEN=8/8
+    target、191/191 Core+CLI passed；真实 subprocess 验证完整 40 字符 SHA 及
+    `git cat-file -e <sha>^{commit}`、缺失/非 commit object BLOCKED 且不写状态、
+    feature HEAD/worktree 不变、Markdown PASS 不生成 test event；run-test 以
+    `shell=False` 直接执行 argv，绑定 commit/command/cwd/环境白名单/rc/counts/
+    stdout+stderr digest 与 2048-byte 摘要，失败命令记录可信 FAIL，commit mismatch
+    执行前拒绝，foreign `GIT_*` 与 shell injection 探针通过；test-quality 0
+    violations；Python 3.9 AST 解析通过；commit 待生成；独立 verifier 待运行
 
 ### P3 · Trust 与 Gates
 
@@ -326,7 +334,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | T7 | `test_workflow_state_git_store_cas.py` | 原子追加与 CAS | REQ-001/009 | SCN-002/015 | TC-002/015 | L2 | `dc941d9` | PASS | PASS | PENDING |
 | T8 | `test_workflow_state_concurrency.py` | 幂等与并发重试 | REQ-009/010 | SCN-014/015/016 | TC-014/015/016 | L2 | `03e8d4a` | PASS | PASS | PENDING |
 | T9 | `test_taskctl_cli.py` | CLI 重放与 fail closed | REQ-001/002/008/010 | SCN-001/003/017 | TC-001/003/017 | L2 | `9f28bc2` | PASS | PASS | PENDING |
-| T10 | `test_taskctl_observers.py` | 真实 commit/test evidence | REQ-004/005 | SCN-006/007/008 | TC-006/007/008 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
+| T10 | `test_taskctl_observers.py` | 真实 commit/test evidence | REQ-004/005 | SCN-006/007/008 | TC-006/007/008 | L2 | STAGED | PASS | NOT_RUN | PENDING |
 | T11 | `test_workflow_state_receipts.py` | allowed-signers 与 trust hash | REQ-003/007 | SCN-004/005/011 | TC-004/005/011/020 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T12 | `test_taskctl_trusted_events.py` | verifier/user 受信事件 | REQ-003/006/007 | SCN-004/005/009/010/011 | TC-004/005/009/010/011 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T13 | `test_workflow_state_github_observer.py` | API 二次取证 | REQ-003/010 | SCN-005/016 | TC-005/016/020 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -419,4 +427,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | `T7` | `dc941d9` | 40 min | PASS 7/7 | PASS | PENDING | 比估时少 20 min；独立 verifier 19/19 Git 探针 |
 | `T8` | `03e8d4a` | 40 min | PASS 8/8 | PASS | PENDING | 比估时少 5 min；独立 verifier 8/8 bare-remote 探针 |
 | `T9` | `9f28bc2` | 40 min | PASS 8/8 | PASS | PENDING | 比估时少 20 min；verifier 首轮证据 FAIL、二轮 8/8 探针 PASS |
-| `T10～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
+| `T10` | STAGED | 35 min | PASS 8/8 | NOT_RUN | PENDING | 比估时少 25 min；待独立 verifier |
+| `T11～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |

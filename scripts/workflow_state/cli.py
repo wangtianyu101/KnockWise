@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from .canonical import event_hash
 from .git_store import GitStateStore, StateSnapshot, StateStoreError
 from .models import ActorKind, EventType, TaskEvent, WorkflowPhase
+from .observers import command_digest, observe_test, resolve_commit
 from .projector import render_projection_files, validate_projection_files
 from .reducer import ReducerError, reduce_events
 
@@ -57,6 +58,15 @@ def _parser() -> TaskctlParser:
     show = subcommands.add_parser("show")
     show.add_argument("--task", required=True)
     show.add_argument("--format", choices=("json", "yaml", "markdown"), default="json")
+
+    observe_commit = subcommands.add_parser("observe-commit")
+    observe_commit.add_argument("--task", required=True)
+    observe_commit.add_argument("--commit", required=True)
+
+    run_test = subcommands.add_parser("run-test")
+    run_test.add_argument("--task", required=True)
+    run_test.add_argument("--commit", required=True)
+    run_test.add_argument("argv", nargs=argparse.REMAINDER)
 
     for name in ("project", "check"):
         command = subcommands.add_parser(name)
@@ -105,6 +115,36 @@ def _event(
             "occurred_at": datetime.now(timezone.utc),
             "actor": {"kind": ActorKind.WRITER, "id": writer_identity},
             "subject": {},
+            "payload": payload,
+            "previous_event_hash": previous_hash,
+        }
+    )
+
+
+def _observer_event(
+    *,
+    task_id: str,
+    sequence: int,
+    event_id: str,
+    idempotency_key: str,
+    event_type: EventType,
+    actor_kind: ActorKind,
+    actor_id: str,
+    commit: str,
+    payload: Dict[str, object],
+    previous_hash: str,
+) -> TaskEvent:
+    return TaskEvent.model_validate(
+        {
+            "schema_version": "task-event/v1",
+            "event_id": event_id,
+            "idempotency_key": idempotency_key,
+            "task_id": task_id,
+            "sequence": sequence,
+            "event_type": event_type,
+            "occurred_at": datetime.now(timezone.utc),
+            "actor": {"kind": actor_kind, "id": actor_id},
+            "subject": {"commit": commit},
             "payload": payload,
             "previous_event_hash": previous_hash,
         }
@@ -201,6 +241,79 @@ def _show(store: GitStateStore, args: argparse.Namespace) -> None:
     sys.stdout.buffer.write(snapshot.files[path])
 
 
+def _observe_commit(store: GitStateStore, args: argparse.Namespace) -> None:
+    snapshot = store.load_snapshot()
+    events = _task_events(store, snapshot, args.task)
+    commit = resolve_commit(store, args.commit)
+    event = _observer_event(
+        task_id=args.task,
+        sequence=len(events) + 1,
+        event_id=f"implementation-{commit[:12]}",
+        idempotency_key=(
+            "implementation-observation:"
+            + command_digest([args.task, commit])
+        ),
+        event_type=EventType.IMPLEMENTATION_COMMITTED,
+        actor_kind=ActorKind.GIT_OBSERVER,
+        actor_id="taskctl:git-object-observer",
+        commit=commit,
+        payload={"verification": "git cat-file -e <sha>^{commit}"},
+        previous_hash=event_hash(events[-1]),
+    )
+    result = store.append_event(event)
+    _json_output(
+        {
+            "commit": commit,
+            "event_type": event.event_type.value,
+            "source_sequence": result.projection.source_sequence,
+            "task_id": args.task,
+        }
+    )
+
+
+def _run_test(store: GitStateStore, args: argparse.Namespace) -> None:
+    snapshot = store.load_snapshot()
+    events = _task_events(store, snapshot, args.task)
+    commit = resolve_commit(store, args.commit)
+    projection = reduce_events(events)
+    if projection.active_commit != commit:
+        raise StateStoreError(
+            "active_commit_mismatch",
+            f"test commit {commit} is not active implementation {projection.active_commit}",
+        )
+    argv = list(args.argv)
+    if argv[:1] == ["--"]:
+        argv = argv[1:]
+    observation = observe_test(store.repository, argv)
+    digest = command_digest(observation.command)
+    sequence = len(events) + 1
+    event = _observer_event(
+        task_id=args.task,
+        sequence=sequence,
+        event_id=f"tests-{sequence:06d}-{digest[:8]}",
+        idempotency_key=(
+            "test-observation:"
+            + command_digest([args.task, commit, str(sequence), digest])
+        ),
+        event_type=EventType.TESTS_OBSERVED,
+        actor_kind=ActorKind.TEST_RUNNER,
+        actor_id="taskctl:direct-test-runner",
+        commit=commit,
+        payload=observation.payload(),
+        previous_hash=event_hash(events[-1]),
+    )
+    result = store.append_event(event)
+    _json_output(
+        {
+            "event_type": event.event_type.value,
+            "result": observation.result,
+            "source_sequence": result.projection.source_sequence,
+            "task_id": args.task,
+            "test_command_rc": observation.exit_code,
+        }
+    )
+
+
 def _project(store: GitStateStore, args: argparse.Namespace) -> None:
     snapshot = store.load_snapshot()
     rendered = {}
@@ -240,6 +353,8 @@ def run(argv: Sequence[str] = None, *, repository: Path = None) -> int:
         "init": lambda: _init(store, args),
         "start": lambda: _start(store, args),
         "show": lambda: _show(store, args),
+        "observe-commit": lambda: _observe_commit(store, args),
+        "run-test": lambda: _run_test(store, args),
         "project": lambda: _project(store, args),
         "check": lambda: _check(store, args),
     }
