@@ -21,7 +21,7 @@
 > - 🟡 **2026-07-26 P0-2 · 空模板可通过 DOD checker**（[`tasks/2026-07-26-p0-dod-empty-template-gate/`](tasks/2026-07-26-p0-dod-empty-template-gate/research.md)）：共享模板残留 Gate 已实现并经独立 verifier PASS；10/10 原样模板 rc=1，治理回归 77/77、测试质量 0 violations；待用户验收，暂不关闭。
 > - 🟡 **2026-07-26 P0-3 · 治理工具回归测试可信度**（[`tasks/2026-07-26-p0-governance-regression-trust/`](tasks/2026-07-26-p0-governance-regression-trust/research.md)）：生产 CLI subprocess + 临时 Git INDEX + rc/output 双断言已提交 `f1cf815`；TDD 抓到并修复 3 个真实 rc 偏差，治理回归 84/84、独立 verifier PASS；待用户验收，暂不关闭。
 > - ✅ **2026-07-27 P1 · Hydration mismatch 全局 _app.tsx + TopNav 时间边界**（[`tasks/2026-07-27-bug-hydration-mismatch/`](tasks/2026-07-27-bug-hydration-mismatch/retro.md)）：3 个根因 `_app.tsx:48 hasToken` 三元 + `_app.tsx:55 userName` 文本 + `TopNav.tsx:51 new Date()` 时间边界；已决策方案 A + TopNav 修复合并；✅ 已修复 commit `eff1128` (fix) + `1665a5b` (docs) + `43f58d4` (commit hash 回写)；验证全过：vitest 246/246 · Playwright 场景 A 5/5 · 独立 verifier 3 维度 PASS · dev server smoke PASS。
-> - 🟠 **2026-07-30 P1 · AI Coding 单一状态与自动投影（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/research.md)）：11 个 manifest 中 6 个明显漂移，checker 可放行 accepted 但缺步骤产物/无效 evidence path；用户已「验收步骤 3，开始实施」；当前进入步骤 4，按 4 批 20 个原子任务实施。
+> - 🟡 **2026-07-30 P1 · AI Coding 单一状态与自动投影（债务 23）**（[`tasks/2026-07-28-refactor-ai-coding-workflow-audit/`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/tasks.md)）：11 个 manifest 中 6 个明显漂移，checker 可放行 accepted 但缺步骤产物/无效 evidence path；方案 B 步骤 0-3 全落地（commit `08d18b1`）· 步骤 4 实施进度 **T1-T10 已完成 verifier PASS（10/20 = 50%）**· T11-T20 待办（10/20 = 50%）；关键 commits：T1 `fa1a0fc`+`348995d` · T2 `dca321e`+`6c685ba` · T3 `b1802e6`+`f5920ca` · T4 `2b282b4`+`2b5ef8c` · T5 `860f764`+`e9abba7` · T6 `71b34dd`+`beeb191` · T7 `dc941d9`+`a366ec7` · T8 `03e8d4a`+`9a86609` · T9 `9f28bc2`+`928db6c` · T10 `f4fd4d1`+`335f6c0`；T11-T15 涉及 SSH receipt 验签 + GitHub environment approval 需用户分阶段决策，T16-T20 涉及 legacy 迁移 + 旧 Gate 退役。
 > - 🔴 **2026-07-30 P0 · test-quality 全量扫描器在 xfail decorator 上崩溃**：`python3 scripts/check_test_quality.py backend/tests` rc=1；`Violation` 定义字段为 `line/test_name`，但 `_xfail_decorator_violations` 传入不存在的 `lineno` 且遗漏 `test_name`，触发 `TypeError`。由控制面 T3 独立 verifier 发现并由 Writer 复现；文件级 T3 扫描仍 0 violations，本问题未夹带修复。
 > - ✅ **2026-07-29 Digest bookmark 404 全量测试 flake**（[`tasks/2026-07-29-bug-bookmark-event-loop-flake/`](tasks/2026-07-29-bug-bookmark-event-loop-flake/research.md)）：历史 `1 failed + 168 errors` 当前复跑为 `1 failed + 0 errors`；用户决定只修唯一 failed；局部 mock async session 后 target 1/1、Digest API 8 passed、backend full `866 passed / 0 failed`，独立 verifier PASS。
 > - ✅ **2026-07-29 P0 · CI auto-fix 三项执行断链（债务 24）已修复**（[`tasks/2026-07-28-p0-ci-autofix-execution-breaks/`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/retro.md)）：用户确认只处理 prompt 中 3 个字面 `$(jq ...)`、`create-branch` 缺 step id、`git add -A` 过度 staging；实施 commit `8fb65bf` + verifier 结果记录 `2b9c81b`；tasks.md status: completed · 8 workflow contract + 7 checker + 31 pytest + 2 Shell E2E + Action provenance 全绿；独立 verifier 固定 commit `8fb65bf` PASS；L5 GitHub run 由用户自执行（BLOCKED · 等用户在 default branch 触发）。
@@ -889,9 +889,23 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ---
 
-### 债务 23 — AI Coding 流程控制面存在可绕过 Gate 与供应链假绿 🔴
+### 债务 23 — AI Coding 流程控制面存在可绕过 Gate 与供应链假绿 🟡
 
-**状态**：🚧 方案 B 步骤 3 已验收；步骤 4 已获授权，当前按 4 批 20 个原子任务实施。Action provenance P0 已完成，远端 ruleset 由用户自行操作
+**状态**：🚧 方案 B 步骤 0-3 全落地（commit `08d18b1`），步骤 4 实施进度 10/20（50%）· T1-T10 已 commit + verifier PASS（核心事件模型 + Git state store + taskctl 基础命令），T11-T20 待办。Action provenance P0 T1 ✅（commit `c2965e6`）+ T2 远端 ruleset 由用户自行操作。
+
+**实施进度**（2026-08-09 · commit `335f6c0` 最新）：
+- ✅ T1 event/projection models（`fa1a0fc`+`348995d`）
+- ✅ T2 canonical hash chain（`dca321e`+`6c685ba`）
+- ✅ T3 deterministic reducer（`b1802e6`+`f5920ca`）
+- ✅ T4 actor policy（`2b282b4`+`2b5ef8c`）
+- ✅ T5 deterministic projector（`860f764`+`e9abba7`）
+- ✅ T6 bootstrap git state store（`71b34dd`+`beeb191`）
+- ✅ T7 atomic CAS append（`dc941d9`+`a366ec7`）
+- ✅ T8 idempotent retry（`03e8d4a`+`9a86609`）
+- ✅ T9 taskctl core commands（`9f28bc2`+`928db6c`）
+- ✅ T10 observe commits and tests（`f4fd4d1`+`335f6c0`）
+- ⏳ T11 trust config + SSH receipt 验签 · T12 verifier adapter · T13 GH run 二次取证 · T14 接入本地 Hook · T15 CI 权限分层
+- ⏳ T16 legacy snapshot 迁移 · T17 generated marker · T18 Shadow 对账 · T19 旧 Gate 退役 · T20 控制面 e2e 演练
 
 **权威决策主账**：[`docs/tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md`](tasks/2026-07-28-refactor-ai-coding-workflow-audit/decisions.md)
 
