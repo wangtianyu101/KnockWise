@@ -126,7 +126,8 @@ phase_acceptance: PENDING
     bootstrap 幂等、ref 只读 immutable snapshot、业务 HEAD/脏工作树不变、
     detached 临时 worktree 异常清理均有真实 Git 仓测试；显式净化 hook 继承的
     `GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE` 等仓库局部环境；test-quality 0
-    violations；Python 3.9 语法解析通过；commit 待生成；独立 verifier 待运行
+    violations；Python 3.9 语法解析通过；commit `71b34dd`；独立 verifier
+    PASS（9 个真实 Git 对抗探针，偏差 0）
 
 ### T7: 实现本地原子追加与 CAS
 
@@ -301,7 +302,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | T3 | `test_workflow_state_reducer.py` | 状态正交与 evidence 失效 | REQ-002/006 | SCN-003/009/010 | TC-003/009/010 | L1 | `b1802e6` | PASS | PASS | PENDING |
 | T4 | `test_workflow_state_actors.py` | Writer 跨 Actor 自签拒绝 | REQ-003 | SCN-004/005 | TC-004/005/020 | L1 | `2b282b4` | PASS | PASS | PENDING |
 | T5 | `test_workflow_state_projector.py` | 重建、幂等、drift | REQ-008 | SCN-001/012/013 | TC-001/012/013 | L1 | `860f764` | PASS | PASS | PENDING |
-| T6 | `test_workflow_state_git_store.py` | state branch 可用性 | REQ-001/010 | SCN-001/016 | TC-001/016 | L2 | STAGED | PASS | NOT_RUN | PENDING |
+| T6 | `test_workflow_state_git_store.py` | state branch 可用性 | REQ-001/010 | SCN-001/016 | TC-001/016 | L2 | `71b34dd` | PASS | PASS | PENDING |
 | T7 | `test_workflow_state_git_store_cas.py` | 原子追加与 CAS | REQ-001/009 | SCN-002/015 | TC-002/015 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T8 | `test_workflow_state_concurrency.py` | 幂等与并发重试 | REQ-009/010 | SCN-014/015/016 | TC-014/015/016 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T9 | `test_taskctl_cli.py` | CLI 重放与 fail closed | REQ-001/002/008/010 | SCN-001/003/017 | TC-001/003/017 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -394,5 +395,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | `T3` | `b1802e6` | 30 min | PASS 17/17 | PASS | PENDING | 比估时少 30 min；12 路径 PASS |
 | `T4` | `2b282b4` | 15 min | PASS 79/79 | PASS | PENDING | 比估时少 30 min；独立 verifier 8/8 探针 |
 | `T5` | `860f764` | 25 min | PASS 11/11 | PASS | PENDING | 比估时少 35 min；独立 verifier 17/17 探针 |
-| `T6` | STAGED | 40 min | PASS 10/10 | NOT_RUN | PENDING | 比估时少 5 min；待独立 verifier |
+| `T6` | `71b34dd` | 40 min | PASS 10/10 | PASS | PENDING | 比估时少 5 min；独立 verifier 9 个 Git 探针 |
 | `T7～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
