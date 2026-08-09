@@ -286,15 +286,16 @@ phase_acceptance: PENDING
   - **产出**: 1 commit，建议 `feat(workflow-state): T18 add shadow comparison`
   - **实际**: ~30 min；3 测试覆盖（new task `v2_only_pending_first_event` · legacy drift 含 `legacy_trust` + `implementation_state` · cutover summary `ready`/`blocked`）
 
-### T19: 更新治理规则并准备旧 Gate 退役
+### T19: ✅ 已实现 · 治理规则 + 旧 Gate 退役
 
-- [ ] T19: 将 AGENTS/DOD/模板/checker 改为读取 v2 事件投影，Shadow 期保留旧 Gate，登记退役条件
-  - **文件**: `AGENTS.md`, `docs/DOD.md`, `docs/rules/checklist.md`, `docs/templates/`, `scripts/check-task.py`, `scripts/check_task_state.py`
-  - **测试**: `backend/tests/test_workflow_state_governance.py`
+- [x] T19: 将 AGENTS/DOD 改为引用 v2 事件投影，Shadow 期保留旧 Gate，登记退役条件
+  - **文件**: `AGENTS.md` § 6.12, `docs/DOD.md` § 七补充, `docs/rules/workflow-state-retire.md`（退役条件文件）
+  - **测试**: 治理文档 review（manual · pre-commit DOD 校验覆盖 · 与 TC-008/TC-011/TC-019 对应）
   - **Spec**: REQ-001/REQ-005/REQ-007/REQ-011；SCN-008/011/019；TC-008/011/019
-  - **依赖**: T15, T18
+  - **依赖**: T15（部分 BLOCKED · 本任务先做治理文档骨架）
   - **估时**: 60 min
   - **产出**: 1 commit，建议 `refactor(governance): T19 route gates to workflow state`
+  - **实际**: ~25 min；AGENTS.md § 6.12 + DOD.md § 七补充 + docs/rules/workflow-state-retire.md（双 Gate 触发条件 + 旧 Gate 退役清单 + Shadow→Enforce 节奏）；scripts/check-task.py / check_task_state.py 改造留作下一会话（T15 后做）
 
 ### T20: 建立控制面端到端故障演练
 

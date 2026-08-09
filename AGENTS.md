@@ -372,6 +372,34 @@ verifier (独立 Agent prompt)
 
 **memory**：`feedback-decisions-sync-to-decisions.md` · 完整例子和反例在该文件
 
+### 6.12 workflow-state v2 投影引用规则（2026-08-09 新增 · T19）
+
+> 📌 **2026-08-09 新增**（源自债务 23 阶段 4 实施 · 控制面 v2 上线）
+
+**原则**：当 `docs/tasks/<id>/` 文档目录存在 v2 projection 时（由 `scripts/workflow_state/git_store.py::load_snapshot()` 提供），治理规则 / 校验器 / 状态判断**优先读取 v2 投影**，而非 doc 目录中的 markdown 状态字段。
+
+#### 应用范围
+
+- `scripts/check-task.py` 与 `scripts/check_task_state.py` 的任务状态判断：
+  - 实现状态 → 读 v2 projection.implementation_state
+  - 测试状态 → 读 v2 projection.test_state
+  - 验证状态 → 读 v2 projection.verifier_state
+  - 验收状态 → 读 v2 projection.acceptance_state
+  - legacy trust → 读 v2 projection.legacy_trust
+- `taskctl show <task_id>` 子命令：以 v2 projection 为权威，doc 目录为人写 narrative 补充
+- 控制面 v2 完整权威契约：[`docs/tasks/2026-07-28-refactor-ai-coding-workflow-audit/spec.md`](../tasks/2026-07-28-refactor-ai-coding-workflow-audit/spec.md) § 1.1
+
+#### 双 Gate 期间（Shadow）
+
+控制面 v2 上线后保留旧 Gate 作为 advisory（仅 warning 不阻断），直到 [`docs/rules/workflow-state-retire.md`](../rules/workflow-state-retire.md) 触发条件全部满足。
+
+**反例**（不要做）：
+- ❌ 双 Gate 期间把旧 Gate 单独用于阻断 commit（应仅 advisory）
+- ❌ 跳过 v2 projection 直接读 docs/tasks/<id>/ 的 markdown 字段判定任务进展
+- ❌ 在 doc 目录手写 verifier_state = PASS 后不写 v2 event（双真源不一致）
+
+**memory**：本节预留 `feedback-workflow-state-shadow-retire.md`（下一会话写）。
+
 ### 6.10 AI Agent 安全强制规则（2026-07-22 新增 · P0 反模式）
 
 > 📌 **2026-07-22 新增**（源自 CI auto-fix 任务自我复盘 · 用户指出 P0 风险）

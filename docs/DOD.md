@@ -126,6 +126,10 @@ tags: [DOD, 6步流程, 完成定义]
 
 > 任何一项未满足，`verify.md` 不算完成，不能进入复盘。
 
+> 📌 **2026-08-09 补充（T19 · workflow-state v2 投影）**：
+> - 5 步验证阶段读任务状态时，**优先读取 v2 projection**（`scripts/workflow_state/git_store.py::load_snapshot()`），不再单独依赖 `docs/tasks/<id>/{tasks.md,verify.md}` 的 markdown 字段。
+> - L4 独立 verifier 也读 v2 projection（详见 `docs/rules/workflow-state-retire.md`）。
+
 ## 八、6 步复盘 DOD
 
 - [ ] 数据完整：计划/实际耗时、任务数、commit 数、返工次数
