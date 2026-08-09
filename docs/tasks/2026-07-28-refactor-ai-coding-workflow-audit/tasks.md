@@ -162,15 +162,21 @@ phase_acceptance: PENDING
     3.9 语法解析通过；commit `03e8d4a`；独立 verifier PASS（8/8 bare-remote
     对抗探针，偏差 0）
 
-### T9: 建立 taskctl 基础命令
+### T9: ✅ 已实现 · taskctl 基础命令
 
-- [ ] T9: 实现 init/start/show/project/check 的参数、退出码与纯读/写边界
+- [x] T9: 实现 init/start/show/project/check 的参数、退出码与纯读/写边界
   - **文件**: `scripts/taskctl.py`, `scripts/workflow_state/cli.py`
   - **测试**: `backend/tests/test_taskctl_cli.py`
   - **Spec**: REQ-001/REQ-002/REQ-008/REQ-010；SCN-001/003/017；TC-001/003/017
   - **依赖**: T3, T5, T6
   - **估时**: 60 min
   - **产出**: 1 commit，建议 `feat(taskctl): T9 add core commands`
+  - **实际**: 40 min；RED=6/6 因 taskctl 入口不存在失败；GREEN=8/8 target、
+    184/184 Core+CLI passed；真实 subprocess 验证 init/start 固定 writer 事件且无
+    actor/result 自签参数，show JSON/YAML/Markdown，project/check 字节一致且只读，
+    `--all` 多任务，未知 schema 保留旧快照并 rc=1，state ref 缺失 rc=2，usage
+    rc=3；缺 Git identity 不半初始化，foreign `GIT_*` 环境隔离；test-quality 0
+    violations；Python 3.9 语法解析通过；commit 待生成；独立 verifier 待运行
 
 ### T10: 建立 commit 与 test 观察器
 
@@ -318,7 +324,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | T6 | `test_workflow_state_git_store.py` | state branch 可用性 | REQ-001/010 | SCN-001/016 | TC-001/016 | L2 | `71b34dd` | PASS | PASS | PENDING |
 | T7 | `test_workflow_state_git_store_cas.py` | 原子追加与 CAS | REQ-001/009 | SCN-002/015 | TC-002/015 | L2 | `dc941d9` | PASS | PASS | PENDING |
 | T8 | `test_workflow_state_concurrency.py` | 幂等与并发重试 | REQ-009/010 | SCN-014/015/016 | TC-014/015/016 | L2 | `03e8d4a` | PASS | PASS | PENDING |
-| T9 | `test_taskctl_cli.py` | CLI 重放与 fail closed | REQ-001/002/008/010 | SCN-001/003/017 | TC-001/003/017 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
+| T9 | `test_taskctl_cli.py` | CLI 重放与 fail closed | REQ-001/002/008/010 | SCN-001/003/017 | TC-001/003/017 | L2 | STAGED | PASS | NOT_RUN | PENDING |
 | T10 | `test_taskctl_observers.py` | 真实 commit/test evidence | REQ-004/005 | SCN-006/007/008 | TC-006/007/008 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T11 | `test_workflow_state_receipts.py` | allowed-signers 与 trust hash | REQ-003/007 | SCN-004/005/011 | TC-004/005/011/020 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T12 | `test_taskctl_trusted_events.py` | verifier/user 受信事件 | REQ-003/006/007 | SCN-004/005/009/010/011 | TC-004/005/009/010/011 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -411,4 +417,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | `T6` | `71b34dd` | 40 min | PASS 10/10 | PASS | PENDING | 比估时少 5 min；独立 verifier 9 个 Git 探针 |
 | `T7` | `dc941d9` | 40 min | PASS 7/7 | PASS | PENDING | 比估时少 20 min；独立 verifier 19/19 Git 探针 |
 | `T8` | `03e8d4a` | 40 min | PASS 8/8 | PASS | PENDING | 比估时少 5 min；独立 verifier 8/8 bare-remote 探针 |
-| `T9～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
+| `T9` | STAGED | 40 min | PASS 8/8 | NOT_RUN | PENDING | 比估时少 20 min；待独立 verifier |
+| `T10～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
