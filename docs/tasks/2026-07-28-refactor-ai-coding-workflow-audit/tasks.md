@@ -159,7 +159,8 @@ phase_acceptance: PENDING
     同 key 异内容 fail-closed、双 actor 旧 head 重放后两事件均保留、第三次 push
     成功、三次 reject 恢复权威 head 并 BLOCKED、权威不可用不产生本地事件；普通
     fast-forward refspec 且拒绝 option-like remote；test-quality 0 violations；Python
-    3.9 语法解析通过；commit 待生成；独立 verifier 待运行
+    3.9 语法解析通过；commit `03e8d4a`；独立 verifier PASS（8/8 bare-remote
+    对抗探针，偏差 0）
 
 ### T9: 建立 taskctl 基础命令
 
@@ -316,7 +317,7 @@ T5 + T9 ─→ T16 ─┐                                  │
 | T5 | `test_workflow_state_projector.py` | 重建、幂等、drift | REQ-008 | SCN-001/012/013 | TC-001/012/013 | L1 | `860f764` | PASS | PASS | PENDING |
 | T6 | `test_workflow_state_git_store.py` | state branch 可用性 | REQ-001/010 | SCN-001/016 | TC-001/016 | L2 | `71b34dd` | PASS | PASS | PENDING |
 | T7 | `test_workflow_state_git_store_cas.py` | 原子追加与 CAS | REQ-001/009 | SCN-002/015 | TC-002/015 | L2 | `dc941d9` | PASS | PASS | PENDING |
-| T8 | `test_workflow_state_concurrency.py` | 幂等与并发重试 | REQ-009/010 | SCN-014/015/016 | TC-014/015/016 | L2 | STAGED | PASS | NOT_RUN | PENDING |
+| T8 | `test_workflow_state_concurrency.py` | 幂等与并发重试 | REQ-009/010 | SCN-014/015/016 | TC-014/015/016 | L2 | `03e8d4a` | PASS | PASS | PENDING |
 | T9 | `test_taskctl_cli.py` | CLI 重放与 fail closed | REQ-001/002/008/010 | SCN-001/003/017 | TC-001/003/017 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T10 | `test_taskctl_observers.py` | 真实 commit/test evidence | REQ-004/005 | SCN-006/007/008 | TC-006/007/008 | L2 | PENDING | NOT_RUN | NOT_RUN | PENDING |
 | T11 | `test_workflow_state_receipts.py` | allowed-signers 与 trust hash | REQ-003/007 | SCN-004/005/011 | TC-004/005/011/020 | L1 | PENDING | NOT_RUN | NOT_RUN | PENDING |
@@ -409,5 +410,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | `T5` | `860f764` | 25 min | PASS 11/11 | PASS | PENDING | 比估时少 35 min；独立 verifier 17/17 探针 |
 | `T6` | `71b34dd` | 40 min | PASS 10/10 | PASS | PENDING | 比估时少 5 min；独立 verifier 9 个 Git 探针 |
 | `T7` | `dc941d9` | 40 min | PASS 7/7 | PASS | PENDING | 比估时少 20 min；独立 verifier 19/19 Git 探针 |
-| `T8` | STAGED | 40 min | PASS 8/8 | NOT_RUN | PENDING | 比估时少 5 min；待独立 verifier |
+| `T8` | `03e8d4a` | 40 min | PASS 8/8 | PASS | PENDING | 比估时少 5 min；独立 verifier 8/8 bare-remote 探针 |
 | `T9～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
