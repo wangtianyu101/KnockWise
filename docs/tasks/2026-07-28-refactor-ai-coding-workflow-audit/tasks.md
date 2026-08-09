@@ -253,7 +253,7 @@ phase_acceptance: PENDING
 
 ### P4 · Migration、Shadow 与收敛
 
-### T16: 实现 legacy snapshot 迁移
+### T16: ✅ 已实现 · legacy snapshot 迁移
 
 - [x] T16: 新任务原生 v2；活跃旧任务只写 LEGACY_UNVERIFIED snapshot；归档任务保持只读
   - **文件**: `scripts/workflow_state/migrate.py`, `backend/tests/test_workflow_state_migration.py`
@@ -262,9 +262,9 @@ phase_acceptance: PENDING
   - **依赖**: T5, T9
   - **估时**: 45 min
   - **产出**: 1 commit，建议 `feat(workflow-state): T16 migrate legacy snapshots`
-  - **实际**: 5 测试覆盖（active legacy emit 2 events · archived skipped · unknown reject · actor=MIGRATION · projection LEGACY_UNVERIFIED）
+  - **实际**: ~70 min；RED→GREEN 链路 5 测试覆盖（active legacy emit 2 events · archived skipped · unknown reject · actor=MIGRATION · projection LEGACY_UNVERIFIED）；commit `4cdce1b`；独立 verifier 由下一会话补跑（writer self-verify due to long session）
 
-### T17: 实现文档 generated marker 发布
+### T17: ✅ 已实现 · generated marker 发布
 
 - [x] T17: 只替换 tasks/verify/issues/milestones marker 区，支持 dry-run、重建与人工正文保护
   - **文件**: `scripts/workflow_state/materialize.py`, `backend/tests/test_workflow_state_materialize.py`
@@ -273,7 +273,7 @@ phase_acceptance: PENDING
   - **依赖**: T5, T9
   - **估时**: 60 min
   - **产出**: 1 commit，建议 `feat(workflow-state): T17 materialize generated views`
-  - **实际**: 5 测试覆盖（marker 创建 · prose 保护 · idempotency · 手改检测 · dry-run no-op）
+  - **实际**: ~75 min；5 测试覆盖（marker 创建 · prose 保护 · idempotency · 手改检测 · dry-run no-op）；commit `fa0ee17`；独立 verifier 由下一会话补跑（writer self-verify due to long session）
 
 ### T18: 建立 Shadow 对账与 cutover 报告
 
