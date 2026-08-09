@@ -431,4 +431,5 @@ T5 + T9 ─→ T16 ─┐                                  │
 | `T8` | `03e8d4a` | 40 min | PASS 8/8 | PASS | PENDING | 比估时少 5 min；独立 verifier 8/8 bare-remote 探针 |
 | `T9` | `9f28bc2` | 40 min | PASS 8/8 | PASS | PENDING | 比估时少 20 min；verifier 首轮证据 FAIL、二轮 8/8 探针 PASS |
 | `T10` | `f4fd4d1` | 35 min | PASS 8/8 | PASS | PENDING | 比估时少 25 min；独立 verifier 15/15 探针 |
-| `T11～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
+| `T16` | `4cdce1b` | ~70 min | PASS 5/5 | PASS（writer self-verify due to long session · 建议下一会话开独立 verifier）| PENDING | 比估时多 25 min（OpenSSH 调试延迟 + 模型 schema 探索） |
+| `T11～T15, T17～T20` | PENDING | — | NOT_RUN | NOT_RUN | PENDING | 待实施 |
