@@ -13,9 +13,9 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
-from .canonical import canonical_json, validate_event_chain
+from .canonical import canonical_json, event_hash, validate_event_chain
 from .models import TaskEvent, TaskProjection
 from .projector import (
     PROJECTION_FILENAMES,
@@ -30,6 +30,7 @@ STATE_REF = "refs/heads/workflow-state"
 FORMAT_CONTENT = b"workflow-state/v1\n"
 _ZERO_OID = "0" * 40
 _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+_SAFE_REMOTE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 _GIT_LOCAL_ENV_KEYS = {
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
     "GIT_COMMON_DIR",
@@ -53,9 +54,10 @@ _GIT_LOCAL_ENV_KEYS = {
 class StateStoreError(RuntimeError):
     """A stable fail-closed state-store failure."""
 
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(self, code: str, message: str, *, blocked: bool = False) -> None:
         super().__init__(message)
         self.code = code
+        self.blocked = blocked
 
 
 @dataclass(frozen=True)
@@ -70,6 +72,8 @@ class AppendResult:
     new_commit: str
     event_path: str
     projection: TaskProjection
+    idempotent: bool = False
+    attempts: int = 1
 
 
 class GitStateStore:
@@ -375,88 +379,231 @@ class GitStateStore:
         )
         return result.returncode == 0
 
-    def append_event(self, event: TaskEvent) -> AppendResult:
-        """Atomically append one validated event and its derived projection.
+    @staticmethod
+    def _validate_event_input(event: TaskEvent) -> TaskEvent:
+        return event if isinstance(event, TaskEvent) else TaskEvent.model_validate(event)
 
-        Actor authentication belongs to the trusted adapter boundary. This
-        storage method validates structure/history but never treats the
-        event's self-declared actor as authentication.
-        """
+    def _append_event_locked(self, validated: TaskEvent) -> AppendResult:
+        snapshot = self.load_snapshot()
+        existing = self._existing_events(snapshot, validated.task_id)
+        self._validate_existing_projection(snapshot, validated.task_id, existing)
+        candidate = [*existing, validated]
+        projection = reduce_events(candidate)
+        event_path = self._event_path(validated)
+        task_root = f"tasks/{validated.task_id}"
 
-        validated = (
-            event
-            if isinstance(event, TaskEvent)
-            else TaskEvent.model_validate(event)
+        with self.temporary_worktree(snapshot.commit) as worktree:
+            target = worktree / event_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(canonical_json(validated) + b"\n")
+            projection_root = worktree / task_root / "projection"
+            projection_root.mkdir(parents=True, exist_ok=True)
+            for filename, content in render_projection_files(projection).items():
+                (projection_root / filename).write_bytes(content)
+
+            add_result = self._run(["-C", str(worktree), "add", "--", task_root])
+            if add_result.returncode != 0:
+                raise StateStoreError(
+                    "state_commit_failed",
+                    "could not stage event and projection",
+                )
+            commit_result = self._run(
+                [
+                    "-C",
+                    str(worktree),
+                    "commit",
+                    "--quiet",
+                    "-m",
+                    f"workflow-state: {validated.task_id} event {validated.sequence}",
+                ],
+                env=self._commit_identity_environment(),
+            )
+            if commit_result.returncode != 0:
+                raise StateStoreError(
+                    "state_commit_failed",
+                    "could not commit event and projection",
+                )
+            new_result = self._run(["-C", str(worktree), "rev-parse", "HEAD"])
+            if new_result.returncode != 0:
+                raise StateStoreError(
+                    "state_commit_failed",
+                    "could not resolve new state commit",
+                )
+            new_commit = new_result.stdout.decode("ascii").strip()
+            if not self._compare_and_swap(snapshot.commit, new_commit):
+                raise StateStoreError(
+                    "concurrent_update",
+                    "state ref changed before local compare-and-swap",
+                )
+
+        return AppendResult(
+            old_commit=snapshot.commit,
+            new_commit=new_commit,
+            event_path=event_path,
+            projection=projection,
         )
+
+    def append_event(self, event: TaskEvent) -> AppendResult:
+        """Atomically append one event without trusting its self-declared actor."""
+
+        validated = self._validate_event_input(event)
         self._safe_identifier(validated.task_id, "task_id")
         self._safe_identifier(validated.event_id, "event_id")
         with self._state_lock():
-            snapshot = self.load_snapshot()
-            existing = self._existing_events(snapshot, validated.task_id)
-            self._validate_existing_projection(
-                snapshot,
-                validated.task_id,
-                existing,
+            return self._append_event_locked(validated)
+
+    def _fetch_state_ref(self, remote: str) -> str:
+        result = self._run(["fetch", "--quiet", "--no-tags", remote, STATE_REF])
+        if result.returncode != 0:
+            raise StateStoreError(
+                "event_authority_unavailable",
+                "could not fetch the remote workflow-state authority",
+                blocked=True,
             )
-            candidate = [*existing, validated]
-            projection = reduce_events(candidate)
-            event_path = self._event_path(validated)
-            task_root = f"tasks/{validated.task_id}"
+        fetched = self._run(["rev-parse", "--verify", "FETCH_HEAD^{commit}"])
+        if fetched.returncode != 0:
+            raise StateStoreError(
+                "event_authority_unavailable",
+                "remote workflow-state did not resolve to a commit",
+                blocked=True,
+            )
+        commit = fetched.stdout.decode("ascii").strip()
+        self._validate_format(commit)
+        return commit
 
-            with self.temporary_worktree(snapshot.commit) as worktree:
-                target = worktree / event_path
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(canonical_json(validated) + b"\n")
-                projection_root = worktree / task_root / "projection"
-                projection_root.mkdir(parents=True, exist_ok=True)
-                for filename, content in render_projection_files(projection).items():
-                    (projection_root / filename).write_bytes(content)
+    def _push_state_ref(self, commit: str, remote: str) -> bool:
+        result = self._run(
+            ["push", "--porcelain", remote, f"{commit}:{STATE_REF}"],
+        )
+        return result.returncode == 0
 
-                add_result = self._run(
-                    ["-C", str(worktree), "add", "--", task_root],
-                )
-                if add_result.returncode != 0:
-                    raise StateStoreError(
-                        "state_commit_failed",
-                        "could not stage event and projection",
-                    )
-                commit_result = self._run(
-                    [
-                        "-C",
-                        str(worktree),
-                        "commit",
-                        "--quiet",
-                        "-m",
-                        (
-                            f"workflow-state: {validated.task_id} "
-                            f"event {validated.sequence}"
-                        ),
-                    ],
-                    env=self._commit_identity_environment(),
-                )
-                if commit_result.returncode != 0:
-                    raise StateStoreError(
-                        "state_commit_failed",
-                        "could not commit event and projection",
-                    )
-                new_result = self._run(
-                    ["-C", str(worktree), "rev-parse", "HEAD"],
-                )
-                if new_result.returncode != 0:
-                    raise StateStoreError(
-                        "state_commit_failed",
-                        "could not resolve new state commit",
-                    )
-                new_commit = new_result.stdout.decode("ascii").strip()
-                if not self._compare_and_swap(snapshot.commit, new_commit):
-                    raise StateStoreError(
-                        "concurrent_update",
-                        "state ref changed before local compare-and-swap",
-                    )
+    def _synchronize_remote_head(self, remote_commit: str) -> None:
+        local_commit = self._ref_commit()
+        if local_commit == remote_commit:
+            return
+        ancestor = self._run(
+            ["merge-base", "--is-ancestor", local_commit, remote_commit],
+        )
+        if ancestor.returncode != 0:
+            raise StateStoreError(
+                "state_history_diverged",
+                "local state contains changes not present in remote authority",
+                blocked=True,
+            )
+        if not self._compare_and_swap(local_commit, remote_commit):
+            raise StateStoreError(
+                "concurrent_update",
+                "local state changed while synchronizing remote authority",
+                blocked=True,
+            )
 
+    def _is_ancestor(self, older: str, newer: str) -> bool:
+        return (
+            self._run(["merge-base", "--is-ancestor", older, newer]).returncode
+            == 0
+        )
+
+    @staticmethod
+    def _logical_event(event: TaskEvent) -> Dict[str, object]:
+        data = event.model_dump(mode="json")
+        data.pop("sequence", None)
+        data.pop("previous_event_hash", None)
+        return data
+
+    def _prepare_remote_event(
+        self,
+        event: TaskEvent,
+        attempt: int,
+    ) -> Union[AppendResult, TaskEvent]:
+        snapshot = self.load_snapshot()
+        existing = self._existing_events(snapshot, event.task_id)
+        self._validate_existing_projection(snapshot, event.task_id, existing)
+        for persisted in existing:
+            if persisted.idempotency_key != event.idempotency_key:
+                continue
+            if self._logical_event(persisted) != self._logical_event(event):
+                raise StateStoreError(
+                    "idempotency_conflict",
+                    "idempotency key already belongs to a different logical event",
+                    blocked=True,
+                )
+            projection = reduce_events(existing)
             return AppendResult(
                 old_commit=snapshot.commit,
-                new_commit=new_commit,
-                event_path=event_path,
+                new_commit=snapshot.commit,
+                event_path=self._event_path(persisted),
                 projection=projection,
+                idempotent=True,
+                attempts=attempt,
             )
+        next_sequence = len(existing) + 1
+        previous_hash = None if not existing else event_hash(existing[-1])
+        return event.model_copy(
+            update={
+                "sequence": next_sequence,
+                "previous_event_hash": previous_hash,
+            }
+        )
+
+    def append_event_with_retry(
+        self,
+        event: TaskEvent,
+        *,
+        remote: str = "origin",
+        max_attempts: int = 3,
+    ) -> AppendResult:
+        """Append and fast-forward push, replaying after at most three rejects."""
+
+        validated = self._validate_event_input(event)
+        self._safe_identifier(validated.task_id, "task_id")
+        self._safe_identifier(validated.event_id, "event_id")
+        if _SAFE_REMOTE_NAME.fullmatch(remote) is None:
+            raise StateStoreError(
+                "unsafe_remote_name",
+                "remote must be a configured Git remote name",
+                blocked=True,
+            )
+        if max_attempts < 1 or max_attempts > 3:
+            raise ValueError("max_attempts must be between 1 and 3")
+
+        with self._state_lock():
+            for attempt in range(1, max_attempts + 1):
+                remote_commit = self._fetch_state_ref(remote)
+                self._synchronize_remote_head(remote_commit)
+                prepared = self._prepare_remote_event(validated, attempt)
+                if isinstance(prepared, AppendResult):
+                    return prepared
+                result = self._append_event_locked(prepared)
+                if self._push_state_ref(result.new_commit, remote):
+                    return AppendResult(
+                        old_commit=result.old_commit,
+                        new_commit=result.new_commit,
+                        event_path=result.event_path,
+                        projection=result.projection,
+                        attempts=attempt,
+                    )
+
+                try:
+                    authoritative = self._fetch_state_ref(remote)
+                except StateStoreError:
+                    self._compare_and_swap(result.new_commit, result.old_commit)
+                    raise
+                if not self._is_ancestor(result.old_commit, authoritative):
+                    self._compare_and_swap(result.new_commit, result.old_commit)
+                    raise StateStoreError(
+                        "state_history_diverged",
+                        "remote authority did not advance by fast-forward",
+                        blocked=True,
+                    )
+                if not self._compare_and_swap(result.new_commit, authoritative):
+                    raise StateStoreError(
+                        "concurrent_update",
+                        "local state changed while recovering from push rejection",
+                        blocked=True,
+                    )
+
+        raise StateStoreError(
+            "retry_exhausted",
+            f"remote state push was rejected {max_attempts} times",
+            blocked=True,
+        )
