@@ -26,7 +26,7 @@ related:
 
 | # | 日期 | 决策项 | 选择 | 状态 | 关联 |
 |---|---|---|---|---|---|
-| D-003 | 2026-08-09 | 步骤 2 方案取舍与实施范围 | 不做 policy registry；最简 `fix-mini` 直接修语义冲突 | ✅ 已决策 · 实施中 | research § 3.5/§ 8；spec 修订；plan archived |
+| D-003 | 2026-08-09 | 步骤 2 方案取舍与实施范围 | 不做 policy registry；最简 `fix-mini` 直接修语义冲突 | ✅ 已决策 · 已提交 | research § 3.5/§ 8；spec 修订；commit `99dde16` |
 | D-002 | 2026-08-09 | 步骤 1 规格验收与步骤 2 授权 | 验收 spec；进入技术方案比选，不实施 | ✅ 已决策 | spec.md / plan.md / task.yaml |
 | D-001 | 2026-08-09 | 调研验收与修复范围 | 只修 R-01 政策单一真源；进入步骤 1 规格 | ✅ 已决策 | research § 3.5 / § 8；spec.md |
 
@@ -100,7 +100,8 @@ related:
 | D-002 | research/spec/issues/task 状态镜像 | ✅ 已同步 | 当前步骤 2 `in_progress` |
 | D-002 | `plan.md` | 🟡 已起草，待步骤 2 验收 | 三方案、单一推荐、风险和决策点 |
 | D-003 | `plan.md` | ⏸ 已归档 | 完整 registry 方案不在本轮实施 |
-| D-003 | 最小 TDD 修复 | ✅ worktree PASS · commit BLOCKED | 3 focused + 36 governance PASS；独立 verifier 偏差 0 |
+| D-003 | 最小 TDD 修复 | ✅ commit `99dde16` | 3 focused + 36 governance PASS；pre-commit 全量后端 1081 PASS |
+| D-003 | 固定 commit 独立验证 | 🟡 首轮 FAIL，修复中 | 实现语义与测试 PASS；主账 PENDING 文案和 spec 路径漂移已修正，待复验 |
 
 - **位置**：`docs/tasks/2026-08-09-refactor-development-standards-reuse/decisions.md`
 - **创建日期**：2026-08-09
@@ -109,4 +110,4 @@ related:
 - **待确认数**：0
 - **暂缓数**：0
 - **取消数**：0
-- **当前阶段**：最简修复 worktree 实现与独立 verifier PASS；无固定 commit，commit-level Gate BLOCKED。
+- **当前阶段**：最简修复已提交 `99dde16`；首轮固定 commit verifier 仅发现文档漂移，已修正并待复验；用户 acceptance 待确认。

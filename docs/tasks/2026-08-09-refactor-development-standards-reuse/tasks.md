@@ -26,10 +26,10 @@ layer: L1
 
 ## 2. 原子任务
 
-- [ ] T1: 统一 `[x]` / FAIL / 裸 DONE 的 active consumer 语义（工作区实现与测试已完成，等待 commit）
+- [x] T1: 统一 `[x]` / FAIL / 裸 DONE 的 active consumer 语义（实现已进入 commit）
   - **估时**: 1h
   - **依赖**: 无；基于债务 23 T19 commit `14df732`
-  - **对应 commit**: PENDING（本轮未提交，避免混入工作区其他 staged 文件）
+  - **对应 commit**: `99dde16cc24ae3e41687b01d383e839e9d77165c`
   - **对应测试**: `backend/tests/test_task_governance_gate.py` 三个回归 + 治理相关 36 项回归
   - **文件**: `AGENTS.md`、tasks template、pre-commit、state checker、旧状态 spec 勘误、回归测试
 
@@ -37,7 +37,7 @@ layer: L1
 
 | 任务 | 自动化测试 | 场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T1 | `test_task_governance_gate.py` | 正交状态语义与 active guidance | REQ-MIN-1 | SCN-MIN-1 | TC-001/003 | L1 | PENDING_COMMIT | PASS | BLOCKED | PENDING |
+| T1 | `test_task_governance_gate.py` | 正交状态语义与 active guidance | REQ-MIN-1 | SCN-MIN-1 | TC-001/003 | L1 | `99dde16` | PASS | FAIL（文档漂移） | PENDING |
 
 ## 4. 实施证据
 
@@ -45,7 +45,7 @@ layer: L1
 - 最小绿灯：新增三个聚焦回归 `3 passed`。
 - 治理回归：`test_task_governance_gate.py + test_check_governance.py + test_workflow_state_reducer.py` 共 `36 passed`。
 - 测试质量：13 tests，0 violations。
-- 独立 verifier：worktree 行为 PASS、偏差 0；因无固定 implementation commit，commit identity BLOCKED。
+- 独立 verifier：固定 commit `99dde16` 的实现语义与 36 项测试 PASS；因本文件仍保留提交前 PENDING 文案、spec 路径残留，整体验证 FAIL。本次文档修复消除该偏差，待固定 commit 复验。
 
 ## 5. 总估时与实际
 
@@ -57,12 +57,12 @@ layer: L1
 
 | Task | commit | 状态 | 说明 |
 |---|---|---|---|
-| Task T1 | PENDING | 工作区已实现、未提交 | 等用户决定是否提交；不触碰其他 staged 文件 |
+| Task T1 | `99dde16` | ✅ 已实施 | 最小语义修复；pre-commit 全量后端 `1081 passed` |
 
 ## 7. 当前 Gate
 
 - implementation worktree：✅ 已完成。
-- implementation commit：⏳ PENDING。
+- implementation commit：✅ `99dde16cc24ae3e41687b01d383e839e9d77165c`。
 - test：✅ PASS。
-- independent verifier：✅ worktree PASS；⛔ commit-level BLOCKED（无固定 commit）。
+- independent verifier：❌ `99dde16` 首轮 FAIL（仅主账文档漂移；实现语义与 36 项测试 PASS）；文档已修正，待新固定 commit 复验。
 - user acceptance：⏳ PENDING。

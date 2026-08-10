@@ -67,6 +67,6 @@ related:
 
 ## 7. 当前结论
 
-- L1/L2 工作区测试：✅ PASS。
-- 独立 verifier：✅ worktree PASS、偏差 0；⛔ commit identity BLOCKED。
-- 固定 implementation commit：尚未创建，因此不能宣称 commit 级验证完成。
+- L1/L2 固定 commit 测试：✅ `99dde16` 上 36 passed；pre-commit 全量后端 1081 passed。
+- 独立 verifier：❌ `99dde16` 首轮整体验证 FAIL；实现语义与指定测试均 PASS，失败仅为 tasks/decisions 的 PENDING 文案和 spec 路径模式漂移。
+- 固定 implementation commit：`99dde16cc24ae3e41687b01d383e839e9d77165c`；上述文档偏差已修正，待新固定 commit 复验。
