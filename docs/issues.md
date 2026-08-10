@@ -25,7 +25,7 @@
 > - 🔴 **2026-07-30 P0 · test-quality 全量扫描器在 xfail decorator 上崩溃**：`python3 scripts/check_test_quality.py backend/tests` rc=1；`Violation` 定义字段为 `line/test_name`，但 `_xfail_decorator_violations` 传入不存在的 `lineno` 且遗漏 `test_name`，触发 `TypeError`。由控制面 T3 独立 verifier 发现并由 Writer 复现；文件级 T3 扫描仍 0 violations，本问题未夹带修复。
 > - ✅ **2026-07-29 Digest bookmark 404 全量测试 flake**（[`tasks/2026-07-29-bug-bookmark-event-loop-flake/`](tasks/2026-07-29-bug-bookmark-event-loop-flake/research.md)）：历史 `1 failed + 168 errors` 当前复跑为 `1 failed + 0 errors`；用户决定只修唯一 failed；局部 mock async session 后 target 1/1、Digest API 8 passed、backend full `866 passed / 0 failed`，独立 verifier PASS。
 > - ✅ **2026-07-29 P0 · CI auto-fix 三项执行断链（债务 24）已修复**（[`tasks/2026-07-28-p0-ci-autofix-execution-breaks/`](tasks/2026-07-28-p0-ci-autofix-execution-breaks/retro.md)）：用户确认只处理 prompt 中 3 个字面 `$(jq ...)`、`create-branch` 缺 step id、`git add -A` 过度 staging；实施 commit `8fb65bf` + verifier 结果记录 `2b9c81b`；tasks.md status: completed · 8 workflow contract + 7 checker + 31 pytest + 2 Shell E2E + Action provenance 全绿；独立 verifier 固定 commit `8fb65bf` PASS；L5 GitHub run 由用户自执行（BLOCKED · 等用户在 default branch 触发）。
-> - 🟡 **2026-08-09 P1 · 开发规范政策单一真源（债务 25）**（[`tasks/2026-08-09-refactor-development-standards-reuse/`](tasks/2026-08-09-refactor-development-standards-reuse/decisions.md)）：用户选择最简 `fix-mini`；`[x]=implementation`、允许 `[x]+FAIL`、禁止裸 `✅ DONE` 及四个 active consumer 已提交 `99dde16`；3 focused + 36 governance + pre-commit 全量后端 1081 PASS；首轮固定 commit verifier 仅发现主账文档漂移，已修正待复验。
+> - 🟡 **2026-08-09 P1 · 开发规范政策单一真源（债务 25）**（[`tasks/2026-08-09-refactor-development-standards-reuse/`](tasks/2026-08-09-refactor-development-standards-reuse/decisions.md)）：用户选择最简 `fix-mini`；`[x]=implementation`、允许 `[x]+FAIL`、禁止裸 `✅ DONE` 及四个 active consumer 已提交 `99dde16`；3 focused + 36 governance + pre-commit 全量后端 1081 PASS；证据修正 `818f08f` 经第二轮固定 commit verifier PASS；待用户验收。
 
 ---
 
@@ -967,7 +967,7 @@ ALTER TABLE interviews ADD CONSTRAINT uniq_user_inprogress
 
 ### 债务 25 — 开发规范强制政策没有单一机器真源 🟡 P1
 
-**状态**：🟡 最简修复已提交 `99dde16`；完整 policy registry 暂缓；首轮固定 commit verifier 的实现与测试 PASS，主账文档漂移已修正待复验；用户 acceptance 待确认。
+**状态**：🟡 最简修复已提交 `99dde16`；完整 policy registry 暂缓；证据修正 `818f08f` 经第二轮固定 commit verifier PASS；用户 acceptance 待确认。
 
 **权威决策主账**：[`docs/tasks/2026-08-09-refactor-development-standards-reuse/decisions.md`](tasks/2026-08-09-refactor-development-standards-reuse/decisions.md)（D-001）
 

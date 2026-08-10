@@ -101,7 +101,7 @@ related:
 | D-002 | `plan.md` | 🟡 已起草，待步骤 2 验收 | 三方案、单一推荐、风险和决策点 |
 | D-003 | `plan.md` | ⏸ 已归档 | 完整 registry 方案不在本轮实施 |
 | D-003 | 最小 TDD 修复 | ✅ commit `99dde16` | 3 focused + 36 governance PASS；pre-commit 全量后端 1081 PASS |
-| D-003 | 固定 commit 独立验证 | 🟡 首轮 FAIL，修复中 | 实现语义与测试 PASS；主账 PENDING 文案和 spec 路径漂移已修正，待复验 |
+| D-003 | 固定 commit 独立验证 | ✅ 第二轮 PASS | `99dde16` 首轮仅文档漂移 FAIL；`818f08f` 修正后 36 tests + 全部治理检查 PASS |
 
 - **位置**：`docs/tasks/2026-08-09-refactor-development-standards-reuse/decisions.md`
 - **创建日期**：2026-08-09
@@ -110,4 +110,4 @@ related:
 - **待确认数**：0
 - **暂缓数**：0
 - **取消数**：0
-- **当前阶段**：最简修复已提交 `99dde16`；首轮固定 commit verifier 仅发现文档漂移，已修正并待复验；用户 acceptance 待确认。
+- **当前阶段**：最简修复已提交 `99dde16`，证据修正 `818f08f` 经第二轮固定 commit verifier PASS；用户 acceptance 待确认。

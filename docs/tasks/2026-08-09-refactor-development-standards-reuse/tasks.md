@@ -37,7 +37,7 @@ layer: L1
 
 | 任务 | 自动化测试 | 场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T1 | `test_task_governance_gate.py` | 正交状态语义与 active guidance | REQ-MIN-1 | SCN-MIN-1 | TC-001/003 | L1 | `99dde16` | PASS | FAIL（文档漂移） | PENDING |
+| T1 | `test_task_governance_gate.py` | 正交状态语义与 active guidance | REQ-MIN-1 | SCN-MIN-1 | TC-001/003 | L1 | `99dde16` | PASS | PASS（`818f08f`） | PENDING |
 
 ## 4. 实施证据
 
@@ -45,7 +45,7 @@ layer: L1
 - 最小绿灯：新增三个聚焦回归 `3 passed`。
 - 治理回归：`test_task_governance_gate.py + test_check_governance.py + test_workflow_state_reducer.py` 共 `36 passed`。
 - 测试质量：13 tests，0 violations。
-- 独立 verifier：固定 commit `99dde16` 的实现语义与 36 项测试 PASS；因本文件仍保留提交前 PENDING 文案、spec 路径残留，整体验证 FAIL。本次文档修复消除该偏差，待固定 commit 复验。
+- 独立 verifier：固定 commit `99dde16` 首轮实现语义与 36 项测试 PASS，但因主账文档漂移整体 FAIL；修复提交 `818f08f` 经第二轮固定 commit verifier PASS，偏差 0，36 项测试 PASS。
 
 ## 5. 总估时与实际
 
@@ -58,11 +58,12 @@ layer: L1
 | Task | commit | 状态 | 说明 |
 |---|---|---|---|
 | Task T1 | `99dde16` | ✅ 已实施 | 最小语义修复；pre-commit 全量后端 `1081 passed` |
+| Task T1 evidence fix | `818f08f` | ✅ 已验证 | 首轮主账漂移修正；第二轮固定 commit verifier PASS |
 
 ## 7. 当前 Gate
 
 - implementation worktree：✅ 已完成。
 - implementation commit：✅ `99dde16cc24ae3e41687b01d383e839e9d77165c`。
 - test：✅ PASS。
-- independent verifier：❌ `99dde16` 首轮 FAIL（仅主账文档漂移；实现语义与 36 项测试 PASS）；文档已修正，待新固定 commit 复验。
+- independent verifier：✅ `818f08f` 第二轮固定 commit PASS；36 passed，13 tests / 0 violations，tasks/implement/state checks PASS。
 - user acceptance：⏳ PENDING。
