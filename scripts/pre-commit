@@ -332,7 +332,7 @@ if [ -n "$backend_changed$frontend_changed" ] && [ -z "$SKIP_TASKS_SYNC" ]; then
     echo "$backend_changed$frontend_changed" | grep -E "^(backend|frontend)/" | head -5 | sed 's/^/     /'
     echo ""
     echo "   按 CLAUDE.md § 6.5 (及 feedback-immediate-tasks-md-sync memory),必须:"
-    echo "     1. 把对应 task 标 - [x] ✅ DONE — commit \`hash\`"
+    echo "     1. implementation 落入 commit 后标 - [x] 并记录 hash；[x] 可与 test/verifier FAIL 共存，禁止裸 ✅ DONE"
     echo "     2. 加实际耗时 vs 估时"
     echo "     3. 更新 § 6 总估时 + § 7 实施顺序"
     echo ""

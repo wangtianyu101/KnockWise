@@ -1,0 +1,23 @@
+schema: task/v1
+task_id: 2026-08-09-refactor-development-standards-reuse
+mode: fix-mini
+current_step: 4
+step_state: in_progress
+triggers:
+  ui_design: false
+  ui_components: false
+  api_change: false
+  db_change: false
+test_evidence:
+  type: code
+  path: backend/tests/test_task_governance_gate.py::test_failed_verifier_keeps_implemented_checkbox
+metadata:
+  created: 2026-08-09
+  author: Codex
+  related:
+    - research.md
+    - decisions.md
+    - spec.md
+    - plan.md
+    - tasks.md
+    - test-cases.md

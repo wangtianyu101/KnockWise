@@ -3,7 +3,7 @@ title: 任务状态语义与传播链 · 规格
 type: spec
 step: 1
 date: 2026-07-24
-status: draft
+status: approved
 tags: [refactor, task-status, state-machine, propagation]
 related:
   - research.md
@@ -65,8 +65,8 @@ phase_acceptance: PENDING | ACCEPTED | REJECTED
 
 - 移除 `✅ DONE` 标记（曾用：`- [x] T1: ✅ DONE — commit hash`）
 - `[x]` 仅表示 implementation 已落 commit
-- 三事实中 test=FAIL 或 verifier=FAIL 时，禁止 `[x]`
-- 写 checker 验证：FAIL 状态下若有 `[x]` 即 violation
+- `[x]` 可与 test=FAIL 或 verifier=FAIL 共存；失败不否认 implementation 已发生
+- checker 只阻断裸 `✅ DONE` 及错误的阶段完成传播，不把 implementation checkbox 当测试或验收事实
 
 ### Requirement: tasks.md § 4 任务↔测试映射 SHALL 三事实表
 
@@ -111,11 +111,12 @@ verify.md L5 staging 段必含：
 **When** 写 tasks.md
 **Then** 必含 implementation.commit + test + verifier 3 字段
 
-#### Scenario: FAILED 阻断 [x] (invalid)
+#### Scenario: FAILED 保留 implementation checkbox (edge)
 **Given** 一个任务 verifier=FAIL
 **When** 写 tasks.md
-**Then** 不能写 `[x]`
-**And** `[ ]` 保留
+**Then** 已有 implementation commit 时仍可写 `[x]`
+**And** verifier 独立保留 `FAIL`
+**And** phase_acceptance 保持 `PENDING` 或 `REJECTED`
 
 #### Scenario: 裸 DONE 移除 (edge)
 **Given** 任意 tasks.md
@@ -211,7 +212,7 @@ failure_action: <next-step> | null
 ## 5. 测试用例 / 测试场景
 
 - TC-1: `test_three_facts_required` — 任务级三事实 schema 必填
-- TC-2: `test_failed_blocks_x_checkbox` — FAILED 阻断 [x]
+- TC-2: `test_failed_verifier_keeps_implemented_checkbox` — FAILED 不抹掉 implementation [x]
 - TC-3: `test_no_naked_done_marker` — 裸 DONE 标记移除
 - TC-4: `test_phase_acceptance_required_for_L5` — L5 段必含 phase_acceptance
 - TC-5: `test_legacy_12_tasks_exempt` — 12 老任务豁免
@@ -220,7 +221,7 @@ failure_action: <next-step> | null
 ```python
 # backend/tests/test_task_state_checker.py
 def test_three_facts_required(): ...
-def test_failed_blocks_x_checkbox(): ...
+def test_failed_verifier_keeps_implemented_checkbox(): ...
 def test_no_naked_done_marker(): ...
 def test_phase_acceptance_required_for_L5(): ...
 def test_legacy_12_tasks_exempt(): ...

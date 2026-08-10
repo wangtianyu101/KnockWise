@@ -2,12 +2,14 @@
 """
 check_task_state.py - 任务状态语义检查 (per P0-5 决策)
 
-5 条不变量 (per spec § 1):
+4 条不变量 (per P0-5 决策主账):
 1. 三事实必填: implementation (commit + test + verifier) + phase_acceptance
-2. FAILED 状态禁止 [x]
-3. 无 `✅ DONE` 标记
-4. L5 段必含 phase_acceptance
-5. 2026-07-24 状态契约生效前的任务豁免 (legacy)
+2. 无 `✅ DONE` 标记
+3. L5 段必含 phase_acceptance，REJECTED 不得冒充绿色完成
+4. 2026-07-24 状态契约生效前的任务豁免 (legacy)
+
+`[x]` 仅表示 implementation 已落入 commit，可与 test/verifier FAIL 共存；
+失败不会抹掉已经发生的 implementation 事实。
 
 Usage:
     python3 scripts/check_task_state.py <tasks_md_path> [--view {index,worktree}]
@@ -18,9 +20,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-# ─── 5 不变量 violation 码 ───────────────────────────
+# ─── violation 码 ────────────────────────────────────
 ERROR_MISSING_THREE_FACTS = "task-state-missing-three-facts"
-ERROR_FAILED_BLOCKS_X = "task-state-failed-blocks-x"
 ERROR_NAKED_DONE = "task-state-naked-done"
 ERROR_L5_NEEDS_ACCEPTANCE = "task-state-l5-needs-acceptance"
 ERROR_REJECTED_CLAIMS_GREEN = "task-state-rejected-claims-green"
@@ -93,20 +94,6 @@ def find_three_facts(cells: list) -> dict:
     }
 
 
-def find_x_checkbox_in_block(blocks: list, target_id: int, lines: list) -> list:
-    """找 task X 行附近 5 行内 [x] 标记"""
-    for lineno, blk in blocks:
-        if blk["task_id"] != target_id:
-            continue
-        # 看后续 5 行
-        for offset in range(0, 6):
-            if lineno + offset >= len(lines):
-                break
-            if re.search(r"- \[x\]", lines[lineno + offset - 1]):
-                return [lineno + offset]
-    return []
-
-
 def check_three_facts(path: Path, view: str = "worktree") -> list:
     """不变量 1: 三事实必填"""
     errors = []
@@ -129,25 +116,8 @@ def check_three_facts(path: Path, view: str = "worktree") -> list:
     return errors
 
 
-def check_failed_blocks_x(path: Path, view: str = "worktree") -> list:
-    """不变量 2: FAILED 状态禁止 [x]"""
-    errors = []
-    if not path.exists():
-        return []
-    blocks, lines = parse_tasks_md(path, view)
-    for lineno, blk in blocks:
-        facts = find_three_facts(blk["cells"])
-        if facts.get("verifier") in ("FAIL", "REJECTED"):
-            x_lines = find_x_checkbox_in_block(blocks, blk["task_id"], lines)
-            if x_lines:
-                errors.append(
-                    f"{ERROR_FAILED_BLOCKS_X}@{path}:{x_lines[0]}: T{blk['task_id']} verifier={facts['verifier']} 但写了 [x] (应保留 [ ])"
-                )
-    return errors
-
-
 def check_no_naked_done(content: str, path: Path) -> list:
-    """不变量 3: 无 `✅ DONE` 标记"""
+    """不变量 2: 无 `✅ DONE` 标记"""
     errors = []
     for i, line in enumerate(content.splitlines(), start=1):
         if re.search(r"✅\s*DONE|✅完成", line):
@@ -158,7 +128,7 @@ def check_no_naked_done(content: str, path: Path) -> list:
 
 
 def check_l5_acceptance(path: Path, view: str = "worktree") -> list:
-    """不变量 4: L5 段必含 phase_acceptance"""
+    """不变量 3: L5 段必含 phase_acceptance"""
     if not path.exists():
         return []
     errors = []
@@ -221,8 +191,6 @@ def main():
     if verify_path.exists():
         errors.extend(check_l5_acceptance(verify_path, args.view))
         errors.extend(check_rejected_claims_green(verify_path, args.view))
-    errors.extend(check_failed_blocks_x(tasks_path, args.view))
-
     if errors:
         for e in errors:
             print(f"::error::{e}")

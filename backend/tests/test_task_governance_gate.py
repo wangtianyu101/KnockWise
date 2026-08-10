@@ -151,6 +151,68 @@ def test_state_checker_does_not_overwrite_task_with_later_table(tmp_path):
     assert errors == [], errors
 
 
+def _task_state_document(*, verifier: str, task_line: str) -> str:
+    return (
+        "| 任务 | 自动化测试 | 场景 | REQ | SCN | TC | Level | 实施 commit | test | verifier | acceptance |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|\n"
+        f"| T1 | node | scenario | REQ-1 | SCN-1 | TC-1 | L1 | abc1234 | PASS | {verifier} | PENDING |\n"
+        f"{task_line}\n"
+        "\n"
+        "implementation evidence follows\n"
+    )
+
+
+def _run_state_checker(path: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            "python3",
+            str(REPO_ROOT / "scripts" / "check_task_state.py"),
+            str(path),
+            "--view",
+            "worktree",
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_failed_verifier_keeps_implemented_checkbox(tmp_path):
+    task_path = tmp_path / "tasks.md"
+    task_path.write_text(
+        _task_state_document(verifier="FAIL", task_line="- [x] T1: 已实施")
+    )
+
+    result = _run_state_checker(task_path)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_naked_done_still_blocks_implemented_checkbox(tmp_path):
+    task_path = tmp_path / "tasks.md"
+    task_path.write_text(
+        _task_state_document(verifier="PASS", task_line="- [x] T1: ✅ DONE")
+    )
+
+    result = _run_state_checker(task_path)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "task-state-naked-done" in result.stdout
+
+
+def test_active_task_status_guidance_uses_orthogonal_facts():
+    agents = (REPO_ROOT / "AGENTS.md").read_text()
+    template = (REPO_ROOT / "docs/templates/tasks-template.md").read_text()
+    hook = (REPO_ROOT / "scripts/pre-commit").read_text()
+
+    assert "- [x] T<n>: ✅ DONE" not in agents
+    assert "只有 `verifier: PASS` + `acceptance: ACCEPTED` 才能写 `[x]`" not in template
+    assert "把对应 task 标 - [x] ✅ DONE" not in hook
+    assert "[x]` 只表示已实施，可与 test/verifier `FAIL` 共存" in agents
+    assert "`[x]` 只表示 implementation 已落入 commit，可与 test/verifier `FAIL` 共存" in template
+    assert "[x] 可与 test/verifier FAIL 共存" in hook
+
+
 def test_new_task_without_manifest_blocks_hook(tmp_path):
     repo = _init_repo(tmp_path)
     _stage(

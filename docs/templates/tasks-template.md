@@ -107,7 +107,7 @@ T5 依赖 T4
 | T4 | test_api.py::test_post_subscribe_error | POST /subscribe error | REQ-003 | SCN-004 | TC-004 | L3 | — | NOT_RUN | NOT_RUN | PENDING |
 ```
 
-**每个任务至少 1 个测试**（TDD 强制）。**Level 列必填**，与 `docs/rules/testing-rules.md` § 6.5.1 L1-L5 主账对齐。**REQ/SCN/TC 列必填**，与 verify.md § 0.4 Traceability Matrix 10 列对齐。**最后 4 列（实施 commit / test / verifier / acceptance）按 P0-5 决策**：三事实（implementation / test / verifier）+ phase_acceptance 必填；只有 `verifier: PASS` + `acceptance: ACCEPTED` 才能写 `[x]`，否则保留 `[ ]`。**移除裸 `✅ DONE` 标记**（如 `- [x] T1: ✅ DONE — commit hash`），`[x]` 仅表示 implementation 已落。
+**每个任务至少 1 个测试**（TDD 强制）。**Level 列必填**，与 `docs/rules/testing-rules.md` § 6.5.1 L1-L5 主账对齐。**REQ/SCN/TC 列必填**，与 verify.md § 0.4 Traceability Matrix 10 列对齐。**最后 4 列（实施 commit / test / verifier / acceptance）按 P0-5 决策**：三事实（implementation / test / verifier）+ phase_acceptance 必填；`[x]` 只表示 implementation 已落入 commit，可与 test/verifier `FAIL` 共存，test/verifier/acceptance 分别记录独立事实。**禁止裸 `✅ DONE` 标记**；阶段是否完成只由 phase acceptance 与 workflow-state 投影决定。
 
 ---
 
